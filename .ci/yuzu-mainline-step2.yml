@@ -56,13 +56,3 @@ stages:
         artifactSource: 'false'
         cache: 'true'
         version: $(DisplayVersion)
-- stage: release
-  displayName: 'release'
-  dependsOn:
-  - build
-  - build_win
-  jobs:
-  - job: github
-    displayName: 'github'
-    steps:
-    - template: ./templates/release-github.yml
