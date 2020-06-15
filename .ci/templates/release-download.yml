@@ -5,9 +5,3 @@ steps:
       artifactName: 'yuzu-mainline-windows-msvc'
       buildType: 'current'
       targetPath: '$(Build.ArtifactStagingDirectory)'
-  - task: DownloadPipelineArtifact@2
-    displayName: 'Download Linux Release'
-    inputs:
-      artifactName: 'yuzu-mainline-linux'
-      buildType: 'current'
-      targetPath: '$(Build.ArtifactStagingDirectory)'
