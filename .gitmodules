@@ -6,7 +6,7 @@
     url = https://github.com/kinetiknz/cubeb.git
 [submodule "dynarmic"]
     path = externals/dynarmic
-    url = https://github.com/MerryMage/dynarmic.git
+    url = https://github.com/kiku233/dynarmic.git
 [submodule "unicorn"]
     path = externals/unicorn
     url = https://github.com/yuzu-emu/unicorn
