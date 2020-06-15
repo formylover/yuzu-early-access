@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Configure Input</string>
+   <string>配置输入</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
@@ -19,7 +19,7 @@
      <item row="1" column="1">
       <widget class="QGroupBox" name="RStick">
        <property name="title">
-        <string>Right Stick</string>
+        <string>右摇杆</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -38,7 +38,7 @@
             <item>
              <widget class="QLabel" name="labelRStickDown">
               <property name="text">
-               <string>Down:</string>
+               <string>下:</string>
               </property>
              </widget>
             </item>
@@ -60,7 +60,7 @@
             <item>
              <widget class="QLabel" name="labelRStickRight">
               <property name="text">
-               <string>Right:</string>
+               <string>右:</string>
               </property>
              </widget>
             </item>
@@ -78,7 +78,7 @@
         <item row="3" column="0" colspan="2">
          <widget class="QPushButton" name="buttonRStickAnalog">
           <property name="text">
-           <string>Set Analog Stick</string>
+           <string>设置摇杆</string>
           </property>
          </widget>
         </item>
@@ -89,7 +89,7 @@
             <item>
              <widget class="QLabel" name="labelRStickLeft">
               <property name="text">
-               <string>Left:</string>
+               <string>左:</string>
               </property>
              </widget>
             </item>
@@ -111,7 +111,7 @@
             <item>
              <widget class="QLabel" name="labelRStickUp">
               <property name="text">
-               <string>Up:</string>
+               <string>上:</string>
               </property>
              </widget>
             </item>
@@ -133,7 +133,7 @@
             <item>
              <widget class="QLabel" name="labelRStickPressed">
               <property name="text">
-               <string>Pressed:</string>
+               <string>按下:</string>
               </property>
              </widget>
             </item>
@@ -155,7 +155,7 @@
             <item>
              <widget class="QLabel" name="labelRStickMod">
               <property name="text">
-               <string>Modifier:</string>
+               <string>修改:</string>
               </property>
              </widget>
             </item>
@@ -214,7 +214,7 @@
      <item row="0" column="1">
       <widget class="QGroupBox" name="Dpad">
        <property name="title">
-        <string>Directional Pad</string>
+        <string>方向垫</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -230,7 +230,7 @@
             <item>
              <widget class="QLabel" name="labelDpadUp">
               <property name="text">
-               <string>Up:</string>
+               <string>上:</string>
               </property>
              </widget>
             </item>
@@ -252,7 +252,7 @@
             <item>
              <widget class="QLabel" name="labelDpadDown">
               <property name="text">
-               <string>Down:</string>
+               <string>下:</string>
               </property>
              </widget>
             </item>
@@ -280,7 +280,7 @@
                </size>
               </property>
               <property name="text">
-               <string>Left:</string>
+               <string>左:</string>
               </property>
              </widget>
             </item>
@@ -308,7 +308,7 @@
                </size>
               </property>
               <property name="text">
-               <string>Right:</string>
+               <string>右:</string>
               </property>
              </widget>
             </item>
@@ -329,7 +329,7 @@
      <item row="0" column="0">
       <widget class="QGroupBox" name="faceButtons">
        <property name="title">
-        <string>Face Buttons</string>
+        <string>正面按钮</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -444,7 +444,7 @@
      <item row="5" column="0" colspan="2">
       <widget class="QGroupBox" name="controller_color">
        <property name="title">
-        <string>Controller Color</string>
+        <string>控制器颜色</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_10" columnstretch="0,0,0,0,0,0,0">
         <item row="0" column="0">
@@ -463,7 +463,7 @@
         <item row="0" column="1">
          <widget class="QLabel" name="left_body_label">
           <property name="text">
-           <string>Left Body</string>
+           <string>左体</string>
           </property>
          </widget>
         </item>
@@ -489,7 +489,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Left Buttons</string>
+           <string>左按钮</string>
           </property>
          </widget>
         </item>
@@ -521,7 +521,7 @@
         <item row="0" column="4">
          <widget class="QLabel" name="right_body_label">
           <property name="text">
-           <string>Right Body</string>
+           <string>右体</string>
           </property>
          </widget>
         </item>
@@ -534,7 +534,7 @@
            </size>
           </property>
           <property name="text">
-           <string>Right Buttons</string>
+           <string>右按钮</string>
           </property>
          </widget>
         </item>
@@ -635,7 +635,7 @@
      <item row="1" column="0">
       <widget class="QGroupBox" name="LStick">
        <property name="title">
-        <string>Left Stick</string>
+        <string>左摇杆</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -651,7 +651,7 @@
             <item>
              <widget class="QLabel" name="labelLStickUp">
               <property name="text">
-               <string>Up:</string>
+               <string>上:</string>
               </property>
              </widget>
             </item>
@@ -673,7 +673,7 @@
             <item>
              <widget class="QLabel" name="labelLStickRight">
               <property name="text">
-               <string>Right:</string>
+               <string>右:</string>
               </property>
              </widget>
             </item>
@@ -691,7 +691,7 @@
         <item row="4" column="1" colspan="2">
          <widget class="QPushButton" name="buttonLStickAnalog">
           <property name="text">
-           <string>Set Analog Stick</string>
+           <string>设置摇杆</string>
           </property>
          </widget>
         </item>
@@ -702,7 +702,7 @@
             <item>
              <widget class="QLabel" name="labelLStickLeft">
               <property name="text">
-               <string>Left:</string>
+               <string>左:</string>
               </property>
              </widget>
             </item>
@@ -724,7 +724,7 @@
             <item>
              <widget class="QLabel" name="labelLStickDown">
               <property name="text">
-               <string>Down:</string>
+               <string>下:</string>
               </property>
              </widget>
             </item>
@@ -746,7 +746,7 @@
             <item>
              <widget class="QLabel" name="labelLStickMod">
               <property name="text">
-               <string>Modifier:</string>
+               <string>修改:</string>
               </property>
              </widget>
             </item>
@@ -768,7 +768,7 @@
             <item>
              <widget class="QLabel" name="labelLStickPressed">
               <property name="text">
-               <string>Pressed:</string>
+               <string>按下:</string>
               </property>
              </widget>
             </item>
@@ -830,7 +830,7 @@
      <item row="3" column="0">
       <widget class="QGroupBox" name="shoulderButtons">
        <property name="title">
-        <string>Shoulder Buttons</string>
+        <string>顶部按钮</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -977,7 +977,7 @@
      <item row="3" column="1">
       <widget class="QGroupBox" name="misc">
        <property name="title">
-        <string>Misc.</string>
+        <string>杂项.</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -993,7 +993,7 @@
             <item>
              <widget class="QLabel" name="labelMinus">
               <property name="text">
-               <string>Minus:</string>
+               <string>“-”键:</string>
               </property>
              </widget>
             </item>
@@ -1028,7 +1028,7 @@
             <item>
              <widget class="QLabel" name="labelPlus">
               <property name="text">
-               <string>Plus:</string>
+               <string>“+”键:</string>
               </property>
              </widget>
             </item>
@@ -1072,7 +1072,7 @@
             <item>
              <widget class="QLabel" name="labelScreenshot">
               <property name="text">
-               <string>Screen Capture:</string>
+               <string>屏幕捕获:</string>
               </property>
               <property name="wordWrap">
                <bool>false</bool>
@@ -1149,7 +1149,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="text">
-        <string>Clear All</string>
+        <string>全部清除</string>
        </property>
       </widget>
      </item>
@@ -1177,7 +1177,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="text">
-        <string>Restore Defaults</string>
+        <string>恢复默认值</string>
        </property>
       </widget>
      </item>

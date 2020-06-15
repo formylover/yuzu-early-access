@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -63,7 +67,7 @@ static void SetAnalogButton(const Common::ParamPackage& input_param,
 
 static QString ButtonToText(const Common::ParamPackage& param) {
     if (!param.Has("engine")) {
-        return QObject::tr("[not set]");
+        return QObject::tr("[没有设置]");
     }
 
     if (param.Get("engine", "") == "keyboard") {
@@ -319,9 +323,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         }
         connect(analog_map_stick[analog_id], &QPushButton::clicked, [=] {
             if (QMessageBox::information(
-                    this, tr("Information"),
-                    tr("After pressing OK, first move your joystick horizontally, "
-                       "and then vertically."),
+                    this, tr("信息"),
+                    tr("按下确定后, 第一水平，然后垂直, "
+                       "移动操纵杆."),
                     QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok) {
                 HandleClick(
                     analog_map_stick[analog_id],
@@ -526,7 +530,7 @@ void ConfigureInputPlayer::UpdateButtonLabels() {
             analog_button->setText(
                 AnalogToText(analogs_param[analog_id], analog_sub_buttons[sub_button_id]));
         }
-        analog_map_stick[analog_id]->setText(tr("Set Analog Stick"));
+        analog_map_stick[analog_id]->setText(tr("设置摇杆"));
 
         auto& param = analogs_param[analog_id];
         auto* const analog_stick_slider = analog_map_deadzone_and_modifier_slider[analog_id];
@@ -561,7 +565,7 @@ void ConfigureInputPlayer::UpdateButtonLabels() {
 void ConfigureInputPlayer::HandleClick(
     QPushButton* button, std::function<void(const Common::ParamPackage&)> new_input_setter,
     InputCommon::Polling::DeviceType type) {
-    button->setText(tr("[press key]"));
+    button->setText(tr("[按键]"));
     button->setFocus();
 
     // Keyboard keys can only be used as button devices

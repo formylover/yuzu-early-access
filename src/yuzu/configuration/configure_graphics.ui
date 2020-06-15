@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="groupBox_2">
        <property name="title">
-        <string>API Settings</string>
+        <string>API 设置</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -52,7 +52,7 @@
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Device:</string>
+             <string>设备:</string>
             </property>
            </widget>
           </item>
@@ -67,20 +67,20 @@
      <item>
       <widget class="QGroupBox" name="groupBox">
        <property name="title">
-        <string>Graphics Settings</string>
+        <string>图形设置</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <widget class="QCheckBox" name="use_disk_shader_cache">
           <property name="text">
-           <string>Use disk shader cache</string>
+           <string>使用磁盘高速缓存着色器</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_asynchronous_gpu_emulation">
           <property name="text">
-           <string>Use asynchronous GPU emulation</string>
+           <string>使用异步GPU仿真</string>
           </property>
          </widget>
         </item>
@@ -89,7 +89,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Internal Resolution:</string>
+             <string>内部分辨率:</string>
             </property>
            </widget>
           </item>
@@ -129,7 +129,7 @@
           <item>
            <widget class="QLabel" name="ar_label">
             <property name="text">
-             <string>Aspect Ratio:</string>
+             <string>长宽比:</string>
             </property>
            </widget>
           </item>
@@ -137,7 +137,7 @@
            <widget class="QComboBox" name="aspect_ratio_combobox">
             <item>
              <property name="text">
-              <string>Default (16:9)</string>
+              <string>默认 (16:9)</string>
              </property>
             </item>
             <item>
@@ -152,7 +152,7 @@
             </item>
             <item>
              <property name="text">
-              <string>Stretch to Window</string>
+              <string>伸展到窗口</string>
              </property>
             </item>
            </widget>
@@ -164,7 +164,7 @@
           <item>
            <widget class="QLabel" name="bg_label">
             <property name="text">
-             <string>Background Color:</string>
+             <string>背景颜色:</string>
             </property>
            </widget>
           </item>

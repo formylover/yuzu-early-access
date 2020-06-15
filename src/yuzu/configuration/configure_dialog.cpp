@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -75,11 +79,11 @@ Q_DECLARE_METATYPE(QList<QWidget*>);
 
 void ConfigureDialog::PopulateSelectionList() {
     const std::array<std::pair<QString, QList<QWidget*>>, 5> items{
-        {{tr("General"), {ui->generalTab, ui->webTab, ui->debugTab, ui->uiTab}},
-         {tr("System"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
-         {tr("Graphics"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
-         {tr("Audio"), {ui->audioTab}},
-         {tr("Controls"), {ui->inputTab, ui->hotkeysTab}}},
+        {{tr("常规"), {ui->generalTab, ui->webTab, ui->debugTab, ui->uiTab}},
+         {tr("系统"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
+         {tr("图形"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
+         {tr("音频"), {ui->audioTab}},
+         {tr("控制"), {ui->inputTab, ui->hotkeysTab}}},
     };
 
     [[maybe_unused]] const QSignalBlocker blocker(ui->selectorList);
@@ -100,19 +104,19 @@ void ConfigureDialog::UpdateVisibleTabs() {
     }
 
     const std::map<QWidget*, QString> widgets = {
-        {ui->generalTab, tr("General")},
-        {ui->systemTab, tr("System")},
-        {ui->profileManagerTab, tr("Profiles")},
-        {ui->inputTab, tr("Input")},
-        {ui->hotkeysTab, tr("Hotkeys")},
-        {ui->graphicsTab, tr("Graphics")},
-        {ui->graphicsAdvancedTab, tr("Advanced")},
-        {ui->audioTab, tr("Audio")},
-        {ui->debugTab, tr("Debug")},
-        {ui->webTab, tr("Web")},
+        {ui->generalTab, tr("常规")},
+        {ui->systemTab, tr("系统")},
+        {ui->profileManagerTab, tr("简介")},
+        {ui->inputTab, tr("输入")},
+        {ui->hotkeysTab, tr("热键")},
+        {ui->graphicsTab, tr("图形")},
+        {ui->graphicsAdvancedTab, tr("高级")},
+        {ui->audioTab, tr("音频")},
+        {ui->debugTab, tr("调试")},
+        {ui->webTab, tr("网络")},
         {ui->uiTab, tr("UI")},
-        {ui->filesystemTab, tr("Filesystem")},
-        {ui->serviceTab, tr("Services")},
+        {ui->filesystemTab, tr("文件系统")},
+        {ui->serviceTab, tr("服务")},
     };
 
     [[maybe_unused]] const QSignalBlocker blocker(ui->tabWidget);
