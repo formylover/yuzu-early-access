@@ -4,14 +4,17 @@ $GITDATE = $(git show -s --date=short --format='%ad') -replace "-", ""
 $GITREV = $(git show -s --format='%h')
 
 if ("$BUILD_NAME" -eq "mainline") {
-    $RELEASE_DIST = "yuzu-early-access"
+    $RELEASE_DIST = "yuzu-windows-msvc"
 }
 else {
     $RELEASE_DIST = "yuzu-windows-msvc-$BUILD_NAME"
 }
 
-$MSVC_BUILD_ZIP = "yuzu-early-access 610.zip" -replace " ", ""
-$MSVC_SEVENZIP = "yuzu-early-access 610.7z" -replace " ", ""
+$MSVC_BUILD_ZIP = "yuzu-windows-msvc-$GITDATE-$GITREV.zip" -replace " ", ""
+$MSVC_BUILD_PDB = "yuzu-windows-msvc-$GITDATE-$GITREV-debugsymbols.zip" -replace " ", ""
+$MSVC_SEVENZIP = "yuzu-windows-msvc-$GITDATE-$GITREV.7z" -replace " ", ""
+$MSVC_TAR = "yuzu-windows-msvc-$GITDATE-$GITREV.tar" -replace " ", ""
+$MSVC_TARXZ = "yuzu-windows-msvc-$GITDATE-$GITREV.tar.xz" -replace " ", ""
 $MSVC_SOURCE = "yuzu-windows-msvc-source-$GITDATE-$GITREV" -replace " ", ""
 $MSVC_SOURCE_TAR = "$MSVC_SOURCE.tar"
 $MSVC_SOURCE_TARXZ = "$MSVC_SOURCE_TAR.xz"
