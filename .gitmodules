@@ -32,5 +32,5 @@
     path = externals/xbyak
     url = https://github.com/herumi/xbyak.git
 [submodule "libressl"]
-	path = libressl
+	path = externals/libressl
 	url = https://github.com/citra-emu/ext-libressl-portable.git
