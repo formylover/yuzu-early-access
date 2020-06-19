@@ -192,8 +192,8 @@ inline GLenum TextureFilterMode(Tegra::Texture::TextureFilter filter_mode,
         }
         break;
     }
-    LOG_ERROR(Render_OpenGL, "Unknown texture filter mode={} and mipmap filter mode={}",
-              static_cast<u32>(filter_mode), static_cast<u32>(mipmap_filter_mode));
+    UNREACHABLE_MSG("Invalid texture filter mode={} and mipmap filter mode={}",
+                    static_cast<u32>(filter_mode), static_cast<u32>(mipmap_filter_mode));
     return GL_NEAREST;
 }
 

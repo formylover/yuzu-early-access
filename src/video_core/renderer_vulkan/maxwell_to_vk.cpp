@@ -26,17 +26,13 @@ VkFilter Filter(Tegra::Texture::TextureFilter filter) {
     case Tegra::Texture::TextureFilter::Linear:
         return VK_FILTER_LINEAR;
     }
-    LOG_ERROR(Render_Vulkan, "Unknown sampler filter={}", static_cast<u32>(filter));
+    UNREACHABLE_MSG("Invalid sampler filter={}", static_cast<u32>(filter));
     return {};
 }
 
 VkSamplerMipmapMode MipmapMode(Tegra::Texture::TextureMipmapFilter mipmap_filter) {
     switch (mipmap_filter) {
     case Tegra::Texture::TextureMipmapFilter::None:
-        // TODO(Rodrigo): None seems to be mapped to OpenGL's mag and min filters without mipmapping
-        // (e.g. GL_NEAREST and GL_LINEAR). Vulkan doesn't have such a thing, find out if we have to
-        // use an image view with a single mipmap level to emulate this.
-
         // There are no Vulkan filter modes that directly correspond to OpenGL minification filters
         // of GL_LINEAR or GL_NEAREST, but they can be emulated using
         // VK_SAMPLER_MIPMAP_MODE_NEAREST, minLod = 0, and maxLod = 0.25, and using minFilter =
@@ -47,7 +43,7 @@ VkSamplerMipmapMode MipmapMode(Tegra::Texture::TextureMipmapFilter mipmap_filter
     case Tegra::Texture::TextureMipmapFilter::Linear:
         return VK_SAMPLER_MIPMAP_MODE_LINEAR;
     }
-    LOG_ERROR(Render_Vulkan, "Unknown sampler mipmap mode={}", static_cast<u32>(mipmap_filter));
+    UNREACHABLE_MSG("Invalid sampler mipmap mode={}", static_cast<u32>(mipmap_filter));
     return {};
 }
 
