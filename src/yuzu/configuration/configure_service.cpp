@@ -72,6 +72,7 @@ void ConfigureService::SetConfiguration() {
 }
 
 std::pair<QString, QString> ConfigureService::BCATDownloadEvents() {
+#ifdef YUZU_ENABLE_BOXCAT
     std::optional<std::string> global;
     std::map<std::string, Service::BCAT::EventStatus> map;
     const auto res = Service::BCAT::Boxcat::GetStatus(global, map);
@@ -81,15 +82,15 @@ std::pair<QString, QString> ConfigureService::BCATDownloadEvents() {
         break;
     case Service::BCAT::Boxcat::StatusResult::Offline:
         return {QString{},
-                tr("该boxcat服务处于脱机状态，或者你没有连接到互联网.")};
+                tr("boxcat服务处于脱机状态，或者您未连接到互联网.")};
     case Service::BCAT::Boxcat::StatusResult::ParseError:
         return {QString{},
-                tr("在处理boxcat事件数据时出错，联系yuzu "
-                   "开发商.")};
+                tr("处理boxcat事件数据时出错， 联系 yuzu "
+                   "开发者.")};
     case Service::BCAT::Boxcat::StatusResult::BadClientVersion:
         return {QString{},
-                tr("您正在使用yuzu的版本是太新或太旧服务器. "
-                   "尝试更新到yuzu的最新正式发布.")};
+                tr("您使用的yuzu版本对于服务器而言太新或太旧. "
+                   "尝试更新到yuzu的最新官方版本.")};
     }
 
     if (map.empty()) {
@@ -109,7 +110,10 @@ std::pair<QString, QString> ConfigureService::BCATDownloadEvents() {
                    .arg(QString::fromStdString(key))
                    .arg(FormatEventStatusString(value));
     }
-    return {QStringLiteral("Current Boxcat Events"), std::move(out)};
+    return {tr("当前的Boxcat活动"), std::move(out)};
+#else
+    return {tr("当前的Boxcat活动"), tr("当前没有关于boxcat的事件.")};
+#endif
 }
 
 void ConfigureService::OnBCATImplChanged() {
@@ -118,7 +122,7 @@ void ConfigureService::OnBCATImplChanged() {
     ui->bcat_empty_header->setHidden(!boxcat);
     ui->bcat_empty_label->setHidden(!boxcat);
     ui->bcat_empty_header->setText(QString{});
-    ui->bcat_empty_label->setText(tr("yuzu被检索最新boxcat状态..."));
+    ui->bcat_empty_label->setText(tr("Yuzu正在检索最新的Boxcat状态..."));
 
     if (!boxcat)
         return;

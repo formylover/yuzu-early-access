@@ -8,12 +8,15 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMessageBox>
-#include <QOffscreenSurface>
-#include <QOpenGLContext>
 #include <QPainter>
 #include <QScreen>
 #include <QStringList>
 #include <QWindow>
+
+#ifdef HAS_OPENGL
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#endif
 
 #if !defined(WIN32) && HAS_VULKAN
 #include <qpa/qplatformnativeinterface.h>
@@ -114,6 +117,7 @@ void EmuThread::run() {
 #endif
 }
 
+#ifdef HAS_OPENGL
 class OpenGLSharedContext : public Core::Frontend::GraphicsContext {
 public:
     /// Create the original context that should be shared from
@@ -199,6 +203,7 @@ private:
     std::unique_ptr<QOffscreenSurface> offscreen_surface{};
     QSurface* surface;
 };
+#endif
 
 class DummyContext : public Core::Frontend::GraphicsContext {};
 
@@ -489,6 +494,7 @@ void GRenderWindow::resizeEvent(QResizeEvent* event) {
 }
 
 std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedContext() const {
+#ifdef HAS_OPENGL
     if (Settings::values.renderer_backend == Settings::RendererBackend::OpenGL) {
         auto c = static_cast<OpenGLSharedContext*>(main_context.get());
         // Bind the shared contexts to the main surface in case the backend wants to take over
@@ -496,6 +502,7 @@ std::unique_ptr<Core::Frontend::GraphicsContext> GRenderWindow::CreateSharedCont
         return std::make_unique<OpenGLSharedContext>(c->GetShareContext(),
                                                      child_widget->windowHandle());
     }
+#endif
     return std::make_unique<DummyContext>();
 }
 
@@ -576,6 +583,7 @@ void GRenderWindow::OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal
 }
 
 bool GRenderWindow::InitializeOpenGL() {
+#ifdef HAS_OPENGL
     // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
     // WA_DontShowOnScreen, WA_DeleteOnClose
     auto child = new OpenGLRenderWidget(this);
@@ -587,6 +595,11 @@ bool GRenderWindow::InitializeOpenGL() {
         std::make_unique<OpenGLSharedContext>(context->GetShareContext(), child->windowHandle()));
 
     return true;
+#else
+    QMessageBox::warning(this, tr("OpenGL not available!"),
+                         tr("yuzu has not been compiled with OpenGL support."));
+    return false;
+#endif
 }
 
 bool GRenderWindow::InitializeVulkan() {

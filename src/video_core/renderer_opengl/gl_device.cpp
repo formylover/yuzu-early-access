@@ -191,9 +191,10 @@ bool IsASTCSupported() {
 /// @brief Returns true when a GL_RENDERER is a Turing GPU
 /// @param renderer GL_RENDERER string
 bool IsTuring(std::string_view renderer) {
-    static constexpr std::array<std::string_view, 7> TURING_GPUS = {
-        "GTX 1650", "GTX 1660",        "RTX 2060",        "RTX 2070",
-        "RTX 2080", "Quadro RTX 5000", "Quadro RTX 6000",
+    static constexpr std::array<std::string_view, 12> TURING_GPUS = {
+        "GTX 1650",        "GTX 1660",        "RTX 2060",        "RTX 2070",
+        "RTX 2080",        "TITAN RTX",       "Quadro RTX 3000", "Quadro RTX 4000",
+        "Quadro RTX 5000", "Quadro RTX 6000", "Quadro RTX 8000", "Tesla T4",
     };
     return std::any_of(TURING_GPUS.begin(), TURING_GPUS.end(),
                        [renderer](std::string_view candidate) {

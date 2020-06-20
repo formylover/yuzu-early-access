@@ -55,7 +55,7 @@ void MacroJITx64Impl::Compile_ALU(Macro::Opcode opcode) {
     const bool is_a_zero = opcode.src_a == 0;
     const bool is_b_zero = opcode.src_b == 0;
     const bool valid_operation = !is_a_zero && !is_b_zero;
-    const bool is_move_operation = !is_a_zero && is_b_zero;
+    [[maybe_unused]] const bool is_move_operation = !is_a_zero && is_b_zero;
     const bool has_zero_register = is_a_zero || is_b_zero;
     const bool no_zero_reg_skip = opcode.alu_operation == Macro::ALUOperation::AddWithCarry ||
                                   opcode.alu_operation == Macro::ALUOperation::SubtractWithBorrow;
@@ -74,7 +74,6 @@ void MacroJITx64Impl::Compile_ALU(Macro::Opcode opcode) {
             src_b = Compile_GetRegister(opcode.src_b, eax);
         }
     }
-    Xbyak::Label skip_carry{};
 
     bool has_emitted = false;
 
@@ -241,10 +240,10 @@ void MacroJITx64Impl::Compile_ExtractInsert(Macro::Opcode opcode) {
 }
 
 void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Macro::Opcode opcode) {
-    auto dst = Compile_GetRegister(opcode.src_a, eax);
-    auto src = Compile_GetRegister(opcode.src_b, RESULT);
+    const auto dst = Compile_GetRegister(opcode.src_a, eax);
+    const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
-    shr(src, al);
+    shr(src, dst.cvt8());
     if (opcode.bf_size != 0 && opcode.bf_size != 31) {
         and_(src, opcode.GetBitfieldMask());
     } else if (opcode.bf_size == 0) {
@@ -260,8 +259,8 @@ void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Macro::Opcode opcode) {
 }
 
 void MacroJITx64Impl::Compile_ExtractShiftLeftRegister(Macro::Opcode opcode) {
-    auto dst = Compile_GetRegister(opcode.src_a, eax);
-    auto src = Compile_GetRegister(opcode.src_b, RESULT);
+    const auto dst = Compile_GetRegister(opcode.src_a, eax);
+    const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
     if (opcode.bf_src_bit != 0) {
         shr(src, opcode.bf_src_bit);
@@ -270,7 +269,8 @@ void MacroJITx64Impl::Compile_ExtractShiftLeftRegister(Macro::Opcode opcode) {
     if (opcode.bf_size != 31) {
         and_(src, opcode.GetBitfieldMask());
     }
-    shl(src, al);
+    shl(src, dst.cvt8());
+
     Compile_ProcessResult(opcode.result_operation, opcode.dst);
 }
 
