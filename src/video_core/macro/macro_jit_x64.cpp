@@ -240,7 +240,7 @@ void MacroJITx64Impl::Compile_ExtractInsert(Macro::Opcode opcode) {
 }
 
 void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Macro::Opcode opcode) {
-    const auto dst = Compile_GetRegister(opcode.src_a, eax);
+    const auto dst = Compile_GetRegister(opcode.src_a, ecx);
     const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
     shr(src, dst.cvt8());
@@ -259,7 +259,7 @@ void MacroJITx64Impl::Compile_ExtractShiftLeftImmediate(Macro::Opcode opcode) {
 }
 
 void MacroJITx64Impl::Compile_ExtractShiftLeftRegister(Macro::Opcode opcode) {
-    const auto dst = Compile_GetRegister(opcode.src_a, eax);
+    const auto dst = Compile_GetRegister(opcode.src_a, ecx);
     const auto src = Compile_GetRegister(opcode.src_b, RESULT);
 
     if (opcode.bf_src_bit != 0) {
