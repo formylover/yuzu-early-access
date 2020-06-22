@@ -2344,6 +2344,15 @@ static ResultCode GetThreadList(Core::System& system, u32* out_num_threads, VAdd
     return RESULT_SUCCESS;
 }
 
+static ResultCode FlushProcessDataCache32(Core::System& system, Handle handle, u32 address,
+                                          u32 size) {
+    // Note(Blinkhawk): For emulation purposes of the data cache this is mostly a nope
+    // as all emulation is done in the same cache level in host architecture, thus data cache
+    // does not need flushing.
+    LOG_DEBUG(Kernel_SVC, "called");
+    return RESULT_SUCCESS;
+}
+
 namespace {
 struct FunctionDef {
     using Func = void(Core::System&);
@@ -2450,7 +2459,7 @@ static const FunctionDef SVC_Table_32[] = {
     {0x5c, nullptr, "Unknown"},
     {0x5d, nullptr, "Unknown"},
     {0x5e, nullptr, "Unknown"},
-    {0x5F, nullptr, "FlushProcessDataCache32"},
+    {0x5F, SvcWrap32<FlushProcessDataCache32>, "FlushProcessDataCache32"},
     {0x60, nullptr, "Unknown"},
     {0x61, nullptr, "Unknown"},
     {0x62, nullptr, "Unknown"},
