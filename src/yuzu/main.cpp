@@ -60,6 +60,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QShortcut>
 #include <QStatusBar>
 #include <QSysInfo>
+#include <QUrl>
 #include <QtConcurrent/QtConcurrent>
 
 #include <fmt/format.h>
@@ -222,7 +223,20 @@ GMainWindow::GMainWindow()
     LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", yuzu_build_version, Common::g_scm_branch,
              Common::g_scm_desc);
 #ifdef ARCHITECTURE_x86_64
-    LOG_INFO(Frontend, "Host CPU: {}", Common::GetCPUCaps().cpu_string);
+    const auto& caps = Common::GetCPUCaps();
+    std::string cpu_string = caps.cpu_string;
+    if (caps.avx || caps.avx2 || caps.avx512) {
+        cpu_string += " | AVX";
+        if (caps.avx512) {
+            cpu_string += "512";
+        } else if (caps.avx2) {
+            cpu_string += '2';
+        }
+        if (caps.fma || caps.fma4) {
+            cpu_string += " | FMA";
+        }
+    }
+    LOG_INFO(Frontend, "Host CPU: {}", cpu_string);
 #endif
     LOG_INFO(Frontend, "Host OS: {}", QSysInfo::prettyProductName().toStdString());
     LOG_INFO(Frontend, "Host RAM: {:.2f} GB",
@@ -512,7 +526,7 @@ void GMainWindow::InitializeWidgets() {
         dock_status_button->setChecked(Settings::values.use_docked_mode);
         OnDockedModeChanged(!Settings::values.use_docked_mode, Settings::values.use_docked_mode);
     });
-    dock_status_button->setText(tr("DOCK"));
+    dock_status_button->setText(tr("主机模式"));
     dock_status_button->setCheckable(true);
     dock_status_button->setChecked(Settings::values.use_docked_mode);
     statusBar()->insertPermanentWidget(0, dock_status_button);
@@ -531,7 +545,7 @@ void GMainWindow::InitializeWidgets() {
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
         Settings::Apply();
     });
-    async_status_button->setText(tr("ASYNC"));
+    async_status_button->setText(tr("异步模式"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
 
@@ -551,7 +565,7 @@ void GMainWindow::InitializeWidgets() {
         multicore_status_button->setChecked(Settings::values.use_multi_core);
         Settings::Apply();
     });
-    multicore_status_button->setText(tr("MULTICORE"));
+    multicore_status_button->setText(tr("多核运行"));
     multicore_status_button->setCheckable(true);
     multicore_status_button->setChecked(Settings::values.use_multi_core);
     statusBar()->insertPermanentWidget(0, multicore_status_button);
@@ -850,6 +864,7 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Stop, &QAction::triggered, this, &GMainWindow::OnStopGame);
     connect(ui.action_Report_Compatibility, &QAction::triggered, this,
             &GMainWindow::OnMenuReportCompatibility);
+    connect(ui.action_Open_Mods_Page, &QAction::triggered, this, &GMainWindow::OnOpenModsPage);
     connect(ui.action_Restart, &QAction::triggered, this, [this] { BootGame(QString(game_path)); });
     connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
 
@@ -1871,9 +1886,19 @@ void GMainWindow::OnMenuReportCompatibility() {
         QMessageBox::critical(
             this, tr("缺少 yuzu 账户"),
             tr("为了提交一个游戏兼容性测试用 "
-               "您必须.<br><br/>连接您的yuzu帐户以链接您的yuzu帐户，然后转到仿真 "
+               "您必须.<br><br/>连接您的yuzu帐户以链接您的yuzu帐户，然后转到模拟器 "
                "&gt; "
                "Web."));
+    }
+}
+
+void GMainWindow::OnOpenModsPage() {
+    const auto mods_page_url = QStringLiteral("https://github.com/yuzu-emu/yuzu/wiki/Switch-Mods");
+    const QUrl mods_page(mods_page_url);
+    const bool open = QDesktopServices::openUrl(mods_page);
+    if (!open) {
+        QMessageBox::warning(this, tr("打开网址时出错"),
+                             tr("无法打开网址 \"%1\".").arg(mods_page_url));
     }
 }
 
@@ -2090,13 +2115,13 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
 
     if (title_name.isEmpty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 641" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 647" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 641 {0}| {3}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 647 {0}| {3}" : fmt, full_name, branch_name,
                         description, title_name.toStdString(), date, build_id)));
     }
 }

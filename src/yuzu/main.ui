@@ -73,7 +73,7 @@
    </widget>
    <widget class="QMenu" name="menu_Emulation">
     <property name="title">
-     <string>&amp;仿真</string>
+     <string>&amp;模拟</string>
     </property>
     <addaction name="action_Start"/>
     <addaction name="action_Pause"/>
@@ -113,6 +113,7 @@
      <string>&amp;帮助</string>
     </property>
     <addaction name="action_Report_Compatibility"/>
+    <addaction name="action_Open_Mods_Page"/>
     <addaction name="separator"/>
     <addaction name="action_About"/>
    </widget>
@@ -254,6 +255,11 @@
    </property>
    <property name="visible">
     <bool>false</bool>
+   </property>
+  </action>
+  <action name="action_Open_Mods_Page">
+   <property name="text">
+    <string>打开MOD下载地址</string>
    </property>
   </action>
   <action name="action_Open_yuzu_Folder">
