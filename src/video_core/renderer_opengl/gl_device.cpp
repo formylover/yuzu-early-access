@@ -178,7 +178,7 @@ bool IsASTCSupported() {
         for (const GLenum format : formats) {
             for (const GLenum support : required_support) {
                 GLint value;
-                glGetInternalformativ(GL_TEXTURE_2D, format, support, 1, &value);
+                glGetInternalformativ(target, format, support, 1, &value);
                 if (value != GL_FULL_SUPPORT) {
                     return false;
                 }
@@ -232,6 +232,7 @@ Device::Device()
     has_shader_ballot = GLAD_GL_ARB_shader_ballot;
     has_vertex_viewport_layer = GLAD_GL_ARB_shader_viewport_layer_array;
     has_image_load_formatted = HasExtension(extensions, "GL_EXT_shader_image_load_formatted");
+    has_texture_shadow_lod = HasExtension(extensions, "GL_EXT_texture_shadow_lod");
     has_astc = IsASTCSupported();
     has_variable_aoffi = TestVariableAoffi();
     has_component_indexing_bug = is_amd;
@@ -269,6 +270,7 @@ Device::Device(std::nullptr_t) {
     has_shader_ballot = true;
     has_vertex_viewport_layer = true;
     has_image_load_formatted = true;
+    has_texture_shadow_lod = true;
     has_variable_aoffi = true;
 }
 

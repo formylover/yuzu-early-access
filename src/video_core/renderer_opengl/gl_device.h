@@ -68,6 +68,10 @@ public:
         return has_image_load_formatted;
     }
 
+    bool HasTextureShadowLod() const {
+        return has_texture_shadow_lod;
+    }
+
     bool HasVertexBufferUnifiedMemory() const {
         return has_vertex_buffer_unified_memory;
     }
@@ -114,6 +118,7 @@ private:
     bool has_shader_ballot{};
     bool has_vertex_viewport_layer{};
     bool has_image_load_formatted{};
+    bool has_texture_shadow_lod{};
     bool has_vertex_buffer_unified_memory{};
     bool has_astc{};
     bool has_variable_aoffi{};

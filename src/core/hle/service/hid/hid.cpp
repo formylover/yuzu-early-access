@@ -372,6 +372,15 @@ void Hid::ActivateKeyboard(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 }
 
+void Hid::SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto flags{rp.Pop<u32>()};
+    LOG_WARNING(Service_HID, "(STUBBED) called. flags={}", flags);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
 void Hid::ActivateGesture(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto unknown{rp.Pop<u32>()};
@@ -966,15 +975,6 @@ void Hid::SetPalmaBoostMode(Kernel::HLERequestContext& ctx) {
     const auto palma_boost_mode{rp.Pop<bool>()};
 
     LOG_WARNING(Service_HID, "(STUBBED) called, palma_boost_mode={}", palma_boost_mode);
-
-    IPC::ResponseBuilder rb{ctx, 2};
-    rb.Push(RESULT_SUCCESS);
-}
-
-void Hid::SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx) {
-    IPC::RequestParser rp{ctx};
-    const auto flags{rp.Pop<u32>()};
-    LOG_WARNING(Service_HID, "(STUBBED) called. flags={}", flags);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);

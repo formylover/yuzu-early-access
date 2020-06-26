@@ -91,6 +91,7 @@ private:
     void ActivateTouchScreen(Kernel::HLERequestContext& ctx);
     void ActivateMouse(Kernel::HLERequestContext& ctx);
     void ActivateKeyboard(Kernel::HLERequestContext& ctx);
+    void SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx);
     void ActivateGesture(Kernel::HLERequestContext& ctx);
     void ActivateNpadWithRevision(Kernel::HLERequestContext& ctx);
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx);
@@ -138,7 +139,6 @@ private:
     void ResetSevenSixAxisSensorTimestamp(Kernel::HLERequestContext& ctx);
     void SetIsPalmaAllConnectable(Kernel::HLERequestContext& ctx);
     void SetPalmaBoostMode(Kernel::HLERequestContext& ctx);
-    void SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx);
 
     std::shared_ptr<IAppletResource> applet_resource;
     Core::System& system;

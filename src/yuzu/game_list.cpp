@@ -121,10 +121,10 @@ GameListSearchField::GameListSearchField(GameList* parent) : QWidget{parent} {
     layout_filter = new QHBoxLayout;
     layout_filter->setMargin(8);
     label_filter = new QLabel;
-    label_filter->setText(tr("过滤:"));
+    label_filter->setText(tr("搜索:"));
     edit_filter = new QLineEdit;
     edit_filter->clear();
-    edit_filter->setPlaceholderText(tr("输入模式过滤器"));
+    edit_filter->setPlaceholderText(tr("输入游戏名"));
     edit_filter->installEventFilter(key_release_eater);
     edit_filter->setClearButtonEnabled(true);
     connect(edit_filter, &QLineEdit::textChanged, parent, &GameList::onTextChanged);
