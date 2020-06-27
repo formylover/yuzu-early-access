@@ -217,7 +217,7 @@ GMainWindow::GMainWindow()
     const auto build_id = std::string(Common::g_build_id);
     const auto fmt = std::string(Common::g_title_bar_format_idle);
     const auto yuzu_build_version =
-        fmt::format(fmt.empty() ? "yuzu Development Build" : fmt, std::string{}, std::string{},
+        fmt::format(fmt.empty() ? "yuzu Early Access" : fmt, std::string{}, std::string{},
                     std::string{}, std::string{}, std::string{}, build_id);
 
     LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", yuzu_build_version, Common::g_scm_branch,
@@ -764,6 +764,9 @@ void GMainWindow::InitializeHotkeys() {
                                     Settings::values.use_docked_mode);
                 dock_status_button->setChecked(Settings::values.use_docked_mode);
             });
+    connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Mute Audio"), this),
+            &QShortcut::activated, this,
+            [] { Settings::values.audio_muted = !Settings::values.audio_muted; });
 }
 
 void GMainWindow::SetDefaultUIGeometry() {
@@ -2115,13 +2118,13 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
 
     if (title_name.isEmpty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 664" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 666" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 664 {0}| {3}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 666 {0}| {3}" : fmt, full_name, branch_name,
                         description, title_name.toStdString(), date, build_id)));
     }
 }

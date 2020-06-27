@@ -12,7 +12,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDia
     const auto build_id = std::string(Common::g_build_id);
     const auto fmt = std::string(Common::g_title_bar_format_idle);
     const auto yuzu_build_version =
-        fmt::format(fmt.empty() ? "yuzu Development Build" : fmt, std::string{}, std::string{},
+        fmt::format(fmt.empty() ? "yuzu Early Access" : fmt, std::string{}, std::string{},
                     std::string{}, std::string{}, std::string{}, build_id);
 
     ui->setupUi(this);
