@@ -52,23 +52,30 @@
            </layout>
           </item>
           <item>
+           <widget class="QCheckBox" name="use_multi_core">
+            <property name="text">
+             <string>多核CPU仿真</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="toggle_check_exit">
             <property name="text">
-             <string>在模拟器运行时确认退出</string>
+             <string>确认退出而仿真正在运行</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="toggle_user_on_boot">
             <property name="text">
-             <string>在启动游戏时提示用户</string>
+             <string>提示用户在游戏启动</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QCheckBox" name="toggle_background_pause">
             <property name="text">
-             <string>在后台时暂停模拟器运行</string>
+             <string>暂停仿真在后台时</string>
             </property>
            </widget>
           </item>

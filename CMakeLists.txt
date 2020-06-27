@@ -158,6 +158,7 @@ macro(yuzu_find_packages)
         "nlohmann_json     3.7         nlohmann_json/3.7.3"
     # we need to be careful as the version check might be broken https://github.com/xiph/opus/issues/110
         "opus              1.3         opus/1.3.1"
+        "tsl-robin-map     0.6.2       tsl-robin-map/0.6.2@tessil/stable"
         "ZLIB              1.2         zlib/1.2.11"
         "zstd              1.4         zstd/1.4.4"
     )
@@ -327,6 +328,12 @@ elseif(SDL2_FOUND)
     add_library(SDL2 INTERFACE)
     target_link_libraries(SDL2 INTERFACE "${SDL2_LIBRARIES}")
 endif()
+
+# Ensure libusb is properly configured (based on dolphin libusb include)
+find_package(LibUSB)
+add_subdirectory(externals/libusb)
+set(LIBUSB_LIBRARIES usb)
+
 
 # Prefer the -pthread flag on Linux.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
