@@ -13,14 +13,8 @@ GPUSynch::GPUSynch(Core::System& system, std::unique_ptr<VideoCore::RendererBase
 
 GPUSynch::~GPUSynch() = default;
 
-void GPUSynch::Start() {}
-
-void GPUSynch::ObtainContext() {
+void GPUSynch::Start() {
     context->MakeCurrent();
-}
-
-void GPUSynch::ReleaseContext() {
-    context->DoneCurrent();
 }
 
 void GPUSynch::PushGPUEntries(Tegra::CommandList&& entries) {

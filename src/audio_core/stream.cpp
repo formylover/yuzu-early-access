@@ -59,20 +59,11 @@ Stream::State Stream::GetState() const {
     return state;
 }
 
-s64 Stream::GetBufferReleaseNS(const Buffer& buffer) const {
+s64 Stream::GetBufferReleaseCycles(const Buffer& buffer) const {
     const std::size_t num_samples{buffer.GetSamples().size() / GetNumChannels()};
-    const auto ns =
-        std::chrono::nanoseconds((static_cast<u64>(num_samples) * 1000000000ULL) / sample_rate);
-    return ns.count();
-}
-
-s64 Stream::GetBufferReleaseNSHostTiming(const Buffer& buffer) const {
-    const std::size_t num_samples{buffer.GetSamples().size() / GetNumChannels()};
-    /// DSP signals before playing the last sample, in HLE we emulate this in this way
-    s64 base_samples = std::max<s64>(static_cast<s64>(num_samples) - 1, 0);
-    const auto ns =
-        std::chrono::nanoseconds((static_cast<u64>(base_samples) * 1000000000ULL) / sample_rate);
-    return ns.count();
+    const auto us =
+        std::chrono::microseconds((static_cast<u64>(num_samples) * 1000000) / sample_rate);
+    return Core::Timing::usToCycles(us);
 }
 
 static void VolumeAdjustSamples(std::vector<s16>& samples, float game_volume) {
@@ -114,11 +105,7 @@ void Stream::PlayNextBuffer() {
 
     sink_stream.EnqueueSamples(GetNumChannels(), active_buffer->GetSamples());
 
-    if (core_timing.IsHostTiming()) {
-        core_timing.ScheduleEvent(GetBufferReleaseNSHostTiming(*active_buffer), release_event, {});
-    } else {
-        core_timing.ScheduleEvent(GetBufferReleaseNS(*active_buffer), release_event, {});
-    }
+    core_timing.ScheduleEvent(GetBufferReleaseCycles(*active_buffer), release_event, {});
 }
 
 void Stream::ReleaseActiveBuffer() {

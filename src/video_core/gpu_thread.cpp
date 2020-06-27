@@ -4,7 +4,6 @@
 
 #include "common/assert.h"
 #include "common/microprofile.h"
-#include "common/thread.h"
 #include "core/core.h"
 #include "core/frontend/emu_window.h"
 #include "core/settings.h"
@@ -19,11 +18,7 @@ namespace VideoCommon::GPUThread {
 static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
                       Core::Frontend::GraphicsContext& context, Tegra::DmaPusher& dma_pusher,
                       SynchState& state) {
-    std::string name = "yuzu:GPU";
-    MicroProfileOnThreadCreate(name.c_str());
-    Common::SetCurrentThreadName(name.c_str());
-    Common::SetCurrentThreadPriority(Common::ThreadPriority::High);
-    system.RegisterHostThread();
+    MicroProfileOnThreadCreate("GpuThread");
 
     // Wait for first GPU command before acquiring the window context
     while (state.queue.Empty())

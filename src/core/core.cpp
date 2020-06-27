@@ -8,10 +8,10 @@
 
 #include "common/file_util.h"
 #include "common/logging/log.h"
-#include "common/microprofile.h"
 #include "common/string_util.h"
 #include "core/arm/exclusive_monitor.h"
 #include "core/core.h"
+#include "core/core_manager.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
 #include "core/device_memory.h"
@@ -50,11 +50,6 @@
 #include "core/tools/freezer.h"
 #include "video_core/renderer_base.h"
 #include "video_core/video_core.h"
-
-MICROPROFILE_DEFINE(ARM_Jit_Dynarmic_CPU0, "ARM JIT", "Dynarmic CPU 0", MP_RGB(255, 64, 64));
-MICROPROFILE_DEFINE(ARM_Jit_Dynarmic_CPU1, "ARM JIT", "Dynarmic CPU 1", MP_RGB(255, 64, 64));
-MICROPROFILE_DEFINE(ARM_Jit_Dynarmic_CPU2, "ARM JIT", "Dynarmic CPU 2", MP_RGB(255, 64, 64));
-MICROPROFILE_DEFINE(ARM_Jit_Dynarmic_CPU3, "ARM JIT", "Dynarmic CPU 3", MP_RGB(255, 64, 64));
 
 namespace Core {
 
@@ -122,22 +117,23 @@ struct System::Impl {
         : kernel{system}, fs_controller{system}, memory{system},
           cpu_manager{system}, reporter{system}, applet_manager{system} {}
 
-    ResultStatus Run() {
-        status = ResultStatus::Success;
-
-        kernel.Suspend(false);
-        core_timing.SyncPause(false);
-        cpu_manager.Pause(false);
-
-        return status;
+    CoreManager& CurrentCoreManager() {
+        return cpu_manager.GetCurrentCoreManager();
     }
 
-    ResultStatus Pause() {
+    Kernel::PhysicalCore& CurrentPhysicalCore() {
+        const auto index = cpu_manager.GetActiveCoreIndex();
+        return kernel.PhysicalCore(index);
+    }
+
+    Kernel::PhysicalCore& GetPhysicalCore(std::size_t index) {
+        return kernel.PhysicalCore(index);
+    }
+
+    ResultStatus RunLoop(bool tight_loop) {
         status = ResultStatus::Success;
 
-        core_timing.SyncPause(true);
-        kernel.Suspend(true);
-        cpu_manager.Pause(true);
+        cpu_manager.RunLoop(tight_loop);
 
         return status;
     }
@@ -147,15 +143,7 @@ struct System::Impl {
 
         device_memory = std::make_unique<Core::DeviceMemory>(system);
 
-        is_multicore = Settings::values.use_multi_core;
-        is_async_gpu = is_multicore || Settings::values.use_asynchronous_gpu_emulation;
-
-        kernel.SetMulticore(is_multicore);
-        cpu_manager.SetMulticore(is_multicore);
-        cpu_manager.SetAsyncGpu(is_async_gpu);
-        core_timing.SetMulticore(is_multicore);
-
-        core_timing.Initialize([&system]() { system.RegisterHostThread(); });
+        core_timing.Initialize();
         kernel.Initialize();
         cpu_manager.Initialize();
 
@@ -191,11 +179,6 @@ struct System::Impl {
 
         is_powered_on = true;
         exit_lock = false;
-
-        microprofile_dynarmic[0] = MICROPROFILE_TOKEN(ARM_Jit_Dynarmic_CPU0);
-        microprofile_dynarmic[1] = MICROPROFILE_TOKEN(ARM_Jit_Dynarmic_CPU1);
-        microprofile_dynarmic[2] = MICROPROFILE_TOKEN(ARM_Jit_Dynarmic_CPU2);
-        microprofile_dynarmic[3] = MICROPROFILE_TOKEN(ARM_Jit_Dynarmic_CPU3);
 
         LOG_DEBUG(Core, "Initialized OK");
 
@@ -294,6 +277,8 @@ struct System::Impl {
         service_manager.reset();
         cheat_engine.reset();
         telemetry_session.reset();
+        perf_stats.reset();
+        gpu_core.reset();
         device_memory.reset();
 
         // Close all CPU/threading state
@@ -305,8 +290,6 @@ struct System::Impl {
 
         // Close app loader
         app_loader.reset();
-        gpu_core.reset();
-        perf_stats.reset();
 
         // Clear all applets
         applet_manager.ClearAll();
@@ -399,35 +382,25 @@ struct System::Impl {
 
     std::unique_ptr<Core::PerfStats> perf_stats;
     Core::FrameLimiter frame_limiter;
-
-    bool is_multicore{};
-    bool is_async_gpu{};
-
-    std::array<u64, Core::Hardware::NUM_CPU_CORES> dynarmic_ticks{};
-    std::array<MicroProfileToken, Core::Hardware::NUM_CPU_CORES> microprofile_dynarmic{};
 };
 
 System::System() : impl{std::make_unique<Impl>(*this)} {}
 System::~System() = default;
 
-CpuManager& System::GetCpuManager() {
-    return impl->cpu_manager;
+CoreManager& System::CurrentCoreManager() {
+    return impl->CurrentCoreManager();
 }
 
-const CpuManager& System::GetCpuManager() const {
-    return impl->cpu_manager;
+const CoreManager& System::CurrentCoreManager() const {
+    return impl->CurrentCoreManager();
 }
 
-System::ResultStatus System::Run() {
-    return impl->Run();
-}
-
-System::ResultStatus System::Pause() {
-    return impl->Pause();
+System::ResultStatus System::RunLoop(bool tight_loop) {
+    return impl->RunLoop(tight_loop);
 }
 
 System::ResultStatus System::SingleStep() {
-    return ResultStatus::Success;
+    return RunLoop(false);
 }
 
 void System::InvalidateCpuInstructionCaches() {
@@ -443,7 +416,7 @@ bool System::IsPoweredOn() const {
 }
 
 void System::PrepareReschedule() {
-    // impl->CurrentPhysicalCore().Stop();
+    impl->CurrentPhysicalCore().Stop();
 }
 
 void System::PrepareReschedule(const u32 core_index) {
@@ -463,41 +436,31 @@ const TelemetrySession& System::TelemetrySession() const {
 }
 
 ARM_Interface& System::CurrentArmInterface() {
-    return impl->kernel.CurrentScheduler().GetCurrentThread()->ArmInterface();
+    return impl->CurrentPhysicalCore().ArmInterface();
 }
 
 const ARM_Interface& System::CurrentArmInterface() const {
-    return impl->kernel.CurrentScheduler().GetCurrentThread()->ArmInterface();
+    return impl->CurrentPhysicalCore().ArmInterface();
 }
 
 std::size_t System::CurrentCoreIndex() const {
-    std::size_t core = impl->kernel.GetCurrentHostThreadID();
-    ASSERT(core < Core::Hardware::NUM_CPU_CORES);
-    return core;
+    return impl->cpu_manager.GetActiveCoreIndex();
 }
 
 Kernel::Scheduler& System::CurrentScheduler() {
-    return impl->kernel.CurrentScheduler();
+    return impl->CurrentPhysicalCore().Scheduler();
 }
 
 const Kernel::Scheduler& System::CurrentScheduler() const {
-    return impl->kernel.CurrentScheduler();
-}
-
-Kernel::PhysicalCore& System::CurrentPhysicalCore() {
-    return impl->kernel.CurrentPhysicalCore();
-}
-
-const Kernel::PhysicalCore& System::CurrentPhysicalCore() const {
-    return impl->kernel.CurrentPhysicalCore();
+    return impl->CurrentPhysicalCore().Scheduler();
 }
 
 Kernel::Scheduler& System::Scheduler(std::size_t core_index) {
-    return impl->kernel.Scheduler(core_index);
+    return impl->GetPhysicalCore(core_index).Scheduler();
 }
 
 const Kernel::Scheduler& System::Scheduler(std::size_t core_index) const {
-    return impl->kernel.Scheduler(core_index);
+    return impl->GetPhysicalCore(core_index).Scheduler();
 }
 
 /// Gets the global scheduler
@@ -527,15 +490,20 @@ const Kernel::Process* System::CurrentProcess() const {
 }
 
 ARM_Interface& System::ArmInterface(std::size_t core_index) {
-    auto* thread = impl->kernel.Scheduler(core_index).GetCurrentThread();
-    ASSERT(thread && !thread->IsHLEThread());
-    return thread->ArmInterface();
+    return impl->GetPhysicalCore(core_index).ArmInterface();
 }
 
 const ARM_Interface& System::ArmInterface(std::size_t core_index) const {
-    auto* thread = impl->kernel.Scheduler(core_index).GetCurrentThread();
-    ASSERT(thread && !thread->IsHLEThread());
-    return thread->ArmInterface();
+    return impl->GetPhysicalCore(core_index).ArmInterface();
+}
+
+CoreManager& System::GetCoreManager(std::size_t core_index) {
+    return impl->cpu_manager.GetCoreManager(core_index);
+}
+
+const CoreManager& System::GetCoreManager(std::size_t core_index) const {
+    ASSERT(core_index < NUM_CPU_CORES);
+    return impl->cpu_manager.GetCoreManager(core_index);
 }
 
 ExclusiveMonitor& System::Monitor() {
@@ -752,20 +720,6 @@ void System::RegisterCoreThread(std::size_t id) {
 
 void System::RegisterHostThread() {
     impl->kernel.RegisterHostThread();
-}
-
-void System::EnterDynarmicProfile() {
-    std::size_t core = impl->kernel.GetCurrentHostThreadID();
-    impl->dynarmic_ticks[core] = MicroProfileEnter(impl->microprofile_dynarmic[core]);
-}
-
-void System::ExitDynarmicProfile() {
-    std::size_t core = impl->kernel.GetCurrentHostThreadID();
-    MicroProfileLeave(impl->microprofile_dynarmic[core], impl->dynarmic_ticks[core]);
-}
-
-bool System::IsMulticore() const {
-    return impl->is_multicore;
 }
 
 } // namespace Core

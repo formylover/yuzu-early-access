@@ -40,10 +40,7 @@ static FileSys::VirtualDir GetDirectoryRelativeWrapped(FileSys::VirtualDir base,
     if (dir_name.empty() || dir_name == "." || dir_name == "/" || dir_name == "\\")
         return base;
 
-    const auto res = base->GetDirectoryRelative(dir_name);
-    if (res == nullptr)
-        return base->CreateDirectoryRelative(dir_name);
-    return res;
+    return base->GetDirectoryRelative(dir_name);
 }
 
 VfsDirectoryServiceWrapper::VfsDirectoryServiceWrapper(FileSys::VirtualDir backing_)

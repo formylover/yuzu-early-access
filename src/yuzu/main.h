@@ -28,7 +28,6 @@ class MicroProfileDialog;
 class ProfilerWidget;
 class QLabel;
 class QPushButton;
-class QProgressDialog;
 class WaitTreeWidget;
 enum class GameListOpenTarget;
 class GameListPlaceholder;
@@ -236,7 +235,6 @@ private:
     QLabel* game_fps_label = nullptr;
     QLabel* emu_frametime_label = nullptr;
     QPushButton* async_status_button = nullptr;
-    QPushButton* multicore_status_button = nullptr;
     QPushButton* renderer_status_button = nullptr;
     QPushButton* dock_status_button = nullptr;
     QTimer status_bar_update_timer;
@@ -267,9 +265,6 @@ private:
     QStringList default_theme_paths;
 
     HotkeyRegistry hotkey_registry;
-
-    // Install to NAND progress dialog
-    QProgressDialog* install_progress;
 
 protected:
     void dropEvent(QDropEvent* event) override;

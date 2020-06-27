@@ -111,7 +111,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/game_list.h"
 #include "yuzu/game_list_p.h"
 #include "yuzu/hotkeys.h"
-#include "yuzu/install_dialog.h"
 #include "yuzu/loading_screen.h"
 #include "yuzu/main.h"
 #include "yuzu/uisettings.h"
@@ -539,36 +538,14 @@ void GMainWindow::InitializeWidgets() {
         if (emulation_running) {
             return;
         }
-        bool is_async =
-            !Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-        Settings::values.use_asynchronous_gpu_emulation = is_async;
+        Settings::values.use_asynchronous_gpu_emulation =
+            !Settings::values.use_asynchronous_gpu_emulation;
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
         Settings::Apply();
     });
     async_status_button->setText(tr("异步模式"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-
-    // Setup Multicore button
-    multicore_status_button = new QPushButton();
-    multicore_status_button->setObjectName(QStringLiteral("TogglableStatusBarButton"));
-    multicore_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(multicore_status_button, &QPushButton::clicked, [&] {
-        if (emulation_running) {
-            return;
-        }
-        Settings::values.use_multi_core = !Settings::values.use_multi_core;
-        bool is_async =
-            Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
-        Settings::values.use_asynchronous_gpu_emulation = is_async;
-        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-        multicore_status_button->setChecked(Settings::values.use_multi_core);
-        Settings::Apply();
-    });
-    multicore_status_button->setText(tr("多核运行"));
-    multicore_status_button->setCheckable(true);
-    multicore_status_button->setChecked(Settings::values.use_multi_core);
-    statusBar()->insertPermanentWidget(0, multicore_status_button);
     statusBar()->insertPermanentWidget(0, async_status_button);
 
     // Setup Renderer API button
@@ -949,8 +926,6 @@ bool GMainWindow::LoadROM(const QString& filename) {
         nullptr,                                     // E-Commerce
     });
 
-    system.RegisterHostThread();
-
     const Core::System::ResultStatus result{system.Load(*render_window, filename.toStdString())};
 
     const auto drd_callout =
@@ -1067,7 +1042,6 @@ void GMainWindow::BootGame(const QString& filename) {
     }
     status_bar_update_timer.start(2000);
     async_status_button->setDisabled(true);
-    multicore_status_button->setDisabled(true);
     renderer_status_button->setDisabled(true);
 
     if (UISettings::values.hide_mouse) {
@@ -1155,7 +1129,6 @@ void GMainWindow::ShutdownGame() {
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
     async_status_button->setEnabled(true);
-    multicore_status_button->setEnabled(true);
 #ifdef HAS_VULKAN
     renderer_status_button->setEnabled(true);
 #endif
@@ -1574,65 +1547,36 @@ void GMainWindow::OnMenuInstallToNAND() {
         tr("安装 Switch 文件 (*.nca *.nsp *.xci);;任天堂内容存档 "
            "(*.nca);;任天堂提交包 (*.nsp);;NX 盒式 "
            "图像 (*.xci)");
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("安装文件"),
-                                                      UISettings::values.roms_path, file_filter);
+    QString filename = QFileDialog::getOpenFileName(this, tr("安装文件"),
+                                                    UISettings::values.roms_path, file_filter);
 
-    if (files.isEmpty()) {
+    if (filename.isEmpty()) {
         return;
     }
 
-    InstallDialog installDialog(this, files);
-    if (installDialog.exec() == QDialog::Rejected) {
-        return;
-    }
-
-    const QStringList filenames = installDialog.GetFilenames();
-    const bool overwrite_files = installDialog.ShouldOverwriteFiles();
-
-    int count = 0;
-    int total_count = filenames.size();
-    bool is_progressdialog_created = false;
-
-    const auto qt_raw_copy = [this, &count, &total_count, &is_progressdialog_created](
-                                 const FileSys::VirtualFile& src, const FileSys::VirtualFile& dest,
-                                 std::size_t block_size) {
-        if (src == nullptr || dest == nullptr) {
+    const auto qt_raw_copy = [this](const FileSys::VirtualFile& src,
+                                    const FileSys::VirtualFile& dest, std::size_t block_size) {
+        if (src == nullptr || dest == nullptr)
             return false;
-        }
-        if (!dest->Resize(src->GetSize())) {
+        if (!dest->Resize(src->GetSize()))
             return false;
-        }
 
         std::array<u8, 0x1000> buffer{};
         const int progress_maximum = static_cast<int>(src->GetSize() / buffer.size());
 
-        if (!is_progressdialog_created) {
-            ui.action_Install_File_NAND->setEnabled(false);
-            install_progress = new QProgressDialog(
-                tr("安装文件 \"%1\"...").arg(QString::fromStdString(src->GetName())),
-                tr("取消"), 0, progress_maximum, this);
-            install_progress->setWindowTitle(
-                tr("%n file(s) remaining", "", total_count - count - 1));
-            install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
-                                             ~Qt::WindowMaximizeButtonHint);
-            install_progress->setAutoClose(false);
-            is_progressdialog_created = true;
-        } else {
-            install_progress->setWindowTitle(
-                tr("%n file(s) remaining", "", total_count - count - 1));
-            install_progress->setLabelText(
-                tr("Installing file \"%1\"...").arg(QString::fromStdString(src->GetName())));
-            install_progress->setMaximum(progress_maximum);
-        }
+        QProgressDialog progress(
+            tr("安装文件 \"%1\"...").arg(QString::fromStdString(src->GetName())),
+            tr("取消"), 0, progress_maximum, this);
+        progress.setWindowModality(Qt::WindowModal);
 
         for (std::size_t i = 0; i < src->GetSize(); i += buffer.size()) {
-            if (install_progress->wasCanceled()) {
+            if (progress.wasCanceled()) {
                 dest->Resize(0);
                 return false;
             }
 
             const int progress_value = static_cast<int>(i / buffer.size());
-            install_progress->setValue(progress_value);
+            progress.setValue(progress_value);
 
             const auto read = src->Read(buffer.data(), buffer.size(), i);
             dest->Write(buffer.data(), read, i);
@@ -1641,166 +1585,143 @@ void GMainWindow::OnMenuInstallToNAND() {
         return true;
     };
 
-    const auto success = [this, &count, &is_progressdialog_created]() {
-        if (is_progressdialog_created) {
-            install_progress->close();
-        }
-        QMessageBox::information(this, tr("安装成功"),
-                                 tr("%n 文件(s) 成功安装", "", count));
+    const auto success = [this]() {
+        QMessageBox::information(this, tr("成功安装"),
+                                 tr("文件已成功安装."));
         game_list->PopulateAsync(UISettings::values.game_dirs);
         FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) +
                                        DIR_SEP + "game_list");
-        ui.action_Install_File_NAND->setEnabled(true);
     };
 
-    const auto failed = [this, &is_progressdialog_created](const QString& file) {
-        if (is_progressdialog_created) {
-            install_progress->close();
-        }
+    const auto failed = [this]() {
         QMessageBox::warning(
-            this, tr("安装失败 %1").arg(QFileInfo(file).fileName()),
-            tr("有在尝试安装所提供的文件中的错误。它可以 "
-               "有一个不正确的格式或失踪的元数据 "
-               "请仔细检查您的文件，然后再试一次."));
-        game_list->PopulateAsync(UISettings::values.game_dirs);
-        ui.action_Install_File_NAND->setEnabled(true);
+            this, tr("安装失败"),
+            tr("尝试安装提供的文件时出错，它 "
+               "可能格式不正确或缺少元数据。 请 "
+               "仔细检查您的文件，然后重试."));
     };
 
-    const auto overwrite = [this](const QString& file) {
-        return QMessageBox::question(
-                   this, tr("安装失败 %1").arg(QFileInfo(file).fileName()),
-                   tr("您正在尝试安装文件已经存在 "
-                      "在缓存中。你想覆盖它吗?")) == QMessageBox::Yes;
+    const auto overwrite = [this]() {
+        return QMessageBox::question(this, tr("安装失败"),
+                                     tr("您要安装的文件已存在 "
+                                        "在缓存中， 您要覆盖它吗？")) ==
+               QMessageBox::Yes;
     };
 
-    for (const QString& filename : filenames) {
-        if (filename.endsWith(QStringLiteral("xci"), Qt::CaseInsensitive) ||
-            filename.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
-            std::shared_ptr<FileSys::NSP> nsp;
-            if (filename.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
-                nsp = std::make_shared<FileSys::NSP>(
-                    vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
-                if (nsp->IsExtractedType()) {
-                    failed(filename);
-                    break;
-                }
-            } else {
-                const auto xci = std::make_shared<FileSys::XCI>(
-                    vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
-                nsp = xci->GetSecurePartitionNSP();
-            }
+    if (filename.endsWith(QStringLiteral("xci"), Qt::CaseInsensitive) ||
+        filename.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
+        std::shared_ptr<FileSys::NSP> nsp;
+        if (filename.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
+            nsp = std::make_shared<FileSys::NSP>(
+                vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
+            if (nsp->IsExtractedType())
+                failed();
+        } else {
+            const auto xci = std::make_shared<FileSys::XCI>(
+                vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
+            nsp = xci->GetSecurePartitionNSP();
+        }
 
-            if (nsp->GetStatus() != Loader::ResultStatus::Success) {
-                failed(filename);
-                break;
-            }
-            const auto res = Core::System::GetInstance()
-                                 .GetFileSystemController()
-                                 .GetUserNANDContents()
-                                 ->InstallEntry(*nsp, false, qt_raw_copy);
-            if (res == FileSys::InstallResult::Success) {
-                ++count;
-            } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
-                if (overwrite_files && overwrite(filename)) {
+        if (nsp->GetStatus() != Loader::ResultStatus::Success) {
+            failed();
+            return;
+        }
+        const auto res = Core::System::GetInstance()
+                             .GetFileSystemController()
+                             .GetUserNANDContents()
+                             ->InstallEntry(*nsp, false, qt_raw_copy);
+        if (res == FileSys::InstallResult::Success) {
+            success();
+        } else {
+            if (res == FileSys::InstallResult::ErrorAlreadyExists) {
+                if (overwrite()) {
                     const auto res2 = Core::System::GetInstance()
                                           .GetFileSystemController()
                                           .GetUserNANDContents()
                                           ->InstallEntry(*nsp, true, qt_raw_copy);
-                    if (res2 != FileSys::InstallResult::Success) {
-                        failed(filename);
-                        break;
+                    if (res2 == FileSys::InstallResult::Success) {
+                        success();
+                    } else {
+                        failed();
                     }
-                    ++count;
-                } else {
-                    --total_count;
                 }
             } else {
-                failed(filename);
-                break;
-            }
-        } else {
-            const auto nca = std::make_shared<FileSys::NCA>(
-                vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
-            const auto id = nca->GetStatus();
-
-            // Game updates necessary are missing base RomFS
-            if (id != Loader::ResultStatus::Success &&
-                id != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS) {
-                failed(filename);
-                break;
-            }
-
-            const QStringList tt_options{tr("系统中的应用"),
-                                         tr("系统存档"),
-                                         tr("系统应用程序更新"),
-                                         tr("固件包（A型）"),
-                                         tr("固件包（B型）"),
-                                         tr("游戏"),
-                                         tr("游戏更新"),
-                                         tr("游戏  DLC"),
-                                         tr("Delta 标题")};
-            bool ok;
-            const auto item = QInputDialog::getItem(
-                this, tr("选择 NCA 安装类型..."),
-                tr("请选择题目的类型，你想安装此NCA，因为在大多数情况:\n(In "
-                   "默认的 '游戏' 是很好的.)"),
-                tt_options, 5, false, &ok);
-
-            auto index = tt_options.indexOf(item);
-            if (!ok || index == -1) {
-                QMessageBox::warning(this, tr("安装失败"),
-                                     tr("您选择的NCA标题类型无效."));
-                break;
-            }
-
-            // If index is equal to or past Game, add the jump in TitleType.
-            if (index >= 5) {
-                index += static_cast<size_t>(FileSys::TitleType::Application) -
-                         static_cast<size_t>(FileSys::TitleType::FirmwarePackageB);
-            }
-
-            FileSys::InstallResult res;
-            if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
-                res = Core::System::GetInstance()
-                          .GetFileSystemController()
-                          .GetUserNANDContents()
-                          ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false,
-                                         qt_raw_copy);
-            } else {
-                res = Core::System::GetInstance()
-                          .GetFileSystemController()
-                          .GetSystemNANDContents()
-                          ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false,
-                                         qt_raw_copy);
-            }
-
-            if (res == FileSys::InstallResult::Success) {
-                ++count;
-            } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
-                if (overwrite_files && overwrite(filename)) {
-                    const auto res2 =
-                        Core::System::GetInstance()
-                            .GetFileSystemController()
-                            .GetUserNANDContents()
-                            ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true,
-                                           qt_raw_copy);
-                    if (res2 != FileSys::InstallResult::Success) {
-                        failed(filename);
-                        break;
-                    }
-                    ++count;
-                } else {
-                    --total_count;
-                }
-            } else {
-                failed(filename);
-                break;
+                failed();
             }
         }
+    } else {
+        const auto nca = std::make_shared<FileSys::NCA>(
+            vfs->OpenFile(filename.toStdString(), FileSys::Mode::Read));
+        const auto id = nca->GetStatus();
 
-        // Return success only on the last file
-        if (filename == filenames.last()) {
+        // Game updates necessary are missing base RomFS
+        if (id != Loader::ResultStatus::Success &&
+            id != Loader::ResultStatus::ErrorMissingBKTRBaseRomFS) {
+            failed();
+            return;
+        }
+
+        const QStringList tt_options{tr("系统中的应用"),
+                                     tr("系统存档"),
+                                     tr("系统应用程序更新"),
+                                     tr("固件包（A型）"),
+                                     tr("固件包（B型）"),
+                                     tr("游戏"),
+                                     tr("游戏更新"),
+                                     tr("游戏 DLC"),
+                                     tr("Delta 标题")};
+        bool ok;
+        const auto item = QInputDialog::getItem(
+            this, tr("选择 NCA 安装类型..."),
+            tr("请选择题目的类型，你想安装此NCA，因为在大多数情况:\n(In "
+               "默认的 '游戏' 是很好的.)"),
+            tt_options, 5, false, &ok);
+
+        auto index = tt_options.indexOf(item);
+        if (!ok || index == -1) {
+            QMessageBox::warning(this, tr("安装失败"),
+                                 tr("您选择的NCA标题类型无效."));
+            return;
+        }
+
+        // If index is equal to or past Game, add the jump in TitleType.
+        if (index >= 5) {
+            index += static_cast<size_t>(FileSys::TitleType::Application) -
+                     static_cast<size_t>(FileSys::TitleType::FirmwarePackageB);
+        }
+
+        FileSys::InstallResult res;
+        if (index >= static_cast<s32>(FileSys::TitleType::Application)) {
+            res = Core::System::GetInstance()
+                      .GetFileSystemController()
+                      .GetUserNANDContents()
+                      ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false,
+                                     qt_raw_copy);
+        } else {
+            res = Core::System::GetInstance()
+                      .GetFileSystemController()
+                      .GetSystemNANDContents()
+                      ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false,
+                                     qt_raw_copy);
+        }
+
+        if (res == FileSys::InstallResult::Success) {
             success();
+        } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
+            if (overwrite()) {
+                const auto res2 = Core::System::GetInstance()
+                                      .GetFileSystemController()
+                                      .GetUserNANDContents()
+                                      ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index),
+                                                     true, qt_raw_copy);
+                if (res2 == FileSys::InstallResult::Success) {
+                    success();
+                } else {
+                    failed();
+                }
+            }
+        } else {
+            failed();
         }
     }
 }
@@ -2013,11 +1934,7 @@ void GMainWindow::OnConfigure() {
     }
 
     dock_status_button->setChecked(Settings::values.use_docked_mode);
-    multicore_status_button->setChecked(Settings::values.use_multi_core);
-    Settings::values.use_asynchronous_gpu_emulation =
-        Settings::values.use_asynchronous_gpu_emulation || Settings::values.use_multi_core;
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation);
-
 #ifdef HAS_VULKAN
     renderer_status_button->setChecked(Settings::values.renderer_backend ==
                                        Settings::RendererBackend::Vulkan);
@@ -2115,13 +2032,13 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
 
     if (title_name.isEmpty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 657" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 662" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 657 {0}| {3}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 662 {0}| {3}" : fmt, full_name, branch_name,
                         description, title_name.toStdString(), date, build_id)));
     }
 }
@@ -2141,10 +2058,10 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("速度: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    game_fps_label->setText(tr("Game: %1 FPS").arg(results.game_fps, 0, 'f', 0));
+    game_fps_label->setText(tr("游戏: %1 FPS").arg(results.game_fps, 0, 'f', 0));
     emu_frametime_label->setText(tr("帧: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
-    emu_speed_label->setVisible(!Settings::values.use_multi_core);
+    emu_speed_label->setVisible(true);
     game_fps_label->setVisible(true);
     emu_frametime_label->setVisible(true);
 }
