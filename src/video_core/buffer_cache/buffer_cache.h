@@ -323,8 +323,7 @@ protected:
     }
 
 private:
-    MapInterval* MapAddress(const Buffer* block, GPUVAddr gpu_addr, VAddr cpu_addr,
-                            std::size_t size) {
+    MapInterval* MapAddress(Buffer* block, GPUVAddr gpu_addr, VAddr cpu_addr, std::size_t size) {
         const VectorMapInterval overlaps = GetMapsInRange(cpu_addr, size);
         if (overlaps.empty()) {
             auto& memory_manager = system.GPU().MemoryManager();
@@ -378,8 +377,7 @@ private:
         return map;
     }
 
-    void UpdateBlock(const Buffer* block, VAddr start, VAddr end,
-                     const VectorMapInterval& overlaps) {
+    void UpdateBlock(Buffer* block, VAddr start, VAddr end, const VectorMapInterval& overlaps) {
         const IntervalType base_interval{start, end};
         IntervalSet interval_set{};
         interval_set.add(base_interval);

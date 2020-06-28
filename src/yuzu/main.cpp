@@ -2118,13 +2118,13 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
 
     if (title_name.isEmpty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 666" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 669" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 666 {0}| {3}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 669 {0}| {3}" : fmt, full_name, branch_name,
                         description, title_name.toStdString(), date, build_id)));
     }
 }
