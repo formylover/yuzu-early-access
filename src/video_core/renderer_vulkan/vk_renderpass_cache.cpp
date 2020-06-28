@@ -29,12 +29,12 @@ VKRenderPassCache::VKRenderPassCache(const VKDevice& device) : device{device} {}
 VKRenderPassCache::~VKRenderPassCache() = default;
 
 VkRenderPass VKRenderPassCache::GetRenderPass(const RenderPassParams& params) {
-    auto [entry, is_cache_miss] = cache.try_emplace(params);
-    auto& renderpass = entry.value();
+    const auto [pair, is_cache_miss] = cache.try_emplace(params);
+    auto& entry = pair->second;
     if (is_cache_miss) {
-        renderpass = CreateRenderPass(params);
+        entry = CreateRenderPass(params);
     }
-    return *renderpass;
+    return *entry;
 }
 
 vk::RenderPass VKRenderPassCache::CreateRenderPass(const RenderPassParams& params) const {

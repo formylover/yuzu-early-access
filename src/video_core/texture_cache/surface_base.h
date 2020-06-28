@@ -6,9 +6,8 @@
 
 #include <optional>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
-
-#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "video_core/gpu.h"
@@ -307,12 +306,12 @@ protected:
     virtual TView CreateView(const ViewParams& view_key) = 0;
 
     TView main_view;
-    tsl::robin_map<ViewParams, TView> views;
+    std::unordered_map<ViewParams, TView> views;
 
 private:
     TView GetView(const ViewParams& key) {
-        auto [entry, is_cache_miss] = views.try_emplace(key);
-        auto& view = entry.value();
+        const auto [entry, is_cache_miss] = views.try_emplace(key);
+        auto& view{entry->second};
         if (is_cache_miss) {
             view = CreateView(key);
         }

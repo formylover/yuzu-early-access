@@ -8,8 +8,7 @@
 #include <optional>
 #include <string>
 #include <thread>
-
-#include <tsl/robin_set.h>
+#include <unordered_set>
 
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -182,13 +181,18 @@ ProgramSharedPtr BuildShader(const Device& device, ShaderType shader_type, u64 u
     return program;
 }
 
-std::vector<GLint> GetSupportedFormats() {
+std::unordered_set<GLenum> GetSupportedFormats() {
     GLint num_formats;
     glGetIntegerv(GL_NUM_PROGRAM_BINARY_FORMATS, &num_formats);
 
     std::vector<GLint> formats(num_formats);
     glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, formats.data());
-    return formats;
+
+    std::unordered_set<GLenum> supported_formats;
+    for (const GLint format : formats) {
+        supported_formats.insert(static_cast<GLenum>(format));
+    }
+    return supported_formats;
 }
 
 } // Anonymous namespace
@@ -409,10 +413,8 @@ void ShaderCacheOpenGL::LoadDiskCache(const std::atomic_bool& stop_loading,
 
 ProgramSharedPtr ShaderCacheOpenGL::GeneratePrecompiledProgram(
     const ShaderDiskCacheEntry& entry, const ShaderDiskCachePrecompiled& precompiled_entry,
-    const std::vector<GLint>& supported_formats) {
-    const auto found = std::find(supported_formats.begin(), supported_formats.end(),
-                                 precompiled_entry.binary_format);
-    if (found == supported_formats.end()) {
+    const std::unordered_set<GLenum>& supported_formats) {
+    if (supported_formats.find(precompiled_entry.binary_format) == supported_formats.end()) {
         LOG_INFO(Render_OpenGL, "Precompiled cache entry with unsupported format, removing");
         return {};
     }

@@ -3,9 +3,8 @@
 // Refer to the license.txt file included.
 
 #include <tuple>
+#include <unordered_map>
 #include <utility>
-
-#include <tsl/robin_map.h>
 
 #include <glad/glad.h>
 
@@ -23,8 +22,8 @@ FramebufferCacheOpenGL::FramebufferCacheOpenGL() = default;
 FramebufferCacheOpenGL::~FramebufferCacheOpenGL() = default;
 
 GLuint FramebufferCacheOpenGL::GetFramebuffer(const FramebufferCacheKey& key) {
-    auto [entry, is_cache_miss] = cache.try_emplace(key);
-    auto& framebuffer = entry.value();
+    const auto [entry, is_cache_miss] = cache.try_emplace(key);
+    auto& framebuffer{entry->second};
     if (is_cache_miss) {
         framebuffer = CreateFramebuffer(key);
     }

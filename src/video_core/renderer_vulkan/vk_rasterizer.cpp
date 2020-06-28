@@ -794,8 +794,8 @@ std::tuple<VkFramebuffer, VkExtent2D> RasterizerVulkan::ConfigureFramebuffers(
         texture_cache.MarkDepthBufferInUse();
     }
 
-    auto [entry, is_cache_miss] = framebuffer_cache.try_emplace(key);
-    auto& framebuffer = entry.value();
+    const auto [fbentry, is_cache_miss] = framebuffer_cache.try_emplace(key);
+    auto& framebuffer = fbentry->second;
     if (is_cache_miss) {
         VkFramebufferCreateInfo framebuffer_ci;
         framebuffer_ci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

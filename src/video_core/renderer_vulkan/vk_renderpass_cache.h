@@ -5,11 +5,10 @@
 #pragma once
 
 #include <type_traits>
+#include <unordered_map>
 
 #include <boost/container/static_vector.hpp>
 #include <boost/functional/hash.hpp>
-
-#include <tsl/robin_map.h>
 
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/renderer_vulkan/wrapper.h"
@@ -65,10 +64,7 @@ private:
     vk::RenderPass CreateRenderPass(const RenderPassParams& params) const;
 
     const VKDevice& device;
-    tsl::robin_map<RenderPassParams, vk::RenderPass, std::hash<RenderPassParams>,
-                   std::equal_to<RenderPassParams>,
-                   std::allocator<std::pair<RenderPassParams, vk::RenderPass>>, true>
-        cache;
+    std::unordered_map<RenderPassParams, vk::RenderPass> cache;
 };
 
 } // namespace Vulkan

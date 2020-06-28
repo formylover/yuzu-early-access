@@ -114,6 +114,8 @@
     </property>
     <addaction name="action_Report_Compatibility"/>
     <addaction name="action_Open_Mods_Page"/>
+    <addaction name="action_Open_Quickstart_Guide"/>
+    <addaction name="action_Open_FAQ"/>
     <addaction name="separator"/>
     <addaction name="action_About"/>
    </widget>
@@ -260,6 +262,16 @@
   <action name="action_Open_Mods_Page">
    <property name="text">
     <string>打开MOD下载地址</string>
+   </property>
+  </action>
+  <action name="action_Open_Quickstart_Guide">
+   <property name="text">
+    <string>快速入门指南</string>
+   </property>
+  </action>
+  <action name="action_Open_FAQ">
+   <property name="text">
+    <string>常见问题</string>
    </property>
   </action>
   <action name="action_Open_yuzu_Folder">

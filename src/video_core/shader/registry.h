@@ -7,9 +7,8 @@
 #include <array>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
-
-#include <tsl/robin_map.h>
 
 #include "common/common_types.h"
 #include "common/hash.h"
@@ -49,11 +48,12 @@ struct equal_to<VideoCommon::Shader::SeparateSamplerKey> {
 
 namespace VideoCommon::Shader {
 
-using KeyMap = tsl::robin_map<std::pair<u32, u32>, u32, Common::PairHash>;
-using BoundSamplerMap = tsl::robin_map<u32, Tegra::Engines::SamplerDescriptor>;
-using SeparateSamplerMap = tsl::robin_map<SeparateSamplerKey, Tegra::Engines::SamplerDescriptor>;
+using KeyMap = std::unordered_map<std::pair<u32, u32>, u32, Common::PairHash>;
+using BoundSamplerMap = std::unordered_map<u32, Tegra::Engines::SamplerDescriptor>;
+using SeparateSamplerMap =
+    std::unordered_map<SeparateSamplerKey, Tegra::Engines::SamplerDescriptor>;
 using BindlessSamplerMap =
-    tsl::robin_map<std::pair<u32, u32>, Tegra::Engines::SamplerDescriptor, Common::PairHash>;
+    std::unordered_map<std::pair<u32, u32>, Tegra::Engines::SamplerDescriptor, Common::PairHash>;
 
 struct GraphicsInfo {
     using Maxwell = Tegra::Engines::Maxwell3D::Regs;

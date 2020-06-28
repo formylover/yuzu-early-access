@@ -868,6 +868,9 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Report_Compatibility, &QAction::triggered, this,
             &GMainWindow::OnMenuReportCompatibility);
     connect(ui.action_Open_Mods_Page, &QAction::triggered, this, &GMainWindow::OnOpenModsPage);
+    connect(ui.action_Open_Quickstart_Guide, &QAction::triggered, this,
+            &GMainWindow::OnOpenQuickstartGuide);
+    connect(ui.action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
     connect(ui.action_Restart, &QAction::triggered, this, [this] { BootGame(QString(game_path)); });
     connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
 
@@ -1082,17 +1085,19 @@ void GMainWindow::BootGame(const QString& filename) {
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
 
     std::string title_name;
+    std::string title_version;
     const auto res = Core::System::GetInstance().GetGameName(title_name);
-    if (res != Loader::ResultStatus::Success) {
-        const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
-        if (metadata.first != nullptr)
-            title_name = metadata.first->GetApplicationName();
 
-        if (title_name.empty())
-            title_name = FileUtil::GetFilename(filename.toStdString());
+    const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
+    if (metadata.first != nullptr) {
+        title_version = metadata.first->GetVersionString();
+        title_name = metadata.first->GetApplicationName();
     }
-    LOG_INFO(Frontend, "Booting game: {:016X} | {}", title_id, title_name);
-    UpdateWindowTitle(QString::fromStdString(title_name));
+    if (res != Loader::ResultStatus::Success || title_name.empty()) {
+        title_name = FileUtil::GetFilename(filename.toStdString());
+    }
+    LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
+    UpdateWindowTitle(title_name, title_version);
 
     loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
     loading_screen->show();
@@ -1895,14 +1900,24 @@ void GMainWindow::OnMenuReportCompatibility() {
     }
 }
 
-void GMainWindow::OnOpenModsPage() {
-    const auto mods_page_url = QStringLiteral("https://github.com/yuzu-emu/yuzu/wiki/Switch-Mods");
-    const QUrl mods_page(mods_page_url);
-    const bool open = QDesktopServices::openUrl(mods_page);
+void GMainWindow::OpenURL(const QUrl& url) {
+    const bool open = QDesktopServices::openUrl(url);
     if (!open) {
         QMessageBox::warning(this, tr("打开网址时出错"),
-                             tr("无法打开网址 \"%1\".").arg(mods_page_url));
+                             tr("无法打开网址 \"%1\".").arg(url.toString()));
     }
+}
+
+void GMainWindow::OnOpenModsPage() {
+    OpenURL(QUrl(QStringLiteral("https://github.com/yuzu-emu/yuzu/wiki/Switch-Mods")));
+}
+
+void GMainWindow::OnOpenQuickstartGuide() {
+    OpenURL(QUrl(QStringLiteral("https://yuzu-emu.org/help/quickstart/")));
+}
+
+void GMainWindow::OnOpenFAQ() {
+    OpenURL(QUrl(QStringLiteral("https://yuzu-emu.org/wiki/faq/")));
 }
 
 void GMainWindow::ToggleFullscreen() {
@@ -2107,7 +2122,8 @@ void GMainWindow::OnCaptureScreenshot() {
     OnStartGame();
 }
 
-void GMainWindow::UpdateWindowTitle(const QString& title_name) {
+void GMainWindow::UpdateWindowTitle(const std::string& title_name,
+                                    const std::string& title_version) {
     const auto full_name = std::string(Common::g_build_fullname);
     const auto branch_name = std::string(Common::g_scm_branch);
     const auto description = std::string(Common::g_scm_desc);
@@ -2116,16 +2132,16 @@ void GMainWindow::UpdateWindowTitle(const QString& title_name) {
     const auto date =
         QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd")).toStdString();
 
-    if (title_name.isEmpty()) {
+    if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 669" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 678" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 669 {0}| {3}" : fmt, full_name, branch_name,
-                        description, title_name.toStdString(), date, build_id)));
+            fmt::format(fmt.empty() ? "yuzu Early Access 678 {0}| {3} {6}" : fmt, full_name, branch_name,
+                        description, title_name, date, build_id, title_version)));
     }
 }
 

@@ -2694,7 +2694,7 @@ private:
         return AppendSuffix(GetGenericAttributeIndex(attribute), INPUT_ATTRIBUTE_NAME);
     }
 
-    tsl::robin_map<u8, GenericVaryingDescription> varying_description;
+    std::unordered_map<u8, GenericVaryingDescription> varying_description;
 
     std::string GetGenericOutputAttribute(Attribute::Index attribute, std::size_t element) const {
         const u8 offset = static_cast<u8>(GetGenericAttributeIndex(attribute) * 4 + element);
@@ -2788,7 +2788,7 @@ private:
     const std::string_view suffix;
     const Header header;
     const bool use_unified_uniforms;
-    tsl::robin_map<u8, VaryingTFB> transform_feedback;
+    std::unordered_map<u8, VaryingTFB> transform_feedback;
 
     ShaderWriter code;
 

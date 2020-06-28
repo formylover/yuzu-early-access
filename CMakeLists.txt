@@ -158,7 +158,6 @@ macro(yuzu_find_packages)
         "nlohmann_json     3.7         nlohmann_json/3.7.3"
     # we need to be careful as the version check might be broken https://github.com/xiph/opus/issues/110
         "opus              1.3         opus/1.3.1"
-        "tsl-robin-map     0.6.2       tsl-robin-map/0.6.2@tessil/stable"
         "ZLIB              1.2         zlib/1.2.11"
         "zstd              1.4         zstd/1.4.4"
     )

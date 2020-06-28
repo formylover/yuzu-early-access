@@ -5,8 +5,7 @@
 #pragma once
 
 #include <memory>
-
-#include <tsl/robin_map.h>
+#include <unordered_map>
 
 #include "common/common_types.h"
 #include "video_core/renderer_vulkan/vk_image.h"
@@ -197,7 +196,7 @@ private:
     u32 last_swizzle = 0;
 
     vk::ImageView render_target;
-    tsl::robin_map<u32, vk::ImageView> view_cache;
+    std::unordered_map<u32, vk::ImageView> view_cache;
 };
 
 class VKTextureCache final : public TextureCacheBase {

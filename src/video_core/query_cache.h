@@ -11,10 +11,9 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
-
-#include <tsl/robin_map.h>
-#include <tsl/robin_set.h>
 
 #include "common/assert.h"
 #include "core/core.h"
@@ -223,11 +222,11 @@ private:
 
         const u64 page_end = addr_end >> PAGE_BITS;
         for (u64 page = addr_begin >> PAGE_BITS; page <= page_end; ++page) {
-            auto it = cached_queries.find(page);
+            const auto& it = cached_queries.find(page);
             if (it == std::end(cached_queries)) {
                 continue;
             }
-            auto& contents = it.value();
+            auto& contents = it->second;
             for (auto& query : contents) {
                 if (!in_range(query)) {
                     continue;
@@ -251,11 +250,11 @@ private:
     /// Tries to a get a cached query. Returns nullptr on failure.
     CachedQuery* TryGet(VAddr addr) {
         const u64 page = static_cast<u64>(addr) >> PAGE_BITS;
-        auto it = cached_queries.find(page);
+        const auto it = cached_queries.find(page);
         if (it == std::end(cached_queries)) {
             return nullptr;
         }
-        auto& contents = it.value();
+        auto& contents = it->second;
         const auto found = std::find_if(std::begin(contents), std::end(contents),
                                         [addr](auto& query) { return query.GetCpuAddr() == addr; });
         return found != std::end(contents) ? &*found : nullptr;
@@ -263,7 +262,7 @@ private:
 
     void AsyncFlushQuery(VAddr addr) {
         if (!uncommitted_flushes) {
-            uncommitted_flushes = std::make_shared<tsl::robin_set<VAddr>>();
+            uncommitted_flushes = std::make_shared<std::unordered_set<VAddr>>();
         }
         uncommitted_flushes->insert(addr);
     }
@@ -276,12 +275,12 @@ private:
 
     std::recursive_mutex mutex;
 
-    tsl::robin_map<u64, std::vector<CachedQuery>> cached_queries;
+    std::unordered_map<u64, std::vector<CachedQuery>> cached_queries;
 
     std::array<CounterStream, VideoCore::NumQueryTypes> streams;
 
-    std::shared_ptr<tsl::robin_set<VAddr>> uncommitted_flushes{};
-    std::list<std::shared_ptr<tsl::robin_set<VAddr>>> committed_flushes;
+    std::shared_ptr<std::unordered_set<VAddr>> uncommitted_flushes{};
+    std::list<std::shared_ptr<std::unordered_set<VAddr>>> committed_flushes;
 };
 
 template <class QueryCache, class HostCounter>

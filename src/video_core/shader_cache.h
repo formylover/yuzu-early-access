@@ -110,12 +110,12 @@ private:
         const VAddr addr_end = addr + size;
         const u64 page_end = addr_end >> PAGE_BITS;
         for (u64 page = addr >> PAGE_BITS; page <= page_end; ++page) {
-            auto it = invalidation_cache.find(page);
+            const auto it = invalidation_cache.find(page);
             if (it == invalidation_cache.end()) {
                 continue;
             }
 
-            std::vector<Entry*>& entries = it.value();
+            std::vector<Entry*>& entries = it->second;
             InvalidatePageEntries(entries, addr, addr_end);
 
             // If there's nothing else in this page, remove it to avoid overpopulating the hash map.
@@ -219,8 +219,8 @@ private:
     mutable std::mutex lookup_mutex;
     std::mutex invalidation_mutex;
 
-    tsl::robin_map<u64, std::unique_ptr<Entry>> lookup_cache;
-    tsl::robin_map<u64, std::vector<Entry*>> invalidation_cache;
+    std::unordered_map<u64, std::unique_ptr<Entry>> lookup_cache;
+    std::unordered_map<u64, std::vector<Entry*>> invalidation_cache;
     std::vector<std::unique_ptr<T>> storage;
     std::vector<Entry*> marked_for_removal;
 };

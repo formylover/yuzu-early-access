@@ -7,11 +7,10 @@
 #include <map>
 #include <optional>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 
 #include <fmt/format.h>
-
-#include <tsl/robin_map.h>
 
 #include <sirit/sirit.h>
 
@@ -2702,7 +2701,7 @@ private:
     const Tegra::Shader::Header header;
     const Registry& registry;
     const Specialization& specialization;
-    tsl::robin_map<u8, VaryingTFB> transform_feedback;
+    std::unordered_map<u8, VaryingTFB> transform_feedback;
 
     const Id t_void = Name(TypeVoid(), "void");
 
@@ -2794,7 +2793,7 @@ private:
     Id shared_memory{};
     std::array<Id, INTERNAL_FLAGS_COUNT> internal_flags{};
     std::map<Attribute::Index, Id> input_attributes;
-    tsl::robin_map<u8, GenericVaryingDescription> output_attributes;
+    std::unordered_map<u8, GenericVaryingDescription> output_attributes;
     std::map<u32, Id> constant_buffers;
     std::map<GlobalMemoryBase, Id> global_buffers;
     std::map<u32, TexelBuffer> uniform_texels;
