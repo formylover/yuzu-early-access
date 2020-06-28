@@ -71,7 +71,7 @@ void ConfigureWeb::RetranslateUI() {
 
     ui->telemetry_learn_more->setText(
         tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'><span style=\"text-decoration: "
-           "underline; color:#039be5;\">学习更多</span></a>"));
+           "underline; color:#039be5;\">了解更多</span></a>"));
 
     ui->web_signup_link->setText(
         tr("<a href='https://profile.yuzu-emu.org/'><span style=\"text-decoration: underline; "

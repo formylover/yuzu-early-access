@@ -80,7 +80,7 @@
         <item>
          <widget class="QCheckBox" name="use_asynchronous_gpu_emulation">
           <property name="text">
-           <string>使用异步GPU仿真</string>
+           <string>使用异步GPU模拟</string>
           </property>
          </widget>
         </item>

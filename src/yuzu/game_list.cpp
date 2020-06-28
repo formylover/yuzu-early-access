@@ -484,7 +484,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, std::string pat
     context_menu.addSeparator();
     QAction* dump_romfs = context_menu.addAction(tr("提取 RomFS"));
     QAction* copy_tid = context_menu.addAction(tr("复制游戏ID到剪贴板"));
-    QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("导航到游戏 DB 条目"));
+    QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("查看该游戏兼容性"));
     context_menu.addSeparator();
     QAction* properties = context_menu.addAction(tr("属性"));
 
