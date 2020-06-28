@@ -112,7 +112,7 @@ QtProfileSelectionDialog::QtProfileSelectionDialog(QWidget* parent)
         item_model->appendRow(item);
 
     setLayout(outer_layout);
-    setWindowTitle(tr("配置文件选择器"));
+    setWindowTitle(tr("设置文件选择器"));
     resize(550, 400);
 }
 

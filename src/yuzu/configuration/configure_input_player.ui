@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>配置输入</string>
+   <string>设置输入</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <item>
@@ -214,7 +214,7 @@
      <item row="0" column="1">
       <widget class="QGroupBox" name="Dpad">
        <property name="title">
-        <string>方向垫</string>
+        <string>十字方向键</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -329,7 +329,7 @@
      <item row="0" column="0">
       <widget class="QGroupBox" name="faceButtons">
        <property name="title">
-        <string>正面按钮</string>
+        <string>主要按键</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -746,7 +746,7 @@
             <item>
              <widget class="QLabel" name="labelLStickMod">
               <property name="text">
-               <string>修改:</string>
+               <string>按住轻摇:</string>
               </property>
              </widget>
             </item>
@@ -830,7 +830,7 @@
      <item row="3" column="0">
       <widget class="QGroupBox" name="shoulderButtons">
        <property name="title">
-        <string>顶部按钮</string>
+        <string>肩部按键</string>
        </property>
        <property name="flat">
         <bool>false</bool>
@@ -1177,7 +1177,7 @@
         <enum>Qt::LeftToRight</enum>
        </property>
        <property name="text">
-        <string>恢复默认值</string>
+        <string>恢复默认设置</string>
        </property>
       </widget>
      </item>

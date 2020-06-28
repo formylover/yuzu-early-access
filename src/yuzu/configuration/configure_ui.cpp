@@ -25,8 +25,8 @@ constexpr std::array default_icon_sizes{
 };
 
 constexpr std::array row_text_names{
-    QT_TR_NOOP("文件名称"),   QT_TR_NOOP("文件类型"), QT_TR_NOOP("标题 ID"),
-    QT_TR_NOOP("标题 名字"), QT_TR_NOOP("无"),
+    QT_TR_NOOP("文件名称"),   QT_TR_NOOP("文件类型"), QT_TR_NOOP("游戏 ID"),
+    QT_TR_NOOP("游戏名字"), QT_TR_NOOP("无"),
 };
 } // Anonymous namespace
 

@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>yuzu 配置</string>
+   <string>yuzu 设置</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -45,7 +45,7 @@
        </property>
        <widget class="ConfigureGeneral" name="generalTab">
         <attribute name="title">
-         <string>常规</string>
+         <string>通用</string>
         </attribute>
        </widget>
        <widget class="ConfigureUi" name="uiTab">
@@ -90,7 +90,7 @@
        </widget>
        <widget class="ConfigureAudio" name="audioTab">
         <attribute name="title">
-         <string>音频</string>
+         <string>声音</string>
         </attribute>
        </widget>
        <widget class="ConfigureDebug" name="debugTab">

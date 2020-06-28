@@ -82,7 +82,7 @@ void ConfigureWeb::RetranslateUI() {
            "underline; color:#039be5;\">什么是我的令牌?</span></a>"));
 
     ui->label_telemetry_id->setText(
-        tr("遥测 ID: 0x%1").arg(QString::number(Core::GetTelemetryId(), 16).toUpper()));
+        tr("数据 ID: 0x%1").arg(QString::number(Core::GetTelemetryId(), 16).toUpper()));
 }
 
 void ConfigureWeb::SetConfiguration() {
@@ -127,7 +127,7 @@ void ConfigureWeb::ApplyConfiguration() {
 void ConfigureWeb::RefreshTelemetryID() {
     const u64 new_telemetry_id{Core::RegenerateTelemetryId()};
     ui->label_telemetry_id->setText(
-        tr("遥测 ID: 0x%1").arg(QString::number(new_telemetry_id, 16).toUpper()));
+        tr("数据 ID: 0x%1").arg(QString::number(new_telemetry_id, 16).toUpper()));
 }
 
 void ConfigureWeb::OnLoginChanged() {

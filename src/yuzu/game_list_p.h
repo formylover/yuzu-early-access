@@ -239,7 +239,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-            setData(QObject::tr("安装 SD 标题"), Qt::DisplayRole);
+            setData(QObject::tr("安装 SD 游戏"), Qt::DisplayRole);
             break;
         case GameListItemType::UserNandDir:
             setData(
@@ -247,7 +247,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-            setData(QObject::tr("安装 NAND 标题"), Qt::DisplayRole);
+            setData(QObject::tr("安装 NAND 游戏"), Qt::DisplayRole);
             break;
         case GameListItemType::SysNandDir:
             setData(
@@ -255,7 +255,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-            setData(QObject::tr("系统标题"), Qt::DisplayRole);
+            setData(QObject::tr("系统游戏"), Qt::DisplayRole);
             break;
         case GameListItemType::CustomDir: {
             const QString icon_name = QFileInfo::exists(game_dir->path)
@@ -297,7 +297,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-        setData(QObject::tr("添加新的游戏目录"), Qt::DisplayRole);
+        setData(QObject::tr("添加游戏目录"), Qt::DisplayRole);
     }
 
     int type() const override {

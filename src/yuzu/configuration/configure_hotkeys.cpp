@@ -75,7 +75,7 @@ void ConfigureHotkeys::changeEvent(QEvent* event) {
 void ConfigureHotkeys::RetranslateUI() {
     ui->retranslateUi(this);
 
-    model->setHorizontalHeaderLabels({tr("行动"), tr("热键"), tr("环境")});
+    model->setHorizontalHeaderLabels({tr("作用"), tr("热键"), tr("环境")});
 }
 
 void ConfigureHotkeys::Configure(QModelIndex index) {
@@ -172,8 +172,8 @@ void ConfigureHotkeys::PopupContextMenu(const QPoint& menu_location) {
     const auto selected = index.sibling(index.row(), 1);
     QMenu context_menu;
 
-    QAction* restore_default = context_menu.addAction(tr("Restore Default"));
-    QAction* clear = context_menu.addAction(tr("Clear"));
+    QAction* restore_default = context_menu.addAction(tr("恢复默认"));
+    QAction* clear = context_menu.addAction(tr("清除"));
 
     connect(restore_default, &QAction::triggered, [this, selected] {
         const QKeySequence& default_key_sequence = QKeySequence::fromString(

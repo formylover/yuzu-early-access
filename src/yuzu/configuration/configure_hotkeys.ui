@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>双击绑定以更改它.</string>
+        <string>双击已绑定的项目以改变设定。</string>
        </property>
       </widget>
      </item>

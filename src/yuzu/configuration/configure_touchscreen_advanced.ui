@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>配置触摸屏</string>
+   <string>设置触摸屏</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

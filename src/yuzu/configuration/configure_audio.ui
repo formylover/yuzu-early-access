@@ -14,7 +14,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>音频</string>
+      <string>声音</string>
      </property>
      <layout class="QVBoxLayout">
       <item>

@@ -35,7 +35,7 @@
         <item row="1" column="3">
          <widget class="QPushButton" name="player1_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
@@ -122,49 +122,49 @@
         <item row="2" column="3">
          <widget class="QPushButton" name="player2_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="3" column="3">
          <widget class="QPushButton" name="player3_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="4" column="3">
          <widget class="QPushButton" name="player4_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="5" column="3">
          <widget class="QPushButton" name="player5_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="6" column="3">
          <widget class="QPushButton" name="player6_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="7" column="3">
          <widget class="QPushButton" name="player7_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
         <item row="8" column="3">
          <widget class="QPushButton" name="player8_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
@@ -297,7 +297,7 @@
         <item row="1" column="3">
          <widget class="QPushButton" name="handheld_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
@@ -429,7 +429,7 @@
         <item row="2" column="3">
          <widget class="QPushButton" name="debug_configure">
           <property name="text">
-           <string>配置</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>

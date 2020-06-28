@@ -84,7 +84,7 @@ void GameListSearchField::setFilterResult(int visible, int total) {
     this->visible = visible;
     this->total = total;
 
-    label_filter_result->setText(tr("%1 of %n 结果(s)", "", total).arg(visible));
+    label_filter_result->setText(tr("%1 / %n 结果", "", total).arg(visible));
 }
 
 QString GameList::getLastFilterResultItem() const {
@@ -124,7 +124,7 @@ GameListSearchField::GameListSearchField(GameList* parent) : QWidget{parent} {
     label_filter->setText(tr("搜索:"));
     edit_filter = new QLineEdit;
     edit_filter->clear();
-    edit_filter->setPlaceholderText(tr("输入游戏名"));
+    edit_filter->setPlaceholderText(tr("搜索游戏"));
     edit_filter->installEventFilter(key_release_eater);
     edit_filter->setClearButtonEnabled(true);
     connect(edit_filter, &QLineEdit::textChanged, parent, &GameList::onTextChanged);
@@ -483,7 +483,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, std::string pat
         context_menu.addAction(tr("打开可转让着色器缓存"));
     context_menu.addSeparator();
     QAction* dump_romfs = context_menu.addAction(tr("提取 RomFS"));
-    QAction* copy_tid = context_menu.addAction(tr("复制标题ID到剪贴板"));
+    QAction* copy_tid = context_menu.addAction(tr("复制游戏ID到剪贴板"));
     QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("导航到游戏 DB 条目"));
     context_menu.addSeparator();
     QAction* properties = context_menu.addAction(tr("属性"));
@@ -695,7 +695,7 @@ GameListPlaceholder::GameListPlaceholder(GMainWindow* parent) : QWidget{parent} 
     layout->setAlignment(Qt::AlignCenter);
     image->setPixmap(QIcon::fromTheme(QStringLiteral("plus_folder")).pixmap(200));
 
-    text->setText(tr("双击一个新的文件夹添加到游戏列表"));
+    text->setText(tr("双击添加游戏文件夹"));
     QFont font = text->font();
     font.setPointSize(20);
     text->setFont(font);

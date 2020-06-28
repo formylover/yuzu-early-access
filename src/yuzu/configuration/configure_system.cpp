@@ -113,7 +113,7 @@ void ConfigureSystem::RefreshConsoleID() {
     QString warning_text = tr("这将有一个新的您当前的虚拟交换机将. "
                               "无法恢复，这可能在游戏意想不到的. "
                               "效果替换当前的虚拟交换机。如果您使用, "
-                              "的是过时的配置秘技这可能会失败，继续?");
+                              "的是过时的设置秘技这可能会失败，继续?");
     reply = QMessageBox::critical(this, tr("Warning"), warning_text,
                                   QMessageBox::No | QMessageBox::Yes);
     if (reply == QMessageBox::No) {

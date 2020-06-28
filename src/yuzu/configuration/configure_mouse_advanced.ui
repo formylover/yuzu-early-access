@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>配置鼠标</string>
+   <string>设置鼠标</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

@@ -166,7 +166,7 @@ void GMainWindow::ShowTelemetryCallout() {
         tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'>匿名 "
            "收集数据</a> 以帮助改善. "
            "<br/><br/>你想与我们分享您的使用情况的数据？");
-    if (QMessageBox::question(this, tr("遥测"), telemetry_message) != QMessageBox::Yes) {
+    if (QMessageBox::question(this, tr("数据"), telemetry_message) != QMessageBox::Yes) {
         Settings::values.enable_telemetry = false;
         Settings::Apply();
     }
@@ -1304,7 +1304,7 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
 
     if (!QFile::exists(transferable_shader_cache_file_path)) {
         QMessageBox::warning(this, tr("错误打开转换着色器缓存"),
-                             tr("对于这个标题着色器缓存中不存在."));
+                             tr("对于这个游戏着色器缓存中不存在."));
         return;
     }
 
@@ -1741,7 +1741,7 @@ void GMainWindow::OnMenuInstallToNAND() {
                                          tr("游戏"),
                                          tr("游戏更新"),
                                          tr("游戏  DLC"),
-                                         tr("Delta 标题")};
+                                         tr("Delta 游戏")};
             bool ok;
             const auto item = QInputDialog::getItem(
                 this, tr("选择 NCA 安装类型..."),
@@ -1752,7 +1752,7 @@ void GMainWindow::OnMenuInstallToNAND() {
             auto index = tt_options.indexOf(item);
             if (!ok || index == -1) {
                 QMessageBox::warning(this, tr("安装失败"),
-                                     tr("您选择的NCA标题类型无效."));
+                                     tr("您选择的NCA游戏类型无效."));
                 break;
             }
 
@@ -2144,7 +2144,7 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("速度: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    game_fps_label->setText(tr("Game: %1 FPS").arg(results.game_fps, 0, 'f', 0));
+    game_fps_label->setText(tr("游戏: %1 FPS").arg(results.game_fps, 0, 'f', 0));
     emu_frametime_label->setText(tr("帧: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
     emu_speed_label->setVisible(!Settings::values.use_multi_core);

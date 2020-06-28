@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2015 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -52,7 +48,7 @@ private:
 
 MicroProfileDialog::MicroProfileDialog(QWidget* parent) : QWidget(parent, Qt::Dialog) {
     setObjectName(QStringLiteral("MicroProfile"));
-    setWindowTitle(tr("微轮廓"));
+    setWindowTitle(tr("MicroProfile"));
     resize(1000, 600);
     // Remove the "?" button from the titlebar and enable the maximize button
     setWindowFlags((windowFlags() & ~Qt::WindowContextHelpButtonHint) |

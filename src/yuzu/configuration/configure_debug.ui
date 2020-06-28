@@ -27,7 +27,7 @@
           <item>
            <widget class="QCheckBox" name="toggle_gdbstub">
             <property name="text">
-             <string>启用 GDB 存根</string>
+             <string>开启 GDB 调试</string>
             </property>
            </widget>
           </item>
@@ -47,7 +47,7 @@
           <item>
            <widget class="QLabel" name="label_1">
             <property name="text">
-             <string>移植:</string>
+             <string>端口:</string>
             </property>
            </widget>
           </item>
@@ -68,7 +68,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>记录</string>
+      <string>日志</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
@@ -76,7 +76,7 @@
         <item>
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>全球日志过滤器</string>
+           <string>全局日志过滤器</string>
           </property>
          </widget>
         </item>
@@ -90,7 +90,7 @@
         <item>
          <widget class="QCheckBox" name="toggle_console">
           <property name="text">
-           <string>显示日志控制台 (仅Windows)</string>
+           <string>显示日志窗口 (仅限 Windows)</string>
           </property>
          </widget>
         </item>
