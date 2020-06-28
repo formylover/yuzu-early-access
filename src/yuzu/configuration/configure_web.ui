@@ -25,7 +25,7 @@
         <item>
          <widget class="QLabel" name="web_credentials_disclaimer">
           <property name="text">
-           <string>通过提供您的用户名和令牌，你同意让yuzu收集更多的使用数据，其中可能包括用户标识信息.</string>
+           <string>提供您的用户名和令牌意味着您同意让 yuzu 收集额外的使用数据，其中可能包括用户识别信息。</string>
           </property>
          </widget>
         </item>
@@ -43,7 +43,7 @@
              <enum>Qt::RightToLeft</enum>
             </property>
             <property name="text">
-             <string>校验</string>
+             <string>验证</string>
             </property>
            </widget>
           </item>
@@ -88,7 +88,7 @@
           <item row="2" column="1">
            <widget class="QLabel" name="web_token_info_link">
             <property name="text">
-             <string>什么是我的令牌？</string>
+             <string>我的令牌是？</string>
             </property>
            </widget>
           </item>
@@ -113,20 +113,20 @@
      <item>
       <widget class="QGroupBox" name="groupBox">
        <property name="title">
-        <string>遥测</string>
+        <string>使用数据共享</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QCheckBox" name="toggle_telemetry">
           <property name="text">
-           <string>与yuzu团队分享匿名使用数据</string>
+           <string>与yuzu团队共享匿名使用数据</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="telemetry_learn_more">
           <property name="text">
-           <string>学习更多</string>
+           <string>了解更多</string>
           </property>
          </widget>
         </item>
@@ -135,7 +135,7 @@
           <item row="0" column="0">
            <widget class="QLabel" name="label_telemetry_id">
             <property name="text">
-             <string>遥测 ID:</string>
+             <string>数据 ID:</string>
             </property>
            </widget>
           </item>
@@ -151,7 +151,7 @@
              <enum>Qt::RightToLeft</enum>
             </property>
             <property name="text">
-             <string>重置</string>
+             <string>重新生成</string>
             </property>
            </widget>
           </item>
@@ -165,13 +165,13 @@
    <item>
      <widget class="QGroupBox" name="discord_group">
       <property name="title">
-       <string>Discord 存在</string>
+       <string>Discord 状态</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_21">
        <item>
         <widget class="QCheckBox" name="toggle_discordrpc">
          <property name="text">
-          <string>显示当前游戏中你的 Discord 状态</string>
+          <string>在您的 Discord 状态中显示当前游戏</string>
          </property>
         </widget>
        </item>
