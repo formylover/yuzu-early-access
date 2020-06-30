@@ -694,6 +694,11 @@ void GMainWindow::InitializeHotkeys() {
     ui.action_Capture_Screenshot->setShortcutContext(
         hotkey_registry.GetShortcutContext(main_window, capture_screenshot));
 
+    ui.action_Fullscreen->setShortcut(
+        hotkey_registry.GetHotkey(main_window, fullscreen, this)->key());
+    ui.action_Fullscreen->setShortcutContext(
+        hotkey_registry.GetShortcutContext(main_window, fullscreen));
+
     connect(hotkey_registry.GetHotkey(main_window, QStringLiteral("Load File"), this),
             &QShortcut::activated, this, &GMainWindow::OnMenuLoadFile);
     connect(
@@ -884,10 +889,6 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Reset_Window_Size, &QAction::triggered, this, &GMainWindow::ResetWindowSize);
 
     // Fullscreen
-    ui.action_Fullscreen->setShortcut(
-        hotkey_registry
-            .GetHotkey(QStringLiteral("Main Window"), QStringLiteral("Fullscreen"), this)
-            ->key());
     connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
 
     // Movie
@@ -2134,13 +2135,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 682" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 685" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 682 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 685 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
