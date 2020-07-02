@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="gridGroupBox">
        <property name="title">
-        <string>设置文件管理器</string>
+        <string>Profile Manager</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_2">
         <property name="sizeConstraint">
@@ -36,7 +36,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>当前用户</string>
+             <string>Current User</string>
             </property>
            </widget>
           </item>
@@ -74,7 +74,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>用户名</string>
+             <string>Username</string>
             </property>
            </widget>
           </item>
@@ -104,7 +104,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>设置图片</string>
+             <string>Set Image</string>
             </property>
            </widget>
           </item>
@@ -124,7 +124,7 @@
           <item>
            <widget class="QPushButton" name="pm_add">
             <property name="text">
-             <string>添加</string>
+             <string>Add</string>
             </property>
            </widget>
           </item>
@@ -134,7 +134,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>改名</string>
+             <string>Rename</string>
             </property>
            </widget>
           </item>
@@ -144,7 +144,7 @@
              <bool>false</bool>
             </property>
             <property name="text">
-             <string>去掉</string>
+             <string>Remove</string>
             </property>
            </widget>
           </item>
@@ -156,7 +156,7 @@
      <item>
       <widget class="QLabel" name="label_disable_info">
        <property name="text">
-        <string>档案管理只适用于当游戏没有运行.</string>
+        <string>Profile management is available only when game is not running.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

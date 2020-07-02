@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2019 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -92,9 +88,9 @@ LoadingScreen::LoadingScreen(QWidget* parent)
     qRegisterMetaType<VideoCore::LoadCallbackStage>();
 
     stage_translations = {
-        {VideoCore::LoadCallbackStage::Prepare, tr("载入中...")},
-        {VideoCore::LoadCallbackStage::Build, tr("加载着色器 %1 / %2")},
-        {VideoCore::LoadCallbackStage::Complete, tr("起动中...")},
+        {VideoCore::LoadCallbackStage::Prepare, tr("Loading...")},
+        {VideoCore::LoadCallbackStage::Build, tr("Loading Shaders %1 / %2")},
+        {VideoCore::LoadCallbackStage::Complete, tr("Launching...")},
     };
     progressbar_style = {
         {VideoCore::LoadCallbackStage::Prepare, PROGRESSBAR_STYLE_PREPARE},
@@ -175,7 +171,7 @@ void LoadingScreen::OnLoadProgress(VideoCore::LoadCallbackStage stage, std::size
                 static_cast<long>(static_cast<double>(total - slow_shader_first_value) /
                                   (value - slow_shader_first_value) * diff.count());
             estimate =
-                tr("预计的时间 %1")
+                tr("Estimated Time %1")
                     .arg(QTime(0, 0, 0, 0)
                              .addMSecs(std::max<long>(eta_mseconds - diff.count() + 1000, 1000))
                              .toString(QStringLiteral("mm:ss")));

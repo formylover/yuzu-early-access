@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2019 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -118,22 +114,22 @@ void ConfigureFilesystem::SetDirectory(DirectoryTarget target, QLineEdit* edit) 
 
     switch (target) {
     case DirectoryTarget::NAND:
-        caption = tr("选择仿真NAND目录...");
+        caption = tr("Select Emulated NAND Directory...");
         break;
     case DirectoryTarget::SD:
-        caption = tr("选择仿真SD目录...");
+        caption = tr("Select Emulated SD Directory...");
         break;
     case DirectoryTarget::Gamecard:
-        caption = tr("选择游戏卡路径...");
+        caption = tr("Select Gamecard Path...");
         break;
     case DirectoryTarget::Dump:
-        caption = tr("选择转储目录...");
+        caption = tr("Select Dump Directory...");
         break;
     case DirectoryTarget::Load:
-        caption = tr("选择 MOD 装载目录...");
+        caption = tr("Select Mod Load Directory...");
         break;
     case DirectoryTarget::Cache:
-        caption = tr("选择高速缓存目录...");
+        caption = tr("Select Cache Directory...");
         break;
     }
 
@@ -154,17 +150,17 @@ void ConfigureFilesystem::SetDirectory(DirectoryTarget target, QLineEdit* edit) 
 void ConfigureFilesystem::ResetMetadata() {
     if (!FileUtil::Exists(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) + DIR_SEP +
                           "game_list")) {
-        QMessageBox::information(this, tr("重置元数据高速缓存"),
-                                 tr("元数据高速缓存已经空."));
+        QMessageBox::information(this, tr("Reset Metadata Cache"),
+                                 tr("The metadata cache is already empty."));
     } else if (FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) +
                                               DIR_SEP + "game_list")) {
-        QMessageBox::information(this, tr("重置元数据高速缓存"),
-                                 tr("操作已成功完成."));
+        QMessageBox::information(this, tr("Reset Metadata Cache"),
+                                 tr("The operation completed successfully."));
         UISettings::values.is_game_list_reload_pending.exchange(true);
     } else {
         QMessageBox::warning(
-            this, tr("重置元数据高速缓存"),
-            tr("元数据高速缓存无法删除，这可能是在使用或不存在."));
+            this, tr("Reset Metadata Cache"),
+            tr("The metadata cache couldn't be deleted. It might be in use or non-existent."));
     }
 }
 

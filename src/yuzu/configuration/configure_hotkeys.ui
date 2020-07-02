@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>热键设置</string>
+   <string>Hotkey Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>双击已绑定的项目以改变设定。</string>
+        <string>Double-click on a binding to change it.</string>
        </property>
       </widget>
      </item>
@@ -39,14 +39,14 @@
      <item>
       <widget class="QPushButton" name="button_clear_all">
        <property name="text">
-        <string>全部清除</string>
+        <string>Clear All</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="button_restore_defaults">
        <property name="text">
-        <string>恢复默认值</string>
+        <string>Restore Defaults</string>
        </property>
       </widget>
      </item>

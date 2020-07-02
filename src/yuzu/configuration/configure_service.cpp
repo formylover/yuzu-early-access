@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2019 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -82,20 +78,20 @@ std::pair<QString, QString> ConfigureService::BCATDownloadEvents() {
         break;
     case Service::BCAT::Boxcat::StatusResult::Offline:
         return {QString{},
-                tr("boxcat服务处于脱机状态，或者您未连接到互联网.")};
+                tr("The boxcat service is offline or you are not connected to the internet.")};
     case Service::BCAT::Boxcat::StatusResult::ParseError:
         return {QString{},
-                tr("处理boxcat事件数据时出错， 联系 yuzu "
-                   "开发者.")};
+                tr("There was an error while processing the boxcat event data. Contact the yuzu "
+                   "developers.")};
     case Service::BCAT::Boxcat::StatusResult::BadClientVersion:
         return {QString{},
-                tr("您使用的yuzu版本对于服务器而言太新或太旧. "
-                   "尝试更新到yuzu的最新官方版本.")};
+                tr("The version of yuzu you are using is either too new or too old for the server. "
+                   "Try updating to the latest official release of yuzu.")};
     }
 
     if (map.empty()) {
         return {QStringLiteral("Current Boxcat Events"),
-                tr("当前没有关于boxcat的事件.")};
+                tr("There are currently no events on boxcat.")};
     }
 
     QString out;
@@ -110,9 +106,9 @@ std::pair<QString, QString> ConfigureService::BCATDownloadEvents() {
                    .arg(QString::fromStdString(key))
                    .arg(FormatEventStatusString(value));
     }
-    return {tr("当前的Boxcat活动"), std::move(out)};
+    return {tr("Current Boxcat Events"), std::move(out)};
 #else
-    return {tr("当前的Boxcat活动"), tr("当前没有关于boxcat的事件.")};
+    return {tr("Current Boxcat Events"), tr("There are currently no events on boxcat.")};
 #endif
 }
 
@@ -122,7 +118,7 @@ void ConfigureService::OnBCATImplChanged() {
     ui->bcat_empty_header->setHidden(!boxcat);
     ui->bcat_empty_label->setHidden(!boxcat);
     ui->bcat_empty_header->setText(QString{});
-    ui->bcat_empty_label->setText(tr("Yuzu正在检索最新的Boxcat状态..."));
+    ui->bcat_empty_label->setText(tr("Yuzu is retrieving the latest boxcat status..."));
 
     if (!boxcat)
         return;

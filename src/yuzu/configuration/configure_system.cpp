@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -18,6 +14,7 @@
 #include "core/core.h"
 #include "core/settings.h"
 #include "ui_configure_system.h"
+#include "yuzu/configuration/configuration_shared.h"
 #include "yuzu/configuration/configure_system.h"
 
 ConfigureSystem::ConfigureSystem(QWidget* parent) : QWidget(parent), ui(new Ui::ConfigureSystem) {
@@ -25,19 +22,24 @@ ConfigureSystem::ConfigureSystem(QWidget* parent) : QWidget(parent), ui(new Ui::
     connect(ui->button_regenerate_console_id, &QPushButton::clicked, this,
             &ConfigureSystem::RefreshConsoleID);
 
-    connect(ui->rng_seed_checkbox, &QCheckBox::stateChanged, this, [this](bool checked) {
-        ui->rng_seed_edit->setEnabled(checked);
-        if (!checked) {
+    connect(ui->rng_seed_checkbox, &QCheckBox::stateChanged, this, [this](int state) {
+        ui->rng_seed_edit->setEnabled(state == Qt::Checked);
+        if (state != Qt::Checked) {
             ui->rng_seed_edit->setText(QStringLiteral("00000000"));
         }
     });
 
-    connect(ui->custom_rtc_checkbox, &QCheckBox::stateChanged, this, [this](bool checked) {
-        ui->custom_rtc_edit->setEnabled(checked);
-        if (!checked) {
+    connect(ui->custom_rtc_checkbox, &QCheckBox::stateChanged, this, [this](int state) {
+        ui->custom_rtc_edit->setEnabled(state == Qt::Checked);
+        if (state != Qt::Checked) {
             ui->custom_rtc_edit->setDateTime(QDateTime::currentDateTime());
         }
     });
+
+    ui->label_console_id->setVisible(Settings::configuring_global);
+    ui->button_regenerate_console_id->setVisible(Settings::configuring_global);
+
+    SetupPerGameUI();
 
     SetConfiguration();
 }
@@ -58,26 +60,58 @@ void ConfigureSystem::RetranslateUI() {
 
 void ConfigureSystem::SetConfiguration() {
     enabled = !Core::System::GetInstance().IsPoweredOn();
-
-    ui->combo_language->setCurrentIndex(Settings::values.language_index);
-    ui->combo_region->setCurrentIndex(Settings::values.region_index);
-    ui->combo_time_zone->setCurrentIndex(Settings::values.time_zone_index);
-    ui->combo_sound->setCurrentIndex(Settings::values.sound_index);
-
-    ui->rng_seed_checkbox->setChecked(Settings::values.rng_seed.has_value());
-    ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.has_value());
-
-    const auto rng_seed = QStringLiteral("%1")
-                              .arg(Settings::values.rng_seed.value_or(0), 8, 16, QLatin1Char{'0'})
-                              .toUpper();
-    ui->rng_seed_edit->setText(rng_seed);
-
-    ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.has_value());
-    ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.has_value());
-
-    const auto rtc_time = Settings::values.custom_rtc.value_or(
+    const auto rng_seed =
+        QStringLiteral("%1")
+            .arg(Settings::values.rng_seed.GetValue().value_or(0), 8, 16, QLatin1Char{'0'})
+            .toUpper();
+    const auto rtc_time = Settings::values.custom_rtc.GetValue().value_or(
         std::chrono::seconds(QDateTime::currentSecsSinceEpoch()));
-    ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+
+    if (Settings::configuring_global) {
+        ui->combo_language->setCurrentIndex(Settings::values.language_index);
+        ui->combo_region->setCurrentIndex(Settings::values.region_index);
+        ui->combo_time_zone->setCurrentIndex(Settings::values.time_zone_index);
+        ui->combo_sound->setCurrentIndex(Settings::values.sound_index);
+
+        ui->rng_seed_checkbox->setChecked(Settings::values.rng_seed.GetValue().has_value());
+        ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.GetValue().has_value() &&
+                                      Settings::values.rng_seed.UsingGlobal());
+        ui->rng_seed_edit->setText(rng_seed);
+
+        ui->custom_rtc_checkbox->setChecked(Settings::values.custom_rtc.GetValue().has_value());
+        ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.GetValue().has_value() &&
+                                        Settings::values.rng_seed.UsingGlobal());
+        ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+    } else {
+        ConfigurationShared::SetPerGameSetting(ui->combo_language,
+                                               &Settings::values.language_index);
+        ConfigurationShared::SetPerGameSetting(ui->combo_region, &Settings::values.region_index);
+        ConfigurationShared::SetPerGameSetting(ui->combo_time_zone,
+                                               &Settings::values.time_zone_index);
+        ConfigurationShared::SetPerGameSetting(ui->combo_sound, &Settings::values.sound_index);
+
+        if (Settings::values.rng_seed.UsingGlobal()) {
+            ui->rng_seed_checkbox->setCheckState(Qt::PartiallyChecked);
+        } else {
+            ui->rng_seed_checkbox->setCheckState(
+                Settings::values.rng_seed.GetValue().has_value() ? Qt::Checked : Qt::Unchecked);
+            ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.GetValue().has_value());
+            if (Settings::values.rng_seed.GetValue().has_value()) {
+                ui->rng_seed_edit->setText(rng_seed);
+            }
+        }
+
+        if (Settings::values.custom_rtc.UsingGlobal()) {
+            ui->custom_rtc_checkbox->setCheckState(Qt::PartiallyChecked);
+        } else {
+            ui->custom_rtc_checkbox->setCheckState(
+                Settings::values.custom_rtc.GetValue().has_value() ? Qt::Checked : Qt::Unchecked);
+            ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.GetValue().has_value());
+            if (Settings::values.custom_rtc.GetValue().has_value()) {
+                ui->custom_rtc_edit->setDateTime(QDateTime::fromSecsSinceEpoch(rtc_time.count()));
+            }
+        }
+    }
 }
 
 void ConfigureSystem::ReadSystemSettings() {}
@@ -87,22 +121,77 @@ void ConfigureSystem::ApplyConfiguration() {
         return;
     }
 
-    Settings::values.language_index = ui->combo_language->currentIndex();
-    Settings::values.region_index = ui->combo_region->currentIndex();
-    Settings::values.time_zone_index = ui->combo_time_zone->currentIndex();
-    Settings::values.sound_index = ui->combo_sound->currentIndex();
+    if (Settings::configuring_global) {
+        // Guard if during game and set to game-specific value
+        if (Settings::values.language_index.UsingGlobal()) {
+            Settings::values.language_index = ui->combo_language->currentIndex();
+        }
+        if (Settings::values.region_index.UsingGlobal()) {
+            Settings::values.region_index = ui->combo_region->currentIndex();
+        }
+        if (Settings::values.time_zone_index.UsingGlobal()) {
+            Settings::values.time_zone_index = ui->combo_time_zone->currentIndex();
+        }
+        if (Settings::values.sound_index.UsingGlobal()) {
+            Settings::values.sound_index = ui->combo_sound->currentIndex();
+        }
 
-    if (ui->rng_seed_checkbox->isChecked()) {
-        Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
-    } else {
-        Settings::values.rng_seed = std::nullopt;
-    }
+        if (Settings::values.rng_seed.UsingGlobal()) {
+            if (ui->rng_seed_checkbox->isChecked()) {
+                Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
+            } else {
+                Settings::values.rng_seed = std::nullopt;
+            }
+        }
 
-    if (ui->custom_rtc_checkbox->isChecked()) {
-        Settings::values.custom_rtc =
-            std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
+        if (Settings::values.custom_rtc.UsingGlobal()) {
+            if (ui->custom_rtc_checkbox->isChecked()) {
+                Settings::values.custom_rtc =
+                    std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
+            } else {
+                Settings::values.custom_rtc = std::nullopt;
+            }
+        }
     } else {
-        Settings::values.custom_rtc = std::nullopt;
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.language_index,
+                                                 ui->combo_language);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.region_index, ui->combo_region);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.time_zone_index,
+                                                 ui->combo_time_zone);
+        ConfigurationShared::ApplyPerGameSetting(&Settings::values.sound_index, ui->combo_sound);
+
+        switch (ui->rng_seed_checkbox->checkState()) {
+        case Qt::Checked:
+            Settings::values.rng_seed.SetGlobal(false);
+            Settings::values.rng_seed = ui->rng_seed_edit->text().toULongLong(nullptr, 16);
+            break;
+        case Qt::Unchecked:
+            Settings::values.rng_seed.SetGlobal(false);
+            Settings::values.rng_seed = std::nullopt;
+            break;
+        case Qt::PartiallyChecked:
+            Settings::values.rng_seed.SetGlobal(false);
+            Settings::values.rng_seed = std::nullopt;
+            Settings::values.rng_seed.SetGlobal(true);
+            break;
+        }
+
+        switch (ui->custom_rtc_checkbox->checkState()) {
+        case Qt::Checked:
+            Settings::values.custom_rtc.SetGlobal(false);
+            Settings::values.custom_rtc =
+                std::chrono::seconds(ui->custom_rtc_edit->dateTime().toSecsSinceEpoch());
+            break;
+        case Qt::Unchecked:
+            Settings::values.custom_rtc.SetGlobal(false);
+            Settings::values.custom_rtc = std::nullopt;
+            break;
+        case Qt::PartiallyChecked:
+            Settings::values.custom_rtc.SetGlobal(false);
+            Settings::values.custom_rtc = std::nullopt;
+            Settings::values.custom_rtc.SetGlobal(true);
+            break;
+        }
     }
 
     Settings::Apply();
@@ -110,10 +199,10 @@ void ConfigureSystem::ApplyConfiguration() {
 
 void ConfigureSystem::RefreshConsoleID() {
     QMessageBox::StandardButton reply;
-    QString warning_text = tr("这将有一个新的您当前的虚拟交换机将. "
-                              "无法恢复，这可能在游戏意想不到的. "
-                              "效果替换当前的虚拟交换机。如果您使用, "
-                              "的是过时的设置秘技这可能会失败，继续?");
+    QString warning_text = tr("This will replace your current virtual Switch with a new one. "
+                              "Your current virtual Switch will not be recoverable. "
+                              "This might have unexpected effects in games. This might fail, "
+                              "if you use an outdated config savegame. Continue?");
     reply = QMessageBox::critical(this, tr("Warning"), warning_text,
                                   QMessageBox::No | QMessageBox::Yes);
     if (reply == QMessageBox::No) {
@@ -123,4 +212,26 @@ void ConfigureSystem::RefreshConsoleID() {
     u64 console_id{};
     ui->label_console_id->setText(
         tr("Console ID: 0x%1").arg(QString::number(console_id, 16).toUpper()));
+}
+
+void ConfigureSystem::SetupPerGameUI() {
+    if (Settings::configuring_global) {
+        ui->combo_language->setEnabled(Settings::values.language_index.UsingGlobal());
+        ui->combo_region->setEnabled(Settings::values.region_index.UsingGlobal());
+        ui->combo_time_zone->setEnabled(Settings::values.time_zone_index.UsingGlobal());
+        ui->combo_sound->setEnabled(Settings::values.sound_index.UsingGlobal());
+        ui->rng_seed_checkbox->setEnabled(Settings::values.rng_seed.UsingGlobal());
+        ui->rng_seed_edit->setEnabled(Settings::values.rng_seed.UsingGlobal());
+        ui->custom_rtc_checkbox->setEnabled(Settings::values.custom_rtc.UsingGlobal());
+        ui->custom_rtc_edit->setEnabled(Settings::values.custom_rtc.UsingGlobal());
+
+        return;
+    }
+
+    ConfigurationShared::InsertGlobalItem(ui->combo_language);
+    ConfigurationShared::InsertGlobalItem(ui->combo_region);
+    ConfigurationShared::InsertGlobalItem(ui->combo_time_zone);
+    ConfigurationShared::InsertGlobalItem(ui->combo_sound);
+    ui->rng_seed_checkbox->setTristate(true);
+    ui->custom_rtc_checkbox->setTristate(true);
 }

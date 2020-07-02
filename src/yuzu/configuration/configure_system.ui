@@ -19,111 +19,111 @@
      <item>
       <widget class="QGroupBox" name="group_system_settings">
        <property name="title">
-        <string>系统设置</string>
+        <string>System Settings</string>
        </property>
        <layout class="QGridLayout" name="gridLayout">
         <item row="3" column="0">
          <widget class="QLabel" name="label_sound">
           <property name="text">
-           <string>声音输出模式</string>
+           <string>Sound output mode</string>
           </property>
          </widget>
         </item>
         <item row="4" column="0">
          <widget class="QLabel" name="label_console_id">
           <property name="text">
-           <string>设备 ID:</string>
+           <string>Console ID:</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
          <widget class="QComboBox" name="combo_language">
           <property name="toolTip">
-           <string>注：这可以被覆盖时区的设置为自动选择</string>
+           <string>Note: this can be overridden when region setting is auto-select</string>
           </property>
           <item>
            <property name="text">
-            <string>日语 (日本語)</string>
+            <string>Japanese (日本語)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>英语</string>
+            <string>English</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>法语 (français)</string>
+            <string>French (français)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>德语 (Deutsch)</string>
+            <string>German (Deutsch)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>意大利语 (italiano)</string>
+            <string>Italian (italiano)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>西班牙语 (español)</string>
+            <string>Spanish (español)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>中文</string>
+            <string>Chinese</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>韩语 (한국어)</string>
+            <string>Korean (한국어)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>荷兰语 (Nederlands)</string>
+            <string>Dutch (Nederlands)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>葡萄牙语 (português)</string>
+            <string>Portuguese (português)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>俄语 (Русский)</string>
+            <string>Russian (Русский)</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>台湾繁体</string>
+            <string>Taiwanese</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>英式英语</string>
+            <string>British English</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>加拿大法语</string>
+            <string>Canadian French</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>拉丁美洲西班牙语</string>
+            <string>Latin American Spanish</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>简体中文</string>
+            <string>Simplified Chinese</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>繁体中文 (正體中文)</string>
+            <string>Traditional Chinese (正體中文)</string>
            </property>
           </item>
          </widget>
@@ -131,7 +131,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="label_region">
           <property name="text">
-           <string>国家区域:</string>
+           <string>Region:</string>
           </property>
          </widget>
         </item>
@@ -139,37 +139,37 @@
          <widget class="QComboBox" name="combo_region">
           <item>
            <property name="text">
-            <string>日本</string>
+            <string>Japan</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>美国</string>
+            <string>USA</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>欧洲</string>
+            <string>Europe</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>澳大利亚</string>
+            <string>Australia</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>中国</string>
+            <string>China</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>韩国</string>
+            <string>Korea</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>台湾地区</string>
+            <string>Taiwan</string>
            </property>
           </item>
          </widget>
@@ -177,7 +177,7 @@
         <item row="2" column="0">
          <widget class="QLabel" name="label_timezone">
           <property name="text">
-           <string>时钟:</string>
+           <string>Time Zone:</string>
           </property>
          </widget>
         </item>
@@ -185,12 +185,12 @@
          <widget class="QComboBox" name="combo_time_zone">
           <item>
            <property name="text">
-            <string>自动</string>
+            <string>Auto</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>默认</string>
+            <string>Default</string>
            </property>
           </item>
           <item>
@@ -418,7 +418,7 @@
         <item row="6" column="0">
          <widget class="QCheckBox" name="rng_seed_checkbox">
           <property name="text">
-           <string>控制随机数生成</string>
+           <string>RNG Seed</string>
           </property>
          </widget>
         </item>
@@ -426,17 +426,17 @@
          <widget class="QComboBox" name="combo_sound">
           <item>
            <property name="text">
-            <string>单声道</string>
+            <string>Mono</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>立体声</string>
+            <string>Stereo</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>环绕</string>
+            <string>Surround</string>
            </property>
           </item>
          </widget>
@@ -444,7 +444,7 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label_language">
           <property name="text">
-           <string>语言</string>
+           <string>Language</string>
           </property>
          </widget>
         </item>
@@ -460,14 +460,14 @@
            <enum>Qt::RightToLeft</enum>
           </property>
           <property name="text">
-           <string>重置 ID</string>
+           <string>Regenerate</string>
           </property>
          </widget>
         </item>
         <item row="5" column="0">
          <widget class="QCheckBox" name="custom_rtc_checkbox">
           <property name="text">
-           <string>自定义时钟</string>
+           <string>Custom RTC</string>
           </property>
          </widget>
         </item>
@@ -525,7 +525,7 @@
      <item>
       <widget class="QLabel" name="label_disable_info">
        <property name="text">
-        <string>系统设置只有当游戏没有运行.</string>
+        <string>System settings are available only when game is not running.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>
