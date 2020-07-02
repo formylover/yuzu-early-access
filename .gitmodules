@@ -34,6 +34,3 @@
 [submodule "externals/libressl"]
 	path = externals/libressl
 	url = https://github.com/citra-emu/ext-libressl-portable.git
-[submodule "externals/libusb"]
-	path = externals/libusb
-	url = https://github.com/kiku233/libusb.git
