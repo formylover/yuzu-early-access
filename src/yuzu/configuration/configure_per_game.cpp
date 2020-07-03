@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -35,7 +39,7 @@ ConfigurePerGame::ConfigurePerGame(QWidget* parent, u64 title_id)
 
     ui->setupUi(this);
     setFocusPolicy(Qt::ClickFocus);
-    setWindowTitle(tr("Properties"));
+    setWindowTitle(tr("属性"));
 
     ui->addonsTab->SetTitleId(title_id);
 

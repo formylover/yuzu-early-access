@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>对话框</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
@@ -25,7 +25,7 @@
         </sizepolicy>
        </property>
        <property name="title">
-        <string>Info</string>
+        <string>信息</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item alignment="Qt::AlignHCenter">
@@ -84,14 +84,14 @@
           <item row="1" column="0">
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>Name</string>
+             <string>游戏名称</string>
             </property>
            </widget>
           </item>
           <item row="4" column="0">
            <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>Title ID</string>
+             <string>游戏 ID</string>
             </property>
            </widget>
           </item>
@@ -128,7 +128,7 @@
           <item row="7" column="0">
            <widget class="QLabel" name="label_7">
             <property name="text">
-             <string>Filename</string>
+             <string>文件名称</string>
             </property>
            </widget>
           </item>
@@ -155,28 +155,28 @@
           <item row="5" column="0">
            <widget class="QLabel" name="label_5">
             <property name="text">
-             <string>Format</string>
+             <string>格式</string>
             </property>
            </widget>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>Version</string>
+             <string>版本</string>
             </property>
            </widget>
           </item>
           <item row="6" column="0">
            <widget class="QLabel" name="label_6">
             <property name="text">
-             <string>Size</string>
+             <string>大小</string>
             </property>
            </widget>
           </item>
           <item row="2" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Developer</string>
+             <string>开发人员</string>
             </property>
            </widget>
           </item>
@@ -222,32 +222,32 @@
          </property>
          <widget class="ConfigurePerGameAddons" name="addonsTab">
           <attribute name="title">
-           <string>Add-Ons</string>
+           <string>扩展</string>
           </attribute>
          </widget>
          <widget class="ConfigureGeneral" name="generalTab">
           <attribute name="title">
-           <string>General</string>
+           <string>通用</string>
           </attribute>
          </widget>
          <widget class="ConfigureSystem" name="systemTab">
           <attribute name="title">
-           <string>System</string>
+           <string>系统</string>
           </attribute>
          </widget>
          <widget class="ConfigureGraphics" name="graphicsTab">
           <attribute name="title">
-           <string>Graphics</string>
+           <string>图形</string>
           </attribute>
          </widget>
          <widget class="ConfigureGraphicsAdvanced" name="graphicsAdvancedTab">
           <attribute name="title">
-           <string>Adv. Graphics</string>
+           <string>高级图形</string>
           </attribute>
          </widget>
          <widget class="ConfigureAudio" name="audioTab">
           <attribute name="title">
-           <string>Audio</string>
+           <string>声音</string>
           </attribute>
          </widget>
         </widget>
