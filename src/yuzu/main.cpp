@@ -1642,14 +1642,13 @@ void GMainWindow::OnMenuInstallToNAND() {
     for (const QString& file : files) {
         install_progress.setWindowTitle(tr("%n 文件(s) 剩余的", "", total_count - count));
         install_progress.setLabelText(
-            tr("正在安装文件 \"%1\"...").arg(QFileInfo(file).fileName()));
+            tr("正在安装 文件 \"%1\"...").arg(QFileInfo(file).fileName()));
 
         QFuture<InstallResult> future;
         InstallResult result;
 
         if (file.endsWith(QStringLiteral("xci"), Qt::CaseInsensitive) ||
             file.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
-
             future = QtConcurrent::run([this, &file, &overwrite_files, &install_progress] {
                 return InstallNSPXCI(file, overwrite_files, install_progress);
             });
@@ -1659,12 +1658,9 @@ void GMainWindow::OnMenuInstallToNAND() {
             }
 
             result = future.result();
-
         } else {
             result = InstallNCA(file, overwrite_files, install_progress);
         }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         switch (result) {
         case InstallResult::Success:
@@ -1682,6 +1678,7 @@ void GMainWindow::OnMenuInstallToNAND() {
         }
 
         install_progress.setValue(++count);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     install_progress.close();
@@ -2181,13 +2178,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 703" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 704" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 703 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 704 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
