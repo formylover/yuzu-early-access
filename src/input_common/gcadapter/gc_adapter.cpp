@@ -9,6 +9,14 @@
 
 namespace GCAdapter {
 
+/// Used to loop through and assign button in poller
+constexpr std::array<PadButton, 12> PadButtonArray{
+    PadButton::PAD_BUTTON_LEFT, PadButton::PAD_BUTTON_RIGHT, PadButton::PAD_BUTTON_DOWN,
+    PadButton::PAD_BUTTON_UP,   PadButton::PAD_TRIGGER_Z,    PadButton::PAD_TRIGGER_R,
+    PadButton::PAD_TRIGGER_L,   PadButton::PAD_BUTTON_A,     PadButton::PAD_BUTTON_B,
+    PadButton::PAD_BUTTON_X,    PadButton::PAD_BUTTON_Y,     PadButton::PAD_BUTTON_START,
+};
+
 Adapter::Adapter() {
     if (usb_adapter_handle != nullptr) {
         return;
@@ -32,27 +40,31 @@ GCPadStatus Adapter::GetPadStatus(int port, const std::array<u8, 37>& adapter_pa
 
     adapter_controllers_status[port] = type;
 
-    constexpr std::array<PadButton, 8> b1_buttons{
+    static constexpr std::array<PadButton, 8> b1_buttons{
         PadButton::PAD_BUTTON_A,    PadButton::PAD_BUTTON_B,    PadButton::PAD_BUTTON_X,
         PadButton::PAD_BUTTON_Y,    PadButton::PAD_BUTTON_LEFT, PadButton::PAD_BUTTON_RIGHT,
-        PadButton::PAD_BUTTON_DOWN, PadButton::PAD_BUTTON_UP};
+        PadButton::PAD_BUTTON_DOWN, PadButton::PAD_BUTTON_UP,
+    };
 
-    constexpr std::array<PadButton, 4> b2_buttons{
-        PadButton::PAD_BUTTON_START, PadButton::PAD_TRIGGER_Z, PadButton::PAD_TRIGGER_R,
-        PadButton::PAD_TRIGGER_L};
+    static constexpr std::array<PadButton, 4> b2_buttons{
+        PadButton::PAD_BUTTON_START,
+        PadButton::PAD_TRIGGER_Z,
+        PadButton::PAD_TRIGGER_R,
+        PadButton::PAD_TRIGGER_L,
+    };
 
     if (adapter_controllers_status[port] != ControllerTypes::None) {
         const u8 b1 = adapter_payload[1 + (9 * port) + 1];
         const u8 b2 = adapter_payload[1 + (9 * port) + 2];
 
-        for (int i = 0; i < b1_buttons.size(); i++) {
-            if (b1 & (1 << i)) {
+        for (std::size_t i = 0; i < b1_buttons.size(); ++i) {
+            if ((b1 & (1U << i)) != 0) {
                 pad.button |= static_cast<u16>(b1_buttons[i]);
             }
         }
 
-        for (int j = 0; j < b2_buttons.size(); j++) {
-            if (b2 & (1 << j)) {
+        for (std::size_t j = 0; j < b2_buttons.size(); ++j) {
+            if ((b2 & (1U << j)) != 0) {
                 pad.button |= static_cast<u16>(b2_buttons[j]);
             }
         }
@@ -73,7 +85,7 @@ GCPadStatus Adapter::GetPadStatus(int port, const std::array<u8, 37>& adapter_pa
 
 void Adapter::PadToState(const GCPadStatus& pad, GCState& state) {
     for (const auto& button : PadButtonArray) {
-        u16 button_value = static_cast<u16>(button);
+        const u16 button_value = static_cast<u16>(button);
         state.buttons.insert_or_assign(button_value, pad.button & button_value);
     }
 
@@ -86,7 +98,7 @@ void Adapter::PadToState(const GCPadStatus& pad, GCState& state) {
 }
 
 void Adapter::Read() {
-    LOG_INFO(Input, "GC Adapter Read() thread started");
+    LOG_DEBUG(Input, "GC Adapter Read() thread started");
 
     int payload_size_in, payload_size_copy;
     std::array<u8, 37> adapter_payload;
@@ -97,6 +109,7 @@ void Adapter::Read() {
         libusb_interrupt_transfer(usb_adapter_handle, input_endpoint, adapter_payload.data(),
                                   sizeof(adapter_payload), &payload_size_in, 16);
         payload_size_copy = 0;
+        // this mutex might be redundant?
         {
             std::lock_guard<std::mutex> lk(s_mutex);
             std::copy(std::begin(adapter_payload), std::end(adapter_payload),
@@ -106,15 +119,13 @@ void Adapter::Read() {
 
         if (payload_size_copy != sizeof(adapter_payload_copy) ||
             adapter_payload_copy[0] != LIBUSB_DT_HID) {
-            LOG_ERROR(Input, "error reading payload (size: %d, type: %02x)", payload_size_copy,
+            LOG_ERROR(Input, "error reading payload (size: {}, type: {:02x})", payload_size_copy,
                       adapter_payload_copy[0]);
             adapter_thread_running = false; // error reading from adapter, stop reading.
-        } else {
-            for (int port = 0; port < pads.size(); port++) {
-                pads[port] = GetPadStatus(port, adapter_payload_copy);
-            }
+            break;
         }
-        for (int port = 0; port < pads.size(); port++) {
+        for (std::size_t port = 0; port < pads.size(); ++port) {
+            pads[port] = GetPadStatus(port, adapter_payload_copy);
             if (DeviceConnected(port) && configuring) {
                 if (pads[port].button != PAD_GET_ORIGIN) {
                     pad_queue[port].Push(pads[port]);
@@ -143,6 +154,16 @@ void Adapter::Read() {
                     pads[port].substick_y < pads[port].C_STICK_CENTER_Y - pads[port].THRESHOLD) {
                     pads[port].axis = GCAdapter::PadAxes::SubstickY;
                     pads[port].axis_value = pads[port].substick_y;
+                    pad_queue[port].Push(pads[port]);
+                }
+                if (pads[port].trigger_left > pads[port].TRIGGER_THRESHOLD) {
+                    pads[port].axis = GCAdapter::PadAxes::TriggerLeft;
+                    pads[port].axis_value = pads[port].trigger_left;
+                    pad_queue[port].Push(pads[port]);
+                }
+                if (pads[port].trigger_right > pads[port].TRIGGER_THRESHOLD) {
+                    pads[port].axis = GCAdapter::PadAxes::TriggerRight;
+                    pads[port].axis_value = pads[port].trigger_right;
                     pad_queue[port].Push(pads[port]);
                 }
             }
@@ -189,14 +210,16 @@ void Adapter::Setup() {
 
     adapter_controllers_status.fill(ControllerTypes::None);
 
-    libusb_device** devs; // pointer to list of connected usb devices
+    // pointer to list of connected usb devices
+    libusb_device** devices;
 
-    const int cnt = libusb_get_device_list(libusb_ctx, &devs); // get the list of devices
+    // populate the list of devices, get the count
+    const std::size_t device_count = libusb_get_device_list(libusb_ctx, &devices);
 
-    for (int i = 0; i < cnt; i++) {
-        if (CheckDeviceAccess(devs[i])) {
+    for (std::size_t index = 0; index < device_count; ++index) {
+        if (CheckDeviceAccess(devices[index])) {
             // GC Adapter found and accessible, registering it
-            GetGCEndpoint(devs[i]);
+            GetGCEndpoint(devices[index]);
             break;
         }
     }
@@ -207,7 +230,7 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
     const int get_descriptor_error = libusb_get_device_descriptor(device, &desc);
     if (get_descriptor_error) {
         // could not acquire the descriptor, no point in trying to use it.
-        LOG_ERROR(Input, "libusb_get_device_descriptor failed with error: %d",
+        LOG_ERROR(Input, "libusb_get_device_descriptor failed with error: {}",
                   get_descriptor_error);
         return false;
     }
@@ -219,12 +242,12 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
     const int open_error = libusb_open(device, &usb_adapter_handle);
 
     if (open_error == LIBUSB_ERROR_ACCESS) {
-        LOG_ERROR(Input, "Yuzu can not gain access to this device: ID %04X:%04X.", desc.idVendor,
-                  desc.idProduct);
+        LOG_ERROR(Input, "Yuzu can not gain access to this device: ID {:04X}:{:04X}.",
+                  desc.idVendor, desc.idProduct);
         return false;
     }
     if (open_error) {
-        LOG_ERROR(Input, "libusb_open failed to open device with error = %d", open_error);
+        LOG_ERROR(Input, "libusb_open failed to open device with error = {}", open_error);
         return false;
     }
 
@@ -232,7 +255,7 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
     if (kernel_driver_error == 1) {
         kernel_driver_error = libusb_detach_kernel_driver(usb_adapter_handle, 0);
         if (kernel_driver_error != 0 && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
-            LOG_ERROR(Input, "libusb_detach_kernel_driver failed with error = %d",
+            LOG_ERROR(Input, "libusb_detach_kernel_driver failed with error = {}",
                       kernel_driver_error);
         }
     }
@@ -245,7 +268,7 @@ bool Adapter::CheckDeviceAccess(libusb_device* device) {
 
     const int interface_claim_error = libusb_claim_interface(usb_adapter_handle, 0);
     if (interface_claim_error) {
-        LOG_ERROR(Input, "libusb_claim_interface failed with error = %d", interface_claim_error);
+        LOG_ERROR(Input, "libusb_claim_interface failed with error = {}", interface_claim_error);
         libusb_close(usb_adapter_handle);
         usb_adapter_handle = nullptr;
         return false;
@@ -265,10 +288,17 @@ void Adapter::GetGCEndpoint(libusb_device* device) {
                 const libusb_endpoint_descriptor* endpoint = &interface->endpoint[e];
                 if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
                     input_endpoint = endpoint->bEndpointAddress;
+                } else {
+                    output_endpoint = endpoint->bEndpointAddress;
                 }
             }
         }
     }
+    // This transfer seems to be responsible for clearing the state of the adapter
+    // Used to clear the "busy" state of when the device is unexpectedly unplugged
+    unsigned char clear_payload = 0x13;
+    libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, &clear_payload,
+                              sizeof(clear_payload), nullptr, 16);
 
     adapter_thread_running = true;
     current_status = ADAPTER_DETECTED;

@@ -36,12 +36,7 @@ enum class PadButton {
     PAD_STICK = 0x2000,
 };
 
-/// Used to loop through the and assign button in poller
-static constexpr std::array<PadButton, 12> PadButtonArray{
-    PadButton::PAD_BUTTON_LEFT, PadButton::PAD_BUTTON_RIGHT, PadButton::PAD_BUTTON_DOWN,
-    PadButton::PAD_BUTTON_UP,   PadButton::PAD_TRIGGER_Z,    PadButton::PAD_TRIGGER_R,
-    PadButton::PAD_TRIGGER_L,   PadButton::PAD_BUTTON_A,     PadButton::PAD_BUTTON_B,
-    PadButton::PAD_BUTTON_X,    PadButton::PAD_BUTTON_Y,     PadButton::PAD_BUTTON_START};
+extern const std::array<PadButton, 12> PadButtonArray;
 
 enum class PadAxes : u8 {
     StickX,
@@ -68,8 +63,10 @@ struct GCPadStatus {
     static constexpr u8 C_STICK_CENTER_X = 0x80;
     static constexpr u8 C_STICK_CENTER_Y = 0x80;
     static constexpr u8 C_STICK_RADIUS = 0x7f;
-    static constexpr u8 TRIGGER_CENTER = 20;
     static constexpr u8 THRESHOLD = 10;
+
+    // 256/4, at least a quarter press to count as a press. For polling mostly
+    static constexpr u8 TRIGGER_THRESHOLD = 64;
 
     u8 port{};
     PadAxes axis{PadAxes::Undefined};
@@ -152,6 +149,7 @@ private:
     libusb_context* libusb_ctx;
 
     u8 input_endpoint = 0;
+    u8 output_endpoint = 0;
 
     bool configuring = false;
 

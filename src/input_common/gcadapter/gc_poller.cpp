@@ -14,7 +14,7 @@ namespace InputCommon {
 
 class GCButton final : public Input::ButtonDevice {
 public:
-    explicit GCButton(int port_, int button_, int axis_, GCAdapter::Adapter* adapter)
+    explicit GCButton(int port_, int button_, GCAdapter::Adapter* adapter)
         : port(port_), button(button_), gcadapter(adapter) {}
 
     ~GCButton() override;
@@ -34,14 +34,22 @@ public:
     explicit GCAxisButton(int port_, int axis_, float threshold_, bool trigger_if_greater_,
                           GCAdapter::Adapter* adapter)
         : port(port_), axis(axis_), threshold(threshold_), trigger_if_greater(trigger_if_greater_),
-          gcadapter(adapter) {}
+          gcadapter(adapter) {
+        // L/R triggers range is only in positive direction beginning near 0
+        // 0.0 threshold equates to near half trigger press, but threshold accounts for variability.
+        if (axis > 3) {
+            threshold *= -0.5;
+        }
+    }
 
     bool GetStatus() const override {
         const float axis_value = (gcadapter->GetPadState()[port].axes.at(axis) - 128.0f) / 128.0f;
         if (trigger_if_greater) {
-            return axis_value > 0.10f; // TODO(ameerj) : Fix threshold.
+            // TODO: Might be worthwile to set a slider for the trigger threshold. It is currently
+            // always set to 0.5 in configure_input_player.cpp ZL/ZR HandleClick
+            return axis_value > threshold;
         }
-        return axis_value < -0.10f;
+        return axis_value < -threshold;
     }
 
 private:
@@ -60,10 +68,19 @@ GCButton::~GCButton() = default;
 std::unique_ptr<Input::ButtonDevice> GCButtonFactory::Create(const Common::ParamPackage& params) {
     const int button_id = params.Get("button", 0);
     const int port = params.Get("port", 0);
+
+    constexpr int PAD_STICK_ID = static_cast<u16>(GCAdapter::PadButton::PAD_STICK);
+
+    // button is not an axis/stick button
+    if (button_id != PAD_STICK_ID) {
+        auto button = std::make_unique<GCButton>(port, button_id, adapter.get());
+        return std::move(button);
+    }
+
     // For Axis buttons, used by the binary sticks.
-    if (params.Has("axis")) {
+    if (button_id == PAD_STICK_ID) {
         const int axis = params.Get("axis", 0);
-        const float threshold = params.Get("threshold", 0.5f);
+        const float threshold = params.Get("threshold", 0.25f);
         const std::string direction_name = params.Get("direction", "");
         bool trigger_if_greater;
         if (direction_name == "+") {
@@ -77,26 +94,19 @@ std::unique_ptr<Input::ButtonDevice> GCButtonFactory::Create(const Common::Param
         return std::make_unique<GCAxisButton>(port, axis, threshold, trigger_if_greater,
                                               adapter.get());
     }
-
-    std::unique_ptr<GCButton> button =
-        std::make_unique<GCButton>(port, button_id, params.Get("axis", 0), adapter.get());
-    return std::move(button);
 }
 
 Common::ParamPackage GCButtonFactory::GetNextInput() {
     Common::ParamPackage params;
     GCAdapter::GCPadStatus pad;
     auto& queue = adapter->GetPadQueue();
-    for (int port = 0; port < queue.size(); port++) {
+    for (std::size_t port = 0; port < queue.size(); ++port) {
         while (queue[port].Pop(pad)) {
             // This while loop will break on the earliest detected button
             params.Set("engine", "gcpad");
-            params.Set("port", port);
-            // I was debating whether to keep these verbose for ease of reading
-            // or to use a while loop shifting the bits to test and set the value.
-
-            for (auto button : GCAdapter::PadButtonArray) {
-                u16 button_value = static_cast<u16>(button);
+            params.Set("port", static_cast<int>(port));
+            for (const auto& button : GCAdapter::PadButtonArray) {
+                const u16 button_value = static_cast<u16>(button);
                 if (pad.button & button_value) {
                     params.Set("button", button_value);
                     break;
@@ -109,10 +119,10 @@ Common::ParamPackage GCButtonFactory::GetNextInput() {
                 params.Set("button", static_cast<u16>(GCAdapter::PadButton::PAD_STICK));
                 if (pad.axis_value > 128) {
                     params.Set("direction", "+");
-                    params.Set("threshold", "0.5");
+                    params.Set("threshold", "0.25");
                 } else {
                     params.Set("direction", "-");
-                    params.Set("threshold", "-0.5");
+                    params.Set("threshold", "-0.25");
                 }
                 break;
             }
@@ -228,14 +238,14 @@ void GCAnalogFactory::EndConfiguration() {
 Common::ParamPackage GCAnalogFactory::GetNextInput() {
     GCAdapter::GCPadStatus pad;
     auto& queue = adapter->GetPadQueue();
-    for (int port = 0; port < queue.size(); port++) {
+    for (std::size_t port = 0; port < queue.size(); ++port) {
         while (queue[port].Pop(pad)) {
             if (pad.axis == GCAdapter::PadAxes::Undefined ||
                 std::abs((pad.axis_value - 128.0f) / 128.0f) < 0.1) {
                 continue;
             }
             // An analog device needs two axes, so we need to store the axis for later and wait for
-            // a second SDL event. The axes also must be from the same joystick.
+            // a second input event. The axes also must be from the same joystick.
             const u8 axis = static_cast<u8>(pad.axis);
             if (analog_x_axis == -1) {
                 analog_x_axis = axis;
