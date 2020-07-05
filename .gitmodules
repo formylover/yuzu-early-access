@@ -37,3 +37,6 @@
 [submodule "externals/opus/opus"]
 	path = externals/opus/opus
 	url = https://github.com/kiku233/opus.git
+[submodule "externals/libusb"]
+	path = externals/libusb
+	url = https://github.com/kiku233/libusb.git
