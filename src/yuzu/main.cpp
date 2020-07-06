@@ -500,8 +500,8 @@ void GMainWindow::InitializeWidgets() {
 
     emu_speed_label = new QLabel();
     emu_speed_label->setToolTip(
-        tr("目前仿真速度。值高或低于 100% "
-           "表明仿真的运行速度低于交换机更快或更慢."));
+        tr("目前模拟速度。值高或低于 100% "
+           "表明模拟的运行速度低于交换机更快或更慢."));
     game_fps_label = new QLabel();
     game_fps_label->setToolTip(tr("多少帧每秒游戏目前显示. "
                                   "这将改变从游戏到游戏和现场场景."));
@@ -848,6 +848,9 @@ void GMainWindow::ConnectWidgetEvents() {
 
     connect(game_list, &GameList::OpenPerGameGeneralRequested, this,
             &GMainWindow::OnGameListOpenPerGameProperties);
+
+    connect(this, &GMainWindow::UpdateInstallProgress, this,
+            &GMainWindow::IncrementInstallProgress);
 
     connect(this, &GMainWindow::EmulationStarting, render_window,
             &GRenderWindow::OnEmulationStarting);
@@ -1304,8 +1307,8 @@ void GMainWindow::OnGameListOpenFolder(GameListOpenTarget target, const std::str
     const QString qpath = QString::fromStdString(path);
     const QDir dir(qpath);
     if (!dir.exists()) {
-        QMessageBox::warning(this, tr("错误打开 %1 文件夹").arg(open_target),
-                             tr("文件夹不存在!"));
+        QMessageBox::warning(this, tr("Error Opening %1 Folder").arg(open_target),
+                             tr("Folder does not exist!"));
         return;
     }
     LOG_INFO(Frontend, "Opening {} path for program_id={:016x}", open_target.toStdString(),
@@ -1601,6 +1604,10 @@ void GMainWindow::OnMenuLoadFolder() {
     }
 }
 
+void GMainWindow::IncrementInstallProgress() {
+    install_progress->setValue(install_progress->value() + 1);
+}
+
 void GMainWindow::OnMenuInstallToNAND() {
     const QString file_filter =
         tr("安装 Switch 文件 (*.nca *.nsp *.xci);;任天堂内容存档 "
@@ -1620,28 +1627,35 @@ void GMainWindow::OnMenuInstallToNAND() {
     }
 
     const QStringList files = installDialog.GetFiles();
-    const bool overwrite_files = installDialog.ShouldOverwriteFiles();
 
-    int count = 0;
-    const int total_count = filenames.size();
+    int remaining = filenames.size();
+
+    // This would only overflow above 2^43 bytes (8.796 TB)
+    int total_size = 0;
+    for (const QString& file : files) {
+        total_size += static_cast<int>(QFile(file).size() / 0x1000);
+    }
+    if (total_size < 0) {
+        LOG_CRITICAL(Frontend, "Attempting to install too many files, aborting.");
+        return;
+    }
 
     QStringList new_files{};         // Newly installed files that do not yet exist in the NAND
     QStringList overwritten_files{}; // Files that overwrote those existing in the NAND
-    QStringList existing_files{}; // Files that were not installed as they already exist in the NAND
-    QStringList failed_files{};   // Files that failed to install due to errors
+    QStringList failed_files{};      // Files that failed to install due to errors
 
     ui.action_Install_File_NAND->setEnabled(false);
 
-    QProgressDialog install_progress(QStringLiteral(""), tr("取消"), 0, total_count, this);
-    install_progress.setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
-                                    ~Qt::WindowMaximizeButtonHint);
-    install_progress.setAutoClose(false);
-    install_progress.setFixedWidth(installDialog.GetMinimumWidth());
-    install_progress.show();
+    install_progress = new QProgressDialog(QStringLiteral(""), tr("取消"), 0, total_size, this);
+    install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
+                                     ~Qt::WindowMaximizeButtonHint);
+    install_progress->setAttribute(Qt::WA_DeleteOnClose, true);
+    install_progress->setFixedWidth(installDialog.GetMinimumWidth() + 40);
+    install_progress->show();
 
     for (const QString& file : files) {
-        install_progress.setWindowTitle(tr("%n 文件(s) 剩余的", "", total_count - count));
-        install_progress.setLabelText(
+        install_progress->setWindowTitle(tr("%n 文件(s) 剩余的", "", remaining));
+        install_progress->setLabelText(
             tr("正在安装 文件 \"%1\"...").arg(QFileInfo(file).fileName()));
 
         QFuture<InstallResult> future;
@@ -1649,18 +1663,20 @@ void GMainWindow::OnMenuInstallToNAND() {
 
         if (file.endsWith(QStringLiteral("xci"), Qt::CaseInsensitive) ||
             file.endsWith(QStringLiteral("nsp"), Qt::CaseInsensitive)) {
-            future = QtConcurrent::run([this, &file, &overwrite_files, &install_progress] {
-                return InstallNSPXCI(file, overwrite_files, install_progress);
-            });
+
+            future = QtConcurrent::run([this, &file] { return InstallNSPXCI(file); });
 
             while (!future.isFinished()) {
                 QCoreApplication::processEvents();
             }
 
             result = future.result();
+
         } else {
-            result = InstallNCA(file, overwrite_files, install_progress);
+            result = InstallNCA(file);
         }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         switch (result) {
         case InstallResult::Success:
@@ -1669,19 +1685,15 @@ void GMainWindow::OnMenuInstallToNAND() {
         case InstallResult::Overwrite:
             overwritten_files.append(QFileInfo(file).fileName());
             break;
-        case InstallResult::AlreadyExists:
-            existing_files.append(QFileInfo(file).fileName());
-            break;
         case InstallResult::Failure:
             failed_files.append(QFileInfo(file).fileName());
             break;
         }
 
-        install_progress.setValue(++count);
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        --remaining;
     }
 
-    install_progress.close();
+    install_progress->close();
 
     const QString install_results =
         (new_files.isEmpty() ? QStringLiteral("")
@@ -1689,9 +1701,6 @@ void GMainWindow::OnMenuInstallToNAND() {
         (overwritten_files.isEmpty()
              ? QStringLiteral("")
              : tr("%n 文件(s) 被覆盖\n", "", overwritten_files.size())) +
-        (existing_files.isEmpty()
-             ? QStringLiteral("")
-             : tr("%n 文件(s) 已经存在于 NAND\n", "", existing_files.size())) +
         (failed_files.isEmpty() ? QStringLiteral("")
                                 : tr("%n 文件(s) 安装失败\n", "", failed_files.size()));
 
@@ -1702,11 +1711,9 @@ void GMainWindow::OnMenuInstallToNAND() {
     ui.action_Install_File_NAND->setEnabled(true);
 }
 
-InstallResult GMainWindow::InstallNSPXCI(const QString& filename, bool overwrite_files,
-                                         QProgressDialog& install_progress) {
-    const auto qt_raw_copy = [this, &install_progress](const FileSys::VirtualFile& src,
-                                                       const FileSys::VirtualFile& dest,
-                                                       std::size_t block_size) {
+InstallResult GMainWindow::InstallNSPXCI(const QString& filename) {
+    const auto qt_raw_copy = [this](const FileSys::VirtualFile& src,
+                                    const FileSys::VirtualFile& dest, std::size_t block_size) {
         if (src == nullptr || dest == nullptr) {
             return false;
         }
@@ -1717,10 +1724,12 @@ InstallResult GMainWindow::InstallNSPXCI(const QString& filename, bool overwrite
         std::array<u8, 0x1000> buffer{};
 
         for (std::size_t i = 0; i < src->GetSize(); i += buffer.size()) {
-            if (install_progress.wasCanceled()) {
+            if (install_progress->wasCanceled()) {
                 dest->Resize(0);
                 return false;
             }
+
+            emit UpdateInstallProgress();
 
             const auto read = src->Read(buffer.data(), buffer.size(), i);
             dest->Write(buffer.data(), read, i);
@@ -1746,32 +1755,19 @@ InstallResult GMainWindow::InstallNSPXCI(const QString& filename, bool overwrite
     }
     const auto res =
         Core::System::GetInstance().GetFileSystemController().GetUserNANDContents()->InstallEntry(
-            *nsp, false, qt_raw_copy);
+            *nsp, true, qt_raw_copy);
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
     } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
-        if (overwrite_files) {
-            const auto res2 = Core::System::GetInstance()
-                                  .GetFileSystemController()
-                                  .GetUserNANDContents()
-                                  ->InstallEntry(*nsp, true, qt_raw_copy);
-            if (res2 != FileSys::InstallResult::Success) {
-                return InstallResult::Failure;
-            }
-            return InstallResult::Overwrite;
-        } else {
-            return InstallResult::AlreadyExists;
-        }
+        return InstallResult::Overwrite;
     } else {
         return InstallResult::Failure;
     }
 }
 
-InstallResult GMainWindow::InstallNCA(const QString& filename, bool overwrite_files,
-                                      QProgressDialog& install_progress) {
-    const auto qt_raw_copy = [this, &install_progress](const FileSys::VirtualFile& src,
-                                                       const FileSys::VirtualFile& dest,
-                                                       std::size_t block_size) {
+InstallResult GMainWindow::InstallNCA(const QString& filename) {
+    const auto qt_raw_copy = [this](const FileSys::VirtualFile& src,
+                                    const FileSys::VirtualFile& dest, std::size_t block_size) {
         if (src == nullptr || dest == nullptr) {
             return false;
         }
@@ -1782,10 +1778,12 @@ InstallResult GMainWindow::InstallNCA(const QString& filename, bool overwrite_fi
         std::array<u8, 0x1000> buffer{};
 
         for (std::size_t i = 0; i < src->GetSize(); i += buffer.size()) {
-            if (install_progress.wasCanceled()) {
+            if (install_progress->wasCanceled()) {
                 dest->Resize(0);
                 return false;
             }
+
+            emit UpdateInstallProgress();
 
             const auto read = src->Read(buffer.data(), buffer.size(), i);
             dest->Write(buffer.data(), read, i);
@@ -1837,30 +1835,18 @@ InstallResult GMainWindow::InstallNCA(const QString& filename, bool overwrite_fi
         res = Core::System::GetInstance()
                   .GetFileSystemController()
                   .GetUserNANDContents()
-                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false, qt_raw_copy);
+                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
     } else {
         res = Core::System::GetInstance()
                   .GetFileSystemController()
                   .GetSystemNANDContents()
-                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), false, qt_raw_copy);
+                  ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
     }
 
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
     } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
-        if (overwrite_files) {
-            const auto res2 =
-                Core::System::GetInstance()
-                    .GetFileSystemController()
-                    .GetUserNANDContents()
-                    ->InstallEntry(*nca, static_cast<FileSys::TitleType>(index), true, qt_raw_copy);
-            if (res2 != FileSys::InstallResult::Success) {
-                return InstallResult::Failure;
-            }
-            return InstallResult::Overwrite;
-        } else {
-            return InstallResult::AlreadyExists;
-        }
+        return InstallResult::Overwrite;
     } else {
         return InstallResult::Failure;
     }
@@ -2178,13 +2164,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 708" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 710" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 708 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 710 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

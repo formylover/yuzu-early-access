@@ -591,7 +591,7 @@ struct Memory::Impl {
                    base + page_table.pointers.size());
 
         if (!target) {
-            ASSERT_MSG(type == Common::PageType::Memory,
+            ASSERT_MSG(type != Common::PageType::Memory,
                        "Mapping memory page without a pointer @ {:016x}", base * PAGE_SIZE);
 
             while (base != end) {
