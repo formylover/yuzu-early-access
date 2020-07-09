@@ -10,6 +10,7 @@
 #include "core/core.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
+#include "core/file_sys/registered_cache.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
@@ -748,14 +749,14 @@ void ICommonStateGetter::GetDefaultDisplayResolution(Kernel::HLERequestContext& 
 
     if (Settings::values.use_docked_mode) {
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedWidth) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::DockedHeight) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
     } else {
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedWidth) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
         rb.Push(static_cast<u32>(Service::VI::DisplayResolution::UndockedHeight) *
-                static_cast<u32>(Settings::values.resolution_factor));
+                static_cast<u32>(Settings::values.resolution_factor.GetValue()));
     }
 }
 
@@ -1371,14 +1372,25 @@ void IApplicationFunctions::GetDisplayVersion(Kernel::HLERequestContext& ctx) {
 
     std::array<u8, 0x10> version_string{};
 
-    FileSys::PatchManager pm{system.CurrentProcess()->GetTitleID()};
-    const auto res = pm.GetControlMetadata();
+    const auto res = [this] {
+        const auto title_id = system.CurrentProcess()->GetTitleID();
+
+        FileSys::PatchManager pm{title_id};
+        auto res = pm.GetControlMetadata();
+        if (res.first != nullptr) {
+            return res;
+        }
+
+        FileSys::PatchManager pm_update{FileSys::GetUpdateTitleID(title_id)};
+        return pm_update.GetControlMetadata();
+    }();
+
     if (res.first != nullptr) {
         const auto& version = res.first->GetVersionString();
         std::copy(version.begin(), version.end(), version_string.begin());
     } else {
-        constexpr u128 default_version = {1, 0};
-        std::memcpy(version_string.data(), default_version.data(), sizeof(u128));
+        constexpr char default_version[]{"1.0.0"};
+        std::memcpy(version_string.data(), default_version, sizeof(default_version));
     }
 
     IPC::ResponseBuilder rb{ctx, 6};
@@ -1395,7 +1407,19 @@ void IApplicationFunctions::GetDesiredLanguage(Kernel::HLERequestContext& ctx) {
     u32 supported_languages = 0;
     FileSys::PatchManager pm{system.CurrentProcess()->GetTitleID()};
 
-    const auto res = pm.GetControlMetadata();
+    const auto res = [this] {
+        const auto title_id = system.CurrentProcess()->GetTitleID();
+
+        FileSys::PatchManager pm{title_id};
+        auto res = pm.GetControlMetadata();
+        if (res.first != nullptr) {
+            return res;
+        }
+
+        FileSys::PatchManager pm_update{FileSys::GetUpdateTitleID(title_id)};
+        return pm_update.GetControlMetadata();
+    }();
+
     if (res.first != nullptr) {
         supported_languages = res.first->GetSupportedLanguages();
     }

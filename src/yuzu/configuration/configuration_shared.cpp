@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -6,6 +10,7 @@
 #include <QComboBox>
 #include "core/settings.h"
 #include "yuzu/configuration/configuration_shared.h"
+#include "yuzu/configuration/configure_per_game.h"
 
 void ConfigurationShared::ApplyPerGameSetting(Settings::Setting<bool>* setting,
                                               const QCheckBox* checkbox) {
@@ -69,7 +74,7 @@ void ConfigurationShared::SetPerGameSetting(
 }
 
 void ConfigurationShared::InsertGlobalItem(QComboBox* combobox) {
-    combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX,
-                         ConfigurationShared::use_global_text);
+    const QString use_global_text = ConfigurePerGame::tr("使用全局设置");
+    combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX, use_global_text);
     combobox->insertSeparator(ConfigurationShared::USE_GLOBAL_SEPARATOR_INDEX);
 }

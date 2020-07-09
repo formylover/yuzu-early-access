@@ -234,13 +234,6 @@ const std::array<UISettings::Shortcut, 16> Config::default_hotkeys{{
 }};
 // clang-format on
 
-const std::array<std::pair<bool, const char*>, 2> Config::default_motion_devices{{
-    {false, "engine:cemuhookudp,address:127.0.0.1,port:26760,pad_index:0,cx:0.0,cy:0.0,"
-            "cz:0.0,sensitivity:1.0"},
-    {false, "engine:cemuhookudp,address:127.0.0.1,port:26760,pad_index:0,cx:0.0,cy:0.0,"
-            "cz:0.0,sensitivity:1.0"},
-}};
-
 void Config::ReadPlayerValues() {
     for (std::size_t p = 0; p < Settings::values.players.size(); ++p) {
         auto& player = Settings::values.players[p];
@@ -302,26 +295,6 @@ void Config::ReadPlayerValues() {
                                  .toStdString();
             if (player_analogs.empty()) {
                 player_analogs = default_param;
-            }
-        }
-
-        for (std::size_t i = 0; i < player.motion_devices.size(); ++i) {
-            const auto& default_param = default_motion_devices[i];
-            auto& player_motion_device = player.motion_devices[i];
-
-            player_motion_device.config =
-                qt_config
-                    ->value(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
-                            QString::fromLocal8Bit(std::get<1>(default_param)))
-                    .toString()
-                    .toStdString();
-            player_motion_device.enabled =
-                qt_config
-                    ->value(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
-                            std::get<0>(default_param))
-                    .toBool();
-            if (player_motion_device.config.empty()) {
-                player_motion_device.config = std::get<1>(default_param);
             }
         }
     }
@@ -730,9 +703,10 @@ void Config::ReadSystemValues() {
     Settings::values.rng_seed.SetGlobal(rng_seed_global);
     if (global || !rng_seed_global) {
         if (rng_seed_enabled) {
-            Settings::values.rng_seed = ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong();
+            Settings::values.rng_seed.SetValue(
+                ReadSetting(QStringLiteral("rng_seed"), 0).toULongLong());
         } else {
-            Settings::values.rng_seed = std::nullopt;
+            Settings::values.rng_seed.SetValue(std::nullopt);
         }
     }
 
@@ -743,10 +717,10 @@ void Config::ReadSystemValues() {
     Settings::values.custom_rtc.SetGlobal(custom_rtc_global);
     if (global || !custom_rtc_global) {
         if (custom_rtc_enabled) {
-            Settings::values.custom_rtc =
-                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong());
+            Settings::values.custom_rtc.SetValue(
+                std::chrono::seconds(ReadSetting(QStringLiteral("custom_rtc"), 0).toULongLong()));
         } else {
-            Settings::values.custom_rtc = std::nullopt;
+            Settings::values.custom_rtc.SetValue(std::nullopt);
         }
     }
 
@@ -893,16 +867,6 @@ void Config::SavePlayerValues() {
                              QString::fromStdString(Settings::NativeAnalog::mapping[i]),
                          QString::fromStdString(player.analogs[i]),
                          QString::fromStdString(default_param));
-        }
-
-        for (std::size_t i = 0; i < player.motion_devices.size(); ++i) {
-            const auto& default_param = default_motion_devices[i];
-            const Settings::MotionRaw& player_motion_device = player.motion_devices[i];
-            WriteSetting(QStringLiteral("player_%1_motion_device%2").arg(p).arg(i),
-                         QString::fromStdString(player_motion_device.config),
-                         QString::fromLocal8Bit(std::get<1>(default_param)));
-            WriteSetting(QStringLiteral("player_%1_motion_device%2/enabled").arg(p).arg(i),
-                         player_motion_device.enabled);
         }
     }
 }
@@ -1139,7 +1103,7 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("backend"),
                        static_cast<int>(Settings::values.renderer_backend.GetValue(global)),
                        Settings::values.renderer_backend.UsingGlobal(), 0);
-    WriteSettingGlobal(QStringLiteral("debug"), Settings::values.renderer_debug, false);
+    WriteSetting(QStringLiteral("debug"), Settings::values.renderer_debug, false);
     WriteSettingGlobal(QStringLiteral("vulkan_device"), Settings::values.vulkan_device, 0);
     WriteSettingGlobal(QStringLiteral("aspect_ratio"), Settings::values.aspect_ratio, 0);
     WriteSettingGlobal(QStringLiteral("max_anisotropy"), Settings::values.max_anisotropy, 0);
@@ -1191,7 +1155,7 @@ void Config::SaveShortcutValues() {
 void Config::SaveSystemValues() {
     qt_config->beginGroup(QStringLiteral("System"));
 
-    WriteSettingGlobal(QStringLiteral("current_user"), Settings::values.current_user, 0);
+    WriteSetting(QStringLiteral("current_user"), Settings::values.current_user, 0);
     WriteSettingGlobal(QStringLiteral("language_index"), Settings::values.language_index, 1);
     WriteSettingGlobal(QStringLiteral("region_index"), Settings::values.region_index, 1);
     WriteSettingGlobal(QStringLiteral("time_zone_index"), Settings::values.time_zone_index, 0);

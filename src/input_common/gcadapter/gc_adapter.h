@@ -7,17 +7,12 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 #include <libusb.h>
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
 
 namespace GCAdapter {
-
-enum {
-    PAD_USE_ORIGIN = 0x0080,
-    PAD_GET_ORIGIN = 0x2000,
-    PAD_ERR_STATUS = 0x8000,
-};
 
 enum class PadButton {
     PAD_BUTTON_LEFT = 0x0001,
@@ -102,6 +97,8 @@ public:
     std::array<GCState, 4>& GetPadState();
     const std::array<GCState, 4>& GetPadState() const;
 
+    int GetOriginValue(int port, int axis) const;
+
 private:
     GCPadStatus GetPadStatus(int port, const std::array<u8, 37>& adapter_payload);
 
@@ -155,6 +152,8 @@ private:
 
     std::array<Common::SPSCQueue<GCPadStatus>, 4> pad_queue;
     std::array<GCState, 4> state;
+    std::array<bool, 4> get_origin;
+    std::array<GCPadStatus, 4> origin_status;
 };
 
 } // namespace GCAdapter

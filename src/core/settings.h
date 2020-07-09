@@ -324,17 +324,11 @@ enum class ControllerType {
     LeftJoycon,
 };
 
-struct MotionRaw {
-    bool enabled;
-    std::string config;
-};
-
 struct PlayerInput {
     bool connected;
     ControllerType type;
     ButtonsRaw buttons;
     AnalogsRaw analogs;
-    std::array<MotionRaw, 2> motion_devices;
 
     u32 body_color_right;
     u32 button_color_right;
@@ -393,43 +387,31 @@ extern bool configuring_global;
 template <typename Type>
 class Setting final {
 public:
-    Setting() {
-        use_global = true;
-    }
-    Setting(Type val) {
-        use_global = true;
-        global = val;
-    }
+    Setting() = default;
+    explicit Setting(Type val) : global{val} {}
     ~Setting() = default;
     void SetGlobal(bool to_global) {
         use_global = to_global;
-    };
+    }
     bool UsingGlobal() const {
         return use_global;
-    };
+    }
     Type GetValue(bool need_global = false) const {
         if (use_global || need_global) {
             return global;
         }
         return local;
-    };
+    }
     void SetValue(const Type& value) {
         if (use_global) {
             global = value;
         } else {
             local = value;
         }
-    };
-    operator Type() const {
-        return GetValue();
-    };
-    Type operator=(const Type& b) {
-        SetValue(b);
-        return b;
-    };
+    }
 
 private:
-    bool use_global{};
+    bool use_global = true;
     Type global{};
     Type local{};
 };
@@ -447,7 +429,7 @@ struct Values {
 
     // Renderer
     Setting<RendererBackend> renderer_backend;
-    Setting<bool> renderer_debug;
+    bool renderer_debug;
     Setting<int> vulkan_device;
 
     Setting<u16> resolution_factor = Setting(static_cast<u16>(1));
@@ -472,9 +454,9 @@ struct Values {
     // Measured in seconds since epoch
     Setting<std::optional<std::chrono::seconds>> custom_rtc;
     // Set on game boot, reset on stop. Seconds difference between current time and `custom_rtc`
-    Setting<std::chrono::seconds> custom_rtc_differential;
+    std::chrono::seconds custom_rtc_differential;
 
-    Setting<s32> current_user;
+    s32 current_user;
     Setting<s32> language_index;
     Setting<s32> region_index;
     Setting<s32> time_zone_index;
