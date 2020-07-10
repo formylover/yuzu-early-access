@@ -505,22 +505,6 @@ void Config::ReadDataStorageValues() {
         ReadSetting(QStringLiteral("gamecard_current_game"), false).toBool();
     Settings::values.gamecard_path =
         ReadSetting(QStringLiteral("gamecard_path"), QStringLiteral("")).toString().toStdString();
-    Settings::values.nand_total_size = static_cast<Settings::NANDTotalSize>(
-        ReadSetting(QStringLiteral("nand_total_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDTotalSize::S29_1GB)))
-            .toULongLong());
-    Settings::values.nand_user_size = static_cast<Settings::NANDUserSize>(
-        ReadSetting(QStringLiteral("nand_user_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDUserSize::S26GB)))
-            .toULongLong());
-    Settings::values.nand_system_size = static_cast<Settings::NANDSystemSize>(
-        ReadSetting(QStringLiteral("nand_system_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDSystemSize::S2_5GB)))
-            .toULongLong());
-    Settings::values.sdmc_size = static_cast<Settings::SDMCSize>(
-        ReadSetting(QStringLiteral("sdmc_size"),
-                    QVariant::fromValue<u64>(static_cast<u64>(Settings::SDMCSize::S16GB)))
-            .toULongLong());
 
     qt_config->endGroup();
 }
@@ -651,6 +635,8 @@ void Config::ReadRendererValues() {
     ReadSettingGlobal(Settings::values.use_vsync, QStringLiteral("use_vsync"), true);
     ReadSettingGlobal(Settings::values.use_assembly_shaders, QStringLiteral("use_assembly_shaders"),
                       false);
+    ReadSettingGlobal(Settings::values.use_asynchronous_shaders,
+                      QStringLiteral("use_asynchronous_shaders"), false);
     ReadSettingGlobal(Settings::values.use_fast_gpu_time, QStringLiteral("use_fast_gpu_time"),
                       true);
     ReadSettingGlobal(Settings::values.force_30fps_mode, QStringLiteral("force_30fps_mode"), false);
@@ -1006,18 +992,7 @@ void Config::SaveDataStorageValues() {
                  false);
     WriteSetting(QStringLiteral("gamecard_path"),
                  QString::fromStdString(Settings::values.gamecard_path), QStringLiteral(""));
-    WriteSetting(QStringLiteral("nand_total_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_total_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDTotalSize::S29_1GB)));
-    WriteSetting(QStringLiteral("nand_user_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_user_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDUserSize::S26GB)));
-    WriteSetting(QStringLiteral("nand_system_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.nand_system_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::NANDSystemSize::S2_5GB)));
-    WriteSetting(QStringLiteral("sdmc_size"),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::values.sdmc_size)),
-                 QVariant::fromValue<u64>(static_cast<u64>(Settings::SDMCSize::S16GB)));
+
     qt_config->endGroup();
 }
 
@@ -1119,6 +1094,10 @@ void Config::SaveRendererValues() {
     WriteSettingGlobal(QStringLiteral("use_vsync"), Settings::values.use_vsync, true);
     WriteSettingGlobal(QStringLiteral("use_assembly_shaders"),
                        Settings::values.use_assembly_shaders, false);
+    WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
+                       Settings::values.use_asynchronous_shaders, false);
+    WriteSettingGlobal(QStringLiteral("use_asynchronous_shaders"),
+                       Settings::values.use_asynchronous_shaders, false);
     WriteSettingGlobal(QStringLiteral("use_fast_gpu_time"), Settings::values.use_fast_gpu_time,
                        true);
     WriteSettingGlobal(QStringLiteral("force_30fps_mode"), Settings::values.force_30fps_mode,

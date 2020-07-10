@@ -114,6 +114,8 @@ void LogSettings() {
                Settings::values.use_asynchronous_gpu_emulation.GetValue());
     LogSetting("Renderer_UseVsync", Settings::values.use_vsync.GetValue());
     LogSetting("Renderer_UseAssemblyShaders", Settings::values.use_assembly_shaders.GetValue());
+    LogSetting("Renderer_UseAsynchronousShaders",
+               Settings::values.use_asynchronous_shaders.GetValue());
     LogSetting("Renderer_AnisotropicFilteringLevel", Settings::values.max_anisotropy.GetValue());
     LogSetting("Audio_OutputEngine", Settings::values.sink_id);
     LogSetting("Audio_EnableAudioStretching", Settings::values.enable_audio_stretching.GetValue());
@@ -169,6 +171,7 @@ void RestoreGlobalState() {
     values.use_asynchronous_gpu_emulation.SetGlobal(true);
     values.use_vsync.SetGlobal(true);
     values.use_assembly_shaders.SetGlobal(true);
+    values.use_asynchronous_shaders.SetGlobal(true);
     values.use_fast_gpu_time.SetGlobal(true);
     values.force_30fps_mode.SetGlobal(true);
     values.bg_red.SetGlobal(true);

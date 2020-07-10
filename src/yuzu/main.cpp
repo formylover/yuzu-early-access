@@ -98,6 +98,8 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/perf_stats.h"
 #include "core/settings.h"
 #include "core/telemetry_session.h"
+#include "video_core/gpu.h"
+#include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
 #include "yuzu/bootmanager.h"
 #include "yuzu/compatdb.h"
@@ -498,6 +500,8 @@ void GMainWindow::InitializeWidgets() {
     message_label->setAlignment(Qt::AlignLeft);
     statusBar()->addPermanentWidget(message_label, 1);
 
+    shader_building_label = new QLabel();
+    shader_building_label->setToolTip(tr("当前正在构建的着色器数量"));
     emu_speed_label = new QLabel();
     emu_speed_label->setToolTip(
         tr("目前模拟速度。值高或低于 100% "
@@ -510,7 +514,8 @@ void GMainWindow::InitializeWidgets() {
         tr("时间采取模拟开关框架，不计算框架限制或垂直刷新同步 "
            "对于全速仿真，这应该是最多 16.67 ms."));
 
-    for (auto& label : {emu_speed_label, game_fps_label, emu_frametime_label}) {
+    for (auto& label :
+         {shader_building_label, emu_speed_label, game_fps_label, emu_frametime_label}) {
         label->setVisible(false);
         label->setFrameStyle(QFrame::NoFrame);
         label->setContentsMargins(4, 0, 4, 0);
@@ -1176,6 +1181,7 @@ void GMainWindow::ShutdownGame() {
 
     // Disable status bar updates
     status_bar_update_timer.stop();
+    shader_building_label->setVisible(false);
     emu_speed_label->setVisible(false);
     game_fps_label->setVisible(false);
     emu_frametime_label->setVisible(false);
@@ -2168,13 +2174,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 721" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 729" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 721 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 729 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2186,6 +2192,17 @@ void GMainWindow::UpdateStatusBar() {
     }
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
+    auto& shader_notify = Core::System::GetInstance().GPU().ShaderNotify();
+    const auto shaders_building = shader_notify.GetShadersBuilding();
+
+    if (shaders_building != 0) {
+        shader_building_label->setText(
+            tr("构建: %1 着色器").arg(shaders_building) +
+            (shaders_building != 1 ? QString::fromStdString("s") : QString::fromStdString("")));
+        shader_building_label->setVisible(true);
+    } else {
+        shader_building_label->setVisible(false);
+    }
 
     if (Settings::values.use_frame_limit.GetValue()) {
         emu_speed_label->setText(tr("速度: %1% / %2%")
@@ -2315,10 +2332,13 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
     if (behavior == ReinitializeKeyBehavior::Warning) {
         const auto res = QMessageBox::information(
             this, tr("确认密钥重新确认"),
-            tr("你要强制重新打开你所有的钥匙. \n如果你不知道这是什么做 "
-               "手段或者你在做什么, \n这是一个潜在的破坏作用. \n请 "
-               "确保这是你想要的 \n选择进行备份.\n\n这将删除 "
-               "你自动生成密钥文件并重新运行密钥生成模块."),
+            tr("您将要强制重新分发所有密钥。 \n如果你不知道什么 "
+               "这个 "
+               "手段或你在做什么, \n这是潜在的破坏性行动。 "
+               "\n请 "
+               "确保这是你想要的 \n并选择进行备份。\n\n这将 "
+               "删除 "
+               "您自动生成的密钥文件，然后重新运行密钥恢复模块。"),
             QMessageBox::StandardButtons{QMessageBox::Ok, QMessageBox::Cancel});
 
         if (res == QMessageBox::Cancel)
@@ -2628,8 +2648,8 @@ int main(int argc, char* argv[]) {
 
 #ifdef __APPLE__
     // If you start a bundle (binary) on OSX without the Terminal, the working directory is "/".
-    // But since we require the working directory to be the executable path for the location of the
-    // user folder in the Qt Frontend, we need to cd into that working directory
+    // But since we require the working directory to be the executable path for the location of
+    // the user folder in the Qt Frontend, we need to cd into that working directory
     const std::string bin_path = FileUtil::GetBundleDirectory() + DIR_SEP + "..";
     chdir(bin_path.c_str());
 #endif
