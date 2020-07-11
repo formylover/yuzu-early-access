@@ -46,8 +46,8 @@ void MaxwellDMA::Launch() {
     ASSERT(launch.semaphore_type == LaunchDMA::SemaphoreType::NONE);
     ASSERT(launch.interrupt_type == LaunchDMA::InterruptType::NONE);
     ASSERT(launch.data_transfer_type == LaunchDMA::DataTransferType::NON_PIPELINED);
-    ASSERT(regs.src_params.origin.x == 0);
-    ASSERT(regs.src_params.origin.y == 0);
+    ASSERT(regs.dst_params.origin.x == 0);
+    ASSERT(regs.dst_params.origin.y == 0);
 
     const bool is_src_pitch = launch.src_memory_layout == LaunchDMA::MemoryLayout::PITCH;
     const bool is_dst_pitch = launch.dst_memory_layout == LaunchDMA::MemoryLayout::PITCH;
