@@ -81,7 +81,7 @@ void ConfigureDialog::RetranslateUI() {
 Q_DECLARE_METATYPE(QList<QWidget*>);
 
 void ConfigureDialog::PopulateSelectionList() {
-    const std::array<std::pair<QString, QList<QWidget*>>, 5> items{
+    const std::array<std::pair<QString, QList<QWidget*>>, 6> items{
         {{tr("通用"), {ui->generalTab, ui->webTab, ui->debugTab, ui->uiTab}},
          {tr("系统"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
          {tr("CPU"), {ui->cpuTab}},

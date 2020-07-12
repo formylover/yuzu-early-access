@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>格式</string>
   </property>
   <layout class="QVBoxLayout">
    <item>
@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox">
        <property name="title">
-        <string>General</string>
+        <string>通用</string>
        </property>
        <layout class="QVBoxLayout">
         <item>
@@ -27,7 +27,7 @@
           <item>
            <widget class="QLabel">
             <property name="text">
-             <string>Accuracy:</string>
+             <string>精确度:</string>
             </property>
            </widget>
           </item>
@@ -35,12 +35,12 @@
            <widget class="QComboBox" name="accuracy">
             <item>
              <property name="text">
-              <string>Accurate</string>
+              <string>准确</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Debugging Mode (Debugging ONLY)</string>
+              <string>调试模式（仅调试）</string>
              </property>
             </item>
            </widget>
@@ -53,7 +53,7 @@
             <bool>1</bool>
           </property>
           <property name="text">
-           <string>We recommend setting accuracy to "Accurate".</string>
+           <string>我们建议将精确度设置为"准确"。</string>
           </property>
          </widget>
         </item>
@@ -67,7 +67,7 @@
      <item>
       <widget class="QGroupBox" name="group_safe">
        <property name="title">
-        <string>Safe CPU Optimizations</string>
+        <string>安全的CPU优化</string>
        </property>
        <layout class="QVBoxLayout">
         <item>
@@ -76,20 +76,20 @@
             <bool>1</bool>
           </property>
           <property name="text">
-           <string>Keep all of these enabled. For debugging only.</string>
+           <string>保持所有这些启用， 仅用于调试。</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="cpuopt_page_tables">
           <property name="text">
-           <string>Enable inline page tables</string>
+           <string>启动内核页表</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div style="white-space: nowrap"&gt;This optimization speeds up memory accesses by the guest program.&lt;/div&gt;
-            &lt;div style="white-space: nowrap"&gt;Enabling it inlines accesses to PageTable::pointers into emitted code.&lt;/div&gt;
-            &lt;div style="white-space: nowrap"&gt;Disabling this forces all memory accesses to go through the Memory::Read/Memory::Write functions.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;此优化加快了来宾程序的内存访问。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;启用它会内联对可分页的访问::指向已发出代码的指针。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;禁用此选项将强制所有内存访问都通过内存::读取/内存::写函数。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -97,11 +97,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_block_linking">
           <property name="text">
-           <string>Enable block linking</string>
+           <string>启动连接块</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;This optimization avoids dispatcher lookups by allowing emitted basic blocks to jump directly to other basic blocks if the destination PC is static.&lt;/div&gt;
+            &lt;div&gt;如果目标PC是静态的，此优化通过允许发出的基本块直接跳到其他基本块来避免调度程序查找。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -109,11 +109,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_return_stack_buffer">
           <property name="text">
-           <string>Enable return stack buffer</string>
+           <string>启用返回堆栈缓冲区</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;This optimization avoids dispatcher lookups by keeping track potential return addresses of BL instructions. This approximates what happens with a return stack buffer on a real CPU.&lt;/div&gt;
+            &lt;div&gt;此优化通过跟踪BL指令的潜在返回地址来避免调度程序查找。 这近似于实际CPU上的返回堆栈缓冲区所发生的情况。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -121,11 +121,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_fast_dispatcher">
           <property name="text">
-           <string>Enable fast dispatcher</string>
+           <string>启用快速调度程序</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;Enable a two-tiered dispatch system. A faster dispatcher written in assembly has a small MRU cache of jump destinations is used first. If that fails, dispatch falls back to the slower C++ dispatcher.&lt;/div&gt;
+            &lt;div&gt;启用两层调度系统。 首先使用汇编中编写的更快的调度程序，该调度程序具有较小的跳转目标MRU缓存。 如果失败，则调度回退到速度较慢的C ++调度器。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -133,11 +133,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_context_elimination">
           <property name="text">
-           <string>Enable context elimination</string>
+           <string>启用上下文消除</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;Enables an IR optimization that reduces unnecessary accesses to the CPU context structure.&lt;/div&gt;
+            &lt;div&gt;启用IR优化，以减少对CPU上下文结构的不必要访问。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -145,11 +145,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_const_prop">
           <property name="text">
-           <string>Enable constant propagation</string>
+           <string>启用恒定传播</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;Enables IR optimizations that involve constant propagation.&lt;/div&gt;
+            &lt;div&gt;启用涉及恒定传播的IR优化。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -157,11 +157,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_misc_ir">
           <property name="text">
-           <string>Enable miscellaneous optimizations</string>
+           <string>启用其他优化</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;Enables miscellaneous IR optimizations.&lt;/div&gt;
+            &lt;div&gt;启用其他IR优化。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -169,12 +169,12 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_reduce_misalign_checks">
           <property name="text">
-           <string>Enable misalignment check reduction</string>
+           <string>启用偏差检查减少</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div style="white-space: nowrap"&gt;When enabled, a misalignment is only triggered when an access crosses a page boundary.&lt;/div&gt;
-            &lt;div style="white-space: nowrap"&gt;When disabled, a misalignment is triggered on all misaligned accesses.&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;启用后，仅当访问跨越页面边界时才会触发未对齐。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;禁用时，所有未对齐的访问都会触发未对齐。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -200,7 +200,7 @@
    <item>
     <widget class="QLabel" name="label_disable_info">
      <property name="text">
-      <string>CPU settings are available only when game is not running.</string>
+      <string>仅当游戏未运行时，CPU设置才可用。</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
