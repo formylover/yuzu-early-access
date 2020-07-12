@@ -6,7 +6,6 @@
 #include <memory>
 #include <dynarmic/A64/a64.h>
 #include <dynarmic/A64/config.h>
-#include <dynarmic/optimization_flags.h>
 #include "common/logging/log.h"
 #include "common/page_table.h"
 #include "core/arm/cpu_interrupt_handler.h"
@@ -192,13 +191,36 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
     // Unpredictable instructions
     config.define_unpredictable_behaviour = true;
 
-    // Optimizations
-    if (Settings::values.disable_cpu_opt) {
-        config.optimizations = Dynarmic::no_optimizations;
-    }
-
     // Timing
     config.wall_clock_cntpct = uses_wall_clock;
+
+    // Safe optimizations
+    if (Settings::values.cpu_accuracy != Settings::CPUAccuracy::Accurate) {
+        if (!Settings::values.cpuopt_page_tables) {
+            config.page_table = nullptr;
+        }
+        if (!Settings::values.cpuopt_block_linking) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::BlockLinking;
+        }
+        if (!Settings::values.cpuopt_return_stack_buffer) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::ReturnStackBuffer;
+        }
+        if (!Settings::values.cpuopt_fast_dispatcher) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::FastDispatch;
+        }
+        if (!Settings::values.cpuopt_context_elimination) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::GetSetElimination;
+        }
+        if (!Settings::values.cpuopt_const_prop) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::ConstProp;
+        }
+        if (!Settings::values.cpuopt_misc_ir) {
+            config.optimizations &= ~Dynarmic::OptimizationFlag::MiscIROpt;
+        }
+        if (!Settings::values.cpuopt_reduce_misalign_checks) {
+            config.only_detect_misalignment_via_page_table_on_page_boundary = false;
+        }
+    }
 
     return std::make_shared<Dynarmic::A64::Jit>(config);
 }
