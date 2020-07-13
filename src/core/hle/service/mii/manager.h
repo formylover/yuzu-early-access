@@ -1,4 +1,4 @@
-// Copyright 2018 yuzu emulator team
+// Copyright 2020 yuzu emulator team
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -100,9 +100,9 @@ struct MiiStoreBitFields {
     union {
         u32 word_0{};
 
-        BitField<0, 8, HairType> hair_type;
+        BitField<0, 8, u32> hair_type;
         BitField<8, 7, u32> height;
-        BitField<15, 1, MoleType> mole_type;
+        BitField<15, 1, u32> mole_type;
         BitField<16, 7, u32> build;
         BitField<23, 1, HairFlip> hair_flip;
         BitField<24, 7, u32> hair_color;
@@ -125,7 +125,7 @@ struct MiiStoreBitFields {
         BitField<0, 7, u32> glasses_color;
         BitField<8, 6, u32> eye_type;
         BitField<14, 2, u32> region_move;
-        BitField<16, 6, MouthType> mouth_type;
+        BitField<16, 6, u32> mouth_type;
         BitField<22, 2, FontRegion> font_region;
         BitField<24, 5, u32> eye_y;
         BitField<29, 3, u32> glasses_scale;
@@ -134,9 +134,9 @@ struct MiiStoreBitFields {
     union {
         u32 word_3{};
 
-        BitField<0, 5, EyebrowType> eyebrow_type;
+        BitField<0, 5, u32> eyebrow_type;
         BitField<5, 3, MustacheType> mustache_type;
-        BitField<8, 5, NoseType> nose_type;
+        BitField<8, 5, u32> nose_type;
         BitField<13, 3, BeardType> beard_type;
         BitField<16, 5, u32> nose_y;
         BitField<21, 3, u32> mouth_aspect;
@@ -159,12 +159,12 @@ struct MiiStoreBitFields {
     union {
         u32 word_5{};
 
-        BitField<0, 5, GlassesType> glasses_type;
+        BitField<0, 5, u32> glasses_type;
         BitField<8, 4, u32> favorite_color;
-        BitField<12, 4, FacelineType> faceline_type;
-        BitField<16, 4, FacelineColor> faceline_color;
-        BitField<20, 4, FacelineWrinkle> faceline_wrinkle;
-        BitField<24, 4, FacelineMakeup> faceline_makeup;
+        BitField<12, 4, u32> faceline_type;
+        BitField<16, 4, u32> faceline_color;
+        BitField<20, 4, u32> faceline_wrinkle;
+        BitField<24, 4, u32> faceline_makeup;
         BitField<28, 4, u32> eye_x;
     };
 
@@ -253,10 +253,10 @@ struct RandomMiiData2 {
 static_assert(sizeof(RandomMiiData2) == 0xc4, "RandomMiiData2 has incorrect size.");
 
 struct DefaultMii {
-    FacelineType face_type{};
-    FacelineColor face_color{};
-    FacelineWrinkle face_wrinkle{};
-    FacelineMakeup face_makeup{};
+    u32 face_type{};
+    u32 face_color{};
+    u32 face_wrinkle{};
+    u32 face_makeup{};
     u32 hair_type{};
     u32 hair_color{};
     u32 hair_flip{};
@@ -316,7 +316,7 @@ public:
 
     bool CheckAndResetUpdateCounter(SourceFlag source_flag, u64& current_update_counter);
     bool IsFullDatabase() const;
-    u32 GetCount(SourceFlag source_flag);
+    u32 GetCount(SourceFlag source_flag) const;
     ResultVal<MiiInfo> UpdateLatest(const MiiInfo& info, SourceFlag source_flag);
     MiiInfo BuildRandom(Age age, Gender gender, Race race);
     MiiInfo BuildDefault(std::size_t index);

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConfigureCpuDebug</class>
+ <widget class="QWidget" name="ConfigureCpuDebug">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>321</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>格式</string>
+  </property>
+  <layout class="QVBoxLayout">
+   <item>
+    <layout class="QVBoxLayout">
+     <item>
+      <widget class="QGroupBox">
+       <property name="title">
+        <string>切换CPU优化</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel">
+          <property name="wordWrap">
+            <bool>1</bool>
+          </property>
+          <property name="text">
+           <string>
+            &lt;div&gt;
+            &lt;b&gt;仅用于调试。&lt;/b&gt;
+            &lt;br&gt;
+            如果不确定这些功能，请启用所有功能。
+            &lt;br&gt;
+            这些设置仅在CPU精度为“调试模式”时才生效。
+            &lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_page_tables">
+          <property name="text">
+           <string>启动内核页表</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;此优化加快了来宾程序的内存访问。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;启用它会内联对可分页的访问::指向已发出代码的指针。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;禁用此选项将强制所有内存访问都通过内存::读取/内存::写函数。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_block_linking">
+          <property name="text">
+           <string>启动连接块</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;如果目标PC是静态的，此优化通过允许发出的基本块直接跳到其他基本块来避免调度程序查找。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_return_stack_buffer">
+          <property name="text">
+           <string>启用返回堆栈缓冲区</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;此优化通过跟踪BL指令的潜在返回地址来避免调度程序查找。 这近似于实际CPU上的返回堆栈缓冲区所发生的情况。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_fast_dispatcher">
+          <property name="text">
+           <string>启用快速调度程序</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;启用两层调度系统。 首先使用汇编中编写的更快的调度程序，该调度程序具有较小的跳转目标MRU缓存。 如果失败，则调度回退到速度较慢的C ++调度器。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_context_elimination">
+          <property name="text">
+           <string>启用上下文消除</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;启用IR优化，以减少对CPU上下文结构的不必要访问。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_const_prop">
+          <property name="text">
+           <string>启用恒定传播</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;启用涉及恒定传播的IR优化。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_misc_ir">
+          <property name="text">
+           <string>启用其他优化</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;启用其他IR优化。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_reduce_misalign_checks">
+          <property name="text">
+           <string>启用偏差检查减少</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div style="white-space: nowrap"&gt;启用后，仅当访问跨越页面边界时才会触发未对齐。&lt;/div&gt;
+            &lt;div style="white-space: nowrap"&gt;禁用时，所有未对齐的访问都会触发未对齐。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_disable_info">
+     <property name="text">
+      <string>仅当游戏未运行时，CPU设置才可用。</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

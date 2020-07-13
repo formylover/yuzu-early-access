@@ -285,17 +285,21 @@ GMainWindow::~GMainWindow() {
 }
 
 void GMainWindow::ProfileSelectorSelectProfile() {
-    QtProfileSelectionDialog dialog(this);
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
-                          Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
-    dialog.setWindowModality(Qt::WindowModal);
-    if (dialog.exec() == QDialog::Rejected) {
-        emit ProfileSelectorFinishedSelection(std::nullopt);
-        return;
+    const Service::Account::ProfileManager manager;
+    int index = 0;
+    if (manager.GetUserCount() != 1) {
+        QtProfileSelectionDialog dialog(this);
+        dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                              Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+        dialog.setWindowModality(Qt::WindowModal);
+        if (dialog.exec() == QDialog::Rejected) {
+            emit ProfileSelectorFinishedSelection(std::nullopt);
+            return;
+        }
+        index = dialog.GetIndex();
     }
 
-    Service::Account::ProfileManager manager;
-    const auto uuid = manager.GetUser(static_cast<std::size_t>(dialog.GetIndex()));
+    const auto uuid = manager.GetUser(static_cast<std::size_t>(index));
     if (!uuid.has_value()) {
         emit ProfileSelectorFinishedSelection(std::nullopt);
         return;
@@ -1765,7 +1769,7 @@ InstallResult GMainWindow::InstallNSPXCI(const QString& filename) {
             *nsp, true, qt_raw_copy);
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
-    } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
+    } else if (res == FileSys::InstallResult::OverwriteExisting) {
         return InstallResult::Overwrite;
     } else {
         return InstallResult::Failure;
@@ -1852,7 +1856,7 @@ InstallResult GMainWindow::InstallNCA(const QString& filename) {
 
     if (res == FileSys::InstallResult::Success) {
         return InstallResult::Success;
-    } else if (res == FileSys::InstallResult::ErrorAlreadyExists) {
+    } else if (res == FileSys::InstallResult::OverwriteExisting) {
         return InstallResult::Overwrite;
     } else {
         return InstallResult::Failure;
@@ -2174,13 +2178,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 735" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 749" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 735 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 749 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

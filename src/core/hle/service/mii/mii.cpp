@@ -108,7 +108,7 @@ private:
             return;
         }
 
-        if (result->size()) {
+        if (result->size() > 0) {
             ctx.WriteBuffer(SerializeArray(*result));
         }
 

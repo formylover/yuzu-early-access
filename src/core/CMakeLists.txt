@@ -402,6 +402,7 @@ add_library(core STATIC
     hle/service/mii/manager.h
     hle/service/mii/mii.cpp
     hle/service/mii/mii.h
+    hle/service/mii/raw_data.cpp
     hle/service/mii/raw_data.h
     hle/service/mii/types.h
     hle/service/mm/mm_u.cpp
