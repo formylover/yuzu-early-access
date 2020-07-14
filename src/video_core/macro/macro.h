@@ -106,7 +106,7 @@ public:
      * @param code The macro byte code to execute
      * @param parameters The parameters of the macro
      */
-    virtual void Execute(const std::vector<u32>& parameters, u32 method) = 0;
+    virtual void Execute(std::span<const u32> parameters, u32 method) = 0;
 };
 
 class MacroEngine {
@@ -118,10 +118,10 @@ public:
     void AddCode(u32 method, u32 data);
 
     // Compiles the macro if its not in the cache, and executes the compiled macro
-    void Execute(Engines::Maxwell3D& maxwell3d, u32 method, const std::vector<u32>& parameters);
+    void Execute(Engines::Maxwell3D& maxwell3d, u32 method, std::span<const u32> parameters);
 
 protected:
-    virtual std::unique_ptr<CachedMacro> Compile(const std::vector<u32>& code) = 0;
+    virtual std::unique_ptr<CachedMacro> Compile(std::span<const u32> code) = 0;
 
 private:
     struct CacheInfo {

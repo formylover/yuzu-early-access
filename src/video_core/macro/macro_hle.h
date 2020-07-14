@@ -16,7 +16,7 @@ namespace Engines {
 class Maxwell3D;
 }
 
-using HLEFunction = void (*)(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& parameters);
+using HLEFunction = void (*)(Engines::Maxwell3D& maxwell3d, std::span<const u32> parameters);
 
 class HLEMacro {
 public:
@@ -34,7 +34,7 @@ public:
     explicit HLEMacroImpl(Engines::Maxwell3D& maxwell3d, HLEFunction func);
     ~HLEMacroImpl();
 
-    void Execute(const std::vector<u32>& parameters, u32 method) override;
+    void Execute(std::span<const u32> parameters, u32 method) override;
 
 private:
     Engines::Maxwell3D& maxwell3d;

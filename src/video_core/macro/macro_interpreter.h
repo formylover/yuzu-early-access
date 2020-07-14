@@ -20,7 +20,7 @@ public:
     explicit MacroInterpreter(Engines::Maxwell3D& maxwell3d);
 
 protected:
-    std::unique_ptr<CachedMacro> Compile(const std::vector<u32>& code) override;
+    std::unique_ptr<CachedMacro> Compile(std::span<const u32> code) override;
 
 private:
     Engines::Maxwell3D& maxwell3d;
@@ -28,8 +28,8 @@ private:
 
 class MacroInterpreterImpl : public CachedMacro {
 public:
-    MacroInterpreterImpl(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& code);
-    void Execute(const std::vector<u32>& parameters, u32 method) override;
+    MacroInterpreterImpl(Engines::Maxwell3D& maxwell3d, std::span<const u32> code);
+    void Execute(std::span<const u32> parameters, u32 method) override;
 
 private:
     /// Resets the execution engine state, zeroing registers, etc.
@@ -96,7 +96,7 @@ private:
     u32 next_parameter_index = 0;
 
     bool carry_flag = false;
-    const std::vector<u32>& code;
+    std::span<const u32> code;
 };
 
 } // namespace Tegra

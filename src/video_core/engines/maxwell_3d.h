@@ -8,8 +8,8 @@
 #include <bitset>
 #include <limits>
 #include <optional>
+#include <span>
 #include <type_traits>
-#include <unordered_map>
 #include <vector>
 
 #include "common/assert.h"
@@ -1513,7 +1513,7 @@ private:
      * @param num_parameters Number of arguments
      * @param parameters Arguments to the method call
      */
-    void CallMacroMethod(u32 method, const std::vector<u32>& parameters);
+    void CallMacroMethod(u32 method, std::span<const u32> parameters);
 
     /// Handles writes to the macro uploading register.
     void ProcessMacroUpload(u32 data);

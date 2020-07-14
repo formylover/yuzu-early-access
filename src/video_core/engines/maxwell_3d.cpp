@@ -225,7 +225,7 @@ void Maxwell3D::ProcessMethodCall(u32 method, u32 argument, u32 nonshadow_argume
     }
 }
 
-void Maxwell3D::CallMacroMethod(u32 method, const std::vector<u32>& parameters) {
+void Maxwell3D::CallMacroMethod(u32 method, std::span<const u32> parameters) {
     // Reset the current macro.
     executing_macro = 0;
 

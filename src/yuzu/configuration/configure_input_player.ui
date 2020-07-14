@@ -155,7 +155,7 @@
             <item>
              <widget class="QLabel" name="labelRStickMod">
               <property name="text">
-               <string>修改:</string>
+               <string>按住轻摇:</string>
               </property>
              </widget>
             </item>
