@@ -6,6 +6,7 @@
 #include <list>
 #include <mutex>
 #include <utility>
+#include "common/assert.h"
 #include "common/threadsafe_queue.h"
 #include "input_common/gcadapter/gc_adapter.h"
 #include "input_common/gcadapter/gc_poller.h"
@@ -20,7 +21,10 @@ public:
     ~GCButton() override;
 
     bool GetStatus() const override {
-        return gcadapter->GetPadState()[port].buttons.at(button);
+        if (gcadapter->DeviceConnected(port)) {
+            return gcadapter->GetPadState()[port].buttons.at(button);
+        }
+        return false;
     }
 
 private:
@@ -34,17 +38,26 @@ public:
     explicit GCAxisButton(int port_, int axis_, float threshold_, bool trigger_if_greater_,
                           GCAdapter::Adapter* adapter)
         : port(port_), axis(axis_), threshold(threshold_), trigger_if_greater(trigger_if_greater_),
-          gcadapter(adapter), origin_value(adapter->GetOriginValue(port_, axis_)) {}
+          gcadapter(adapter) {
+        // L/R triggers range is only in positive direction beginning near 0
+        // 0.0 threshold equates to near half trigger press, but threshold accounts for variability.
+        if (axis > 3) {
+            threshold *= -0.5;
+        }
+    }
 
     bool GetStatus() const override {
-        const float current_axis_value = gcadapter->GetPadState()[port].axes.at(axis);
-        const float axis_value = (current_axis_value - origin_value) / 128.0f;
-        if (trigger_if_greater) {
-            // TODO: Might be worthwile to set a slider for the trigger threshold. It is currently
-            // always set to 0.5 in configure_input_player.cpp ZL/ZR HandleClick
-            return axis_value > threshold;
+        if (gcadapter->DeviceConnected(port)) {
+            const float axis_value =
+                (gcadapter->GetPadState()[port].axes.at(axis) - 128.0f) / 128.0f;
+            if (trigger_if_greater) {
+                // TODO: Might be worthwile to set a slider for the trigger threshold. It is
+                // currently always set to 0.5 in configure_input_player.cpp ZL/ZR HandleClick
+                return axis_value > threshold;
+            }
+            return axis_value < -threshold;
         }
-        return axis_value < -threshold;
+        return false;
     }
 
 private:
@@ -53,7 +66,6 @@ private:
     float threshold;
     bool trigger_if_greater;
     GCAdapter::Adapter* gcadapter;
-    const float origin_value;
 };
 
 GCButtonFactory::GCButtonFactory(std::shared_ptr<GCAdapter::Adapter> adapter_)
@@ -90,9 +102,12 @@ std::unique_ptr<Input::ButtonDevice> GCButtonFactory::Create(const Common::Param
         return std::make_unique<GCAxisButton>(port, axis, threshold, trigger_if_greater,
                                               adapter.get());
     }
+
+    UNREACHABLE();
+    return nullptr;
 }
 
-Common::ParamPackage GCButtonFactory::GetNextInput() {
+Common::ParamPackage GCButtonFactory::GetNextInput() const {
     Common::ParamPackage params;
     GCAdapter::GCPadStatus pad;
     auto& queue = adapter->GetPadQueue();
@@ -140,17 +155,17 @@ void GCButtonFactory::EndConfiguration() {
 class GCAnalog final : public Input::AnalogDevice {
 public:
     GCAnalog(int port_, int axis_x_, int axis_y_, float deadzone_, GCAdapter::Adapter* adapter)
-        : port(port_), axis_x(axis_x_), axis_y(axis_y_), deadzone(deadzone_), gcadapter(adapter),
-          origin_value_x(adapter->GetOriginValue(port_, axis_x_)),
-          origin_value_y(adapter->GetOriginValue(port_, axis_y_)) {}
+        : port(port_), axis_x(axis_x_), axis_y(axis_y_), deadzone(deadzone_), gcadapter(adapter) {}
 
     float GetAxis(int axis) const {
-        std::lock_guard lock{mutex};
-        const auto origin_value = axis % 2 == 0 ? origin_value_x : origin_value_y;
-        // division is not by a perfect 128 to account for some variance in center location
-        // e.g. my device idled at 131 in X, 120 in Y, and full range of motion was in range
-        // [20-230]
-        return (gcadapter->GetPadState()[port].axes.at(axis) - origin_value) / 95.0f;
+        if (gcadapter->DeviceConnected(port)) {
+            std::lock_guard lock{mutex};
+            // division is not by a perfect 128 to account for some variance in center location
+            // e.g. my device idled at 131 in X, 120 in Y, and full range of motion was in range
+            // [20-230]
+            return (gcadapter->GetPadState()[port].axes.at(axis) - 128.0f) / 95.0f;
+        }
+        return 0.0f;
     }
 
     std::pair<float, float> GetAnalog(int axis_x, int axis_y) const {
@@ -200,10 +215,8 @@ private:
     const int axis_x;
     const int axis_y;
     const float deadzone;
-    GCAdapter::Adapter* gcadapter;
-    const float origin_value_x;
-    const float origin_value_y;
     mutable std::mutex mutex;
+    GCAdapter::Adapter* gcadapter;
 };
 
 /// An analog device factory that creates analog devices from GC Adapter
@@ -250,7 +263,7 @@ Common::ParamPackage GCAnalogFactory::GetNextInput() {
             const u8 axis = static_cast<u8>(pad.axis);
             if (analog_x_axis == -1) {
                 analog_x_axis = axis;
-                controller_number = port;
+                controller_number = static_cast<int>(port);
             } else if (analog_y_axis == -1 && analog_x_axis != axis && controller_number == port) {
                 analog_y_axis = axis;
             }
