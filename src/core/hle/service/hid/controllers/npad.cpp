@@ -502,15 +502,29 @@ void Controller_NPad::SetNpadMode(u32 npad_id, NPadAssignments assignment_mode) 
 
 void Controller_NPad::VibrateController(const std::vector<u32>& controller_ids,
                                         const std::vector<Vibration>& vibrations) {
-    LOG_DEBUG(Service_HID, "(STUBBED) called");
 
     if (!can_controllers_vibrate) {
         return;
     }
     for (std::size_t i = 0; i < controller_ids.size(); i++) {
-        std::size_t controller_pos = NPadIdToIndex(static_cast<u32>(i));
+        const u8 byte0 = static_cast<u8>(controller_ids[i] % 256); // possible motor direction?
+        const u8 byte1 = static_cast<u8>((controller_ids[i] >> 8) % 256);  // controller number
+        const u8 byte2 = static_cast<u8>((controller_ids[i] >> 16) % 256); // possible start/stop?
+        const u8 byte3 = static_cast<u8>((controller_ids[i] >> 24) % 256); // unknown
+        const auto controller_pos = NPadIdToIndex(static_cast<u32>(byte1));
+        const bool vibration_start = byte2 == 0;
+
         if (connected_controllers[controller_pos].is_connected) {
-            // TODO(ogniK): Vibrate the physical controller
+            f32 amplitude = std::max(vibrations[0].amp_low, vibrations[0].amp_high);
+            if (amplitude > 0 && vibration_start) {
+                // Amplitudes are too small, The motors can't spin with that little force
+                amplitude *= 6.0f;
+                amplitude = std::clamp(amplitude, 0.2f, 1.0f);
+
+                using namespace Settings::NativeButton;
+                const auto& button_state = buttons[controller_pos];
+                button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(amplitude, 1);
+            }
         }
     }
     last_processed_vibration = vibrations.back();

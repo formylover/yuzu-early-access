@@ -48,8 +48,9 @@ static int SDLEventWatcher(void* user_data, SDL_Event* event) {
 
 class SDLJoystick {
 public:
-    SDLJoystick(std::string guid_, int port_, SDL_Joystick* joystick)
-        : guid{std::move(guid_)}, port{port_}, sdl_joystick{joystick, &SDL_JoystickClose} {}
+    SDLJoystick(std::string guid_, int port_, SDL_Joystick* joystick, SDL_Haptic* haptic)
+        : guid{std::move(guid_)}, port{port_}, sdl_joystick{joystick, &SDL_JoystickClose},
+          sdl_haptic{haptic, &SDL_HapticClose} {}
 
     void SetButton(int button, bool value) {
         std::lock_guard lock{mutex};
@@ -69,6 +70,12 @@ public:
     float GetAxis(int axis) const {
         std::lock_guard lock{mutex};
         return state.axes.at(axis) / 32767.0f;
+    }
+
+    bool RumblePlay(f32 amplitude, int time) {
+        if (SDL_HapticRumbleSupported(sdl_haptic.get())) {
+            return SDL_HapticRumblePlay(sdl_haptic.get(), amplitude, time);
+        }
     }
 
     std::tuple<float, float> GetAnalog(int axis_x, int axis_y) const {
@@ -115,6 +122,10 @@ public:
         return sdl_joystick.get();
     }
 
+    SDL_Haptic* GetSDLHaptic() const {
+        return sdl_haptic.get();
+    }
+
     void SetSDLJoystick(SDL_Joystick* joystick) {
         sdl_joystick.reset(joystick);
     }
@@ -128,6 +139,7 @@ private:
     std::string guid;
     int port;
     std::unique_ptr<SDL_Joystick, decltype(&SDL_JoystickClose)> sdl_joystick;
+    std::unique_ptr<SDL_Haptic, decltype(&SDL_HapticClose)> sdl_haptic;
     mutable std::mutex mutex;
 };
 
@@ -136,13 +148,13 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickByGUID(const std::string& g
     const auto it = joystick_map.find(guid);
     if (it != joystick_map.end()) {
         while (it->second.size() <= static_cast<std::size_t>(port)) {
-            auto joystick =
-                std::make_shared<SDLJoystick>(guid, static_cast<int>(it->second.size()), nullptr);
+            auto joystick = std::make_shared<SDLJoystick>(guid, static_cast<int>(it->second.size()),
+                                                          nullptr, nullptr);
             it->second.emplace_back(std::move(joystick));
         }
         return it->second[port];
     }
-    auto joystick = std::make_shared<SDLJoystick>(guid, 0, nullptr);
+    auto joystick = std::make_shared<SDLJoystick>(guid, 0, nullptr, nullptr);
     return joystick_map[guid].emplace_back(std::move(joystick));
 }
 
@@ -178,25 +190,34 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickBySDLID(SDL_JoystickID sdl_
         // There is no SDLJoystick without a mapped SDL_Joystick
         // Create a new SDLJoystick
         const int port = static_cast<int>(map_it->second.size());
-        auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick);
+        auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, nullptr);
         return map_it->second.emplace_back(std::move(joystick));
     }
 
-    auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick);
+    auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, nullptr);
     return joystick_map[guid].emplace_back(std::move(joystick));
 }
 
 void SDLState::InitJoystick(int joystick_index) {
     SDL_Joystick* sdl_joystick = SDL_JoystickOpen(joystick_index);
     if (!sdl_joystick) {
-        LOG_ERROR(Input, "failed to open joystick {}", joystick_index);
+        LOG_ERROR(Input, "Failed to open joystick {}", joystick_index);
         return;
     }
-    const std::string guid = GetGUID(sdl_joystick);
 
+    SDL_Haptic* sdl_haptic = SDL_HapticOpenFromJoystick(sdl_joystick);
+    if (!sdl_haptic) {
+        LOG_INFO(Input, "Controller does not support haptics {}", joystick_index);
+    } else {
+        if (SDL_HapticRumbleInit(sdl_haptic) < 0) {
+            LOG_INFO(Input, "Unable to initialize rumble {}", joystick_index);
+        }
+    }
+
+    const std::string guid = GetGUID(sdl_joystick);
     std::lock_guard lock{joystick_map_mutex};
     if (joystick_map.find(guid) == joystick_map.end()) {
-        auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick);
+        auto joystick = std::make_shared<SDLJoystick>(guid, 0, sdl_joystick, sdl_haptic);
         joystick_map[guid].emplace_back(std::move(joystick));
         return;
     }
@@ -209,7 +230,7 @@ void SDLState::InitJoystick(int joystick_index) {
         return;
     }
     const int port = static_cast<int>(joystick_guid_list.size());
-    auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick);
+    auto joystick = std::make_shared<SDLJoystick>(guid, port, sdl_joystick, sdl_haptic);
     joystick_guid_list.emplace_back(std::move(joystick));
 }
 
@@ -283,6 +304,10 @@ public:
 
     bool GetStatus() const override {
         return joystick->GetButton(button);
+    }
+
+    bool SetRumblePlay(f32 amplitude, int time) const override {
+        return joystick->RumblePlay(amplitude, time);
     }
 
 private:
@@ -477,9 +502,10 @@ SDLState::SDLState() {
     RegisterFactory<AnalogDevice>("sdl", std::make_shared<SDLAnalogFactory>(*this));
 
     // If the frontend is going to manage the event loop, then we dont start one here
-    start_thread = !SDL_WasInit(SDL_INIT_JOYSTICK);
-    if (start_thread && SDL_Init(SDL_INIT_JOYSTICK) < 0) {
-        LOG_CRITICAL(Input, "SDL_Init(SDL_INIT_JOYSTICK) failed with: {}", SDL_GetError());
+    start_thread = !SDL_WasInit(SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC);
+    if (start_thread && SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC) < 0) {
+        LOG_CRITICAL(Input, "SDL_Init(SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC) failed with: {}",
+                     SDL_GetError());
         return;
     }
     if (SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1") == SDL_FALSE) {
@@ -516,7 +542,7 @@ SDLState::~SDLState() {
     initialized = false;
     if (start_thread) {
         poll_thread.join();
-        SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+        SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC);
     }
 }
 
