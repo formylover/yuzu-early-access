@@ -31,18 +31,18 @@ static const std::bitset<32> PERSISTENT_REGISTERS = Common::X64::BuildRegSet({
 MacroJITx64::MacroJITx64(Engines::Maxwell3D& maxwell3d)
     : MacroEngine::MacroEngine(maxwell3d), maxwell3d(maxwell3d) {}
 
-std::unique_ptr<CachedMacro> MacroJITx64::Compile(std::span<const u32> code) {
+std::unique_ptr<CachedMacro> MacroJITx64::Compile(const std::vector<u32>& code) {
     return std::make_unique<MacroJITx64Impl>(maxwell3d, code);
 }
 
-MacroJITx64Impl::MacroJITx64Impl(Engines::Maxwell3D& maxwell3d, std::span<const u32> code)
+MacroJITx64Impl::MacroJITx64Impl(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& code)
     : Xbyak::CodeGenerator(MAX_CODE_SIZE), code(code), maxwell3d(maxwell3d) {
     Compile();
 }
 
 MacroJITx64Impl::~MacroJITx64Impl() = default;
 
-void MacroJITx64Impl::Execute(std::span<const u32> parameters, u32 method) {
+void MacroJITx64Impl::Execute(const std::vector<u32>& parameters, u32 method) {
     MICROPROFILE_SCOPE(MacroJitExecute);
     ASSERT_OR_EXECUTE(program != nullptr, { return; });
     JITState state{};

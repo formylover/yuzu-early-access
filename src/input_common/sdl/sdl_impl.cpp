@@ -306,8 +306,8 @@ public:
         return joystick->GetButton(button);
     }
 
-    bool SetRumblePlay(f32 amplitude, int time) const override {
-        return joystick->RumblePlay(amplitude, time);
+    bool SetRumblePlay(f32 amplitude) const override {
+        return joystick->RumblePlay(amplitude, SDL_HAPTIC_INFINITY);
     }
 
 private:

@@ -26,7 +26,7 @@ public:
     explicit MacroJITx64(Engines::Maxwell3D& maxwell3d);
 
 protected:
-    std::unique_ptr<CachedMacro> Compile(std::span<const u32> code) override;
+    std::unique_ptr<CachedMacro> Compile(const std::vector<u32>& code) override;
 
 private:
     Engines::Maxwell3D& maxwell3d;
@@ -34,10 +34,10 @@ private:
 
 class MacroJITx64Impl : public Xbyak::CodeGenerator, public CachedMacro {
 public:
-    MacroJITx64Impl(Engines::Maxwell3D& maxwell3d, std::span<const u32> code);
+    MacroJITx64Impl(Engines::Maxwell3D& maxwell3d, const std::vector<u32>& code);
     ~MacroJITx64Impl();
 
-    void Execute(std::span<const u32> parameters, u32 method) override;
+    void Execute(const std::vector<u32>& parameters, u32 method) override;
 
     void Compile_ALU(Macro::Opcode opcode);
     void Compile_AddImmediate(Macro::Opcode opcode);
@@ -91,7 +91,7 @@ private:
     u32 pc{};
     std::optional<u32> delayed_pc;
 
-    std::span<const u32> code;
+    const std::vector<u32>& code;
     Engines::Maxwell3D& maxwell3d;
 };
 

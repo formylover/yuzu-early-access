@@ -33,7 +33,7 @@ public:
     virtual bool GetAnalogDirectionStatus(AnalogDirection direction) const {
         return {};
     }
-    virtual bool SetRumblePlay(f32 amplitude, int time) const {
+    virtual bool SetRumblePlay(f32 amplitude) const {
         return {};
     }
 };
