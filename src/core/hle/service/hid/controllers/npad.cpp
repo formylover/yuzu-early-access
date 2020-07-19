@@ -500,25 +500,20 @@ void Controller_NPad::SetNpadMode(u32 npad_id, NPadAssignments assignment_mode) 
     }
 }
 
-void Controller_NPad::VibrateController(const std::vector<u32>& controller_ids,
+void Controller_NPad::VibrateController(const std::vector<ControllerIds>& controller_ids,
                                         const std::vector<Vibration>& vibrations) {
 
     if (!can_controllers_vibrate) {
         return;
     }
     for (std::size_t i = 0; i < controller_ids.size(); i++) {
-        const u8 byte0 = static_cast<u8>(controller_ids[i] % 256); // possible motor direction?
-        const u8 byte1 = static_cast<u8>((controller_ids[i] >> 8) % 256);  // controller number
-        const u8 byte2 = static_cast<u8>((controller_ids[i] >> 16) % 256); // possible start/stop?
-        const u8 byte3 = static_cast<u8>((controller_ids[i] >> 24) % 256); // unknown
-        const auto controller_pos = NPadIdToIndex(static_cast<u32>(byte1));
-        const bool vibration_start = byte2 == 0;
+        const auto controller_pos = NPadIdToIndex(controller_ids[i].controller);
 
-        if (connected_controllers[controller_pos].is_connected && vibration_start) {
+        if (connected_controllers[controller_pos].is_connected &&
+            !controller_ids[i].vibration_stop) {
             const f32 amplitude = std::max(vibrations[0].amp_low, vibrations[0].amp_high);
             // Amplitudes are too small, The motors can't spin with that little force
-            const auto new_amplitude =
-                pow(amplitude, 0.45f) * (3.0f - 2.0f * pow(amplitude, 0.225f));
+            const auto new_amplitude = pow(amplitude, 0.5f) * (3.0f - 2.0f * pow(amplitude, 0.15f));
             using namespace Settings::NativeButton;
             const auto& button_state = buttons[controller_pos];
             button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(new_amplitude);

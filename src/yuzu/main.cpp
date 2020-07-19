@@ -195,6 +195,8 @@ GMainWindow::GMainWindow()
       provider(std::make_unique<FileSys::ManualContentProvider>()) {
     InitializeLogging();
 
+    LoadTranslation();
+
     setAcceptDrops(true);
     ui.setupUi(this);
     statusBar()->hide();
@@ -2052,6 +2054,9 @@ void GMainWindow::OnConfigure() {
     const bool old_discord_presence = UISettings::values.enable_discord_presence;
 
     ConfigureDialog configure_dialog(this, hotkey_registry);
+    connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
+            &GMainWindow::OnLanguageChanged);
+
     const auto result = configure_dialog.exec();
     if (result != QDialog::Accepted) {
         return;
@@ -2178,13 +2183,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 785" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 787" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 785 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 787 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2622,6 +2627,43 @@ void GMainWindow::UpdateUITheme() {
     }
 
     QIcon::setThemeSearchPaths(theme_paths);
+}
+
+void GMainWindow::LoadTranslation() {
+    // If the selected language is English, no need to install any translation
+    if (UISettings::values.language == QStringLiteral("en")) {
+        return;
+    }
+
+    bool loaded;
+
+    if (UISettings::values.language.isEmpty()) {
+        // If the selected language is empty, use system locale
+        loaded = translator.load(QLocale(), {}, {}, QStringLiteral(":/languages/"));
+    } else {
+        // Otherwise load from the specified file
+        loaded = translator.load(UISettings::values.language, QStringLiteral(":/languages/"));
+    }
+
+    if (loaded) {
+        qApp->installTranslator(&translator);
+    } else {
+        UISettings::values.language = QStringLiteral("en");
+    }
+}
+
+void GMainWindow::OnLanguageChanged(const QString& locale) {
+    if (UISettings::values.language != QStringLiteral("en")) {
+        qApp->removeTranslator(&translator);
+    }
+
+    UISettings::values.language = locale;
+    LoadTranslation();
+    ui.retranslateUi(this);
+    UpdateWindowTitle();
+
+    if (emulation_running)
+        ui.action_Start->setText(tr("继续"));
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {
