@@ -1240,20 +1240,14 @@ void GMainWindow::OnGameListLoadFile(QString game_path) {
     BootGame(game_path);
 }
 
-void GMainWindow::OnGameListOpenFolder(GameListOpenTarget target, const std::string& game_path) {
+void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target) {
     std::string path;
     QString open_target;
 
-    const auto v_file = Core::GetGameFileFromPath(vfs, game_path);
-    const auto loader = Loader::GetLoader(v_file);
-    FileSys::NACP control{};
-    u64 program_id{};
-
-    loader->ReadControlData(control);
-    loader->ReadProgramId(program_id);
-
-    const bool has_user_save{control.GetDefaultNormalSaveSize() > 0};
-    const bool has_device_save{control.GetDeviceSaveDataSize() > 0};
+    FileSys::PatchManager pm{program_id};
+    const auto control = pm.GetControlMetadata();
+    const bool has_user_save{control.first->GetDefaultNormalSaveSize() > 0};
+    const bool has_device_save{control.first->GetDeviceSaveDataSize() > 0};
 
     ASSERT_MSG(has_user_save != has_device_save, "Game uses both user and device savedata?");
 
@@ -2183,13 +2177,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 788" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 789" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 788 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 789 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

@@ -15,6 +15,8 @@ const Themes themes{{
     {"彩色", "colorful"},
     {"黑暗", "qdarkstyle"},
     {"多彩黑暗", "colorful_dark"},
+    {"深蓝色", "qdarkstyle_midnight_blue"},
+    {"多彩深蓝色", "colorful_midnight_blue"},	
 }};
 
 Values values = {};
