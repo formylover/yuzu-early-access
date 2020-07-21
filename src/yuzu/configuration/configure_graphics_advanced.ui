@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>404</width>
     <height>321</height>
    </rect>
   </property>
@@ -23,39 +23,53 @@
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
-          <item>
-           <widget class="QLabel" name="label_gpu_accuracy">
-            <property name="text">
-             <string>精度等级:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="gpu_accuracy">
-            <item>
+         <widget class="QWidget" name="gpu_accuracy_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_gpu_accuracy">
              <property name="text">
-              <string notr="true">Normal</string>
+              <string>精度等级:</string>
              </property>
-            </item>
-            <item>
-             <property name="text">
-              <string notr="true">High</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string notr="true">Extreme(very slow)</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-         </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="gpu_accuracy">
+             <item>
+              <property name="text">
+               <string notr="true">正常</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string notr="true">高</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string notr="true">极限(非常慢)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_vsync">
           <property name="toolTip">
-           <string>垂直同步可以防止屏幕撕裂，但是启用了VSync的某些显卡性能较低。 如果您没有发现性能差异，请保持启用状态.</string>
+           <string>垂直同步可以防止屏幕撕裂，但是启用了VSync的某些显卡性能较低。 如果您没有发现性能差异，请保持启用状态。</string>
           </property>
           <property name="text">
            <string>使用垂直同步 (仅限OpenGL)</string>
@@ -65,7 +79,7 @@
         <item>
          <widget class="QCheckBox" name="use_assembly_shaders">
           <property name="toolTip">
-           <string>启用此功能可减少着色器的卡顿现象。 在支持的Nvidia设备上启用OpenGL组件着色器 (NV_gpu_program5 is required). 此功能是实验性的.</string>
+           <string>启用此功能可减少着色器的卡顿现象。 在支持的Nvidia设备上启用OpenGL组件着色器 (NV_gpu_program5 is required). 此功能是实验性的。</string>
           </property>
           <property name="text">
            <string>使用程序集着色器 (实验性的，仅限Nvidia OpenGL)</string>
@@ -97,44 +111,58 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_1">
-          <item>
-           <widget class="QLabel" name="af_label">
-            <property name="text">
-             <string>各项异性过滤:</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="anisotropic_filtering_combobox">
-            <item>
+         <widget class="QWidget" name="af_layout" native="true">
+          <layout class="QHBoxLayout" name="horizontalLayout_1">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="af_label">
              <property name="text">
-              <string>默认</string>
+              <string>各项异性过滤:</string>
              </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>2x</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>4x</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>8x</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>16x</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-         </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="anisotropic_filtering_combobox">
+             <item>
+              <property name="text">
+               <string>默认</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>2x</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>4x</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>8x</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>16x</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </widget>

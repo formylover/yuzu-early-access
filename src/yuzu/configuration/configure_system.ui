@@ -21,490 +21,494 @@
        <property name="title">
         <string>系统设置</string>
        </property>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_sound">
-          <property name="text">
-           <string>声音输出模式</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_console_id">
-          <property name="text">
-           <string>设备 ID:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="combo_language">
-          <property name="toolTip">
-           <string>注：这可以被覆盖时区的设置为自动选择</string>
-          </property>
-          <item>
-           <property name="text">
-            <string>日语 (日本語)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>英语</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>法语 (français)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>德语 (Deutsch)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>意大利语 (italiano)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>西班牙语 (español)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>中文</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>韩语 (한국어)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>荷兰语 (Nederlands)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>葡萄牙语 (português)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>俄语 (Русский)</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>台湾繁体</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>英式英语</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>加拿大法语</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>拉丁美洲西班牙语</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>简体中文</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>繁体中文 (正體中文)</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_region">
-          <property name="text">
-           <string>国家区域:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="combo_region">
-          <item>
-           <property name="text">
-            <string>日本</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>美国</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>欧洲</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>澳大利亚</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>中国</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>韩国</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>台湾地区</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_timezone">
-          <property name="text">
-           <string>时钟:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QComboBox" name="combo_time_zone">
-          <item>
-           <property name="text">
-            <string>自动</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>默认</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CET</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>CST6CDT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Cuba</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>EET</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Egypt</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Eire</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>EST</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>EST5EDT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GB</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GB-Eire</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GMT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GMT+0</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GMT-0</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>GMT0</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Greenwich</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Hongkong</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>HST</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Iceland</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Iran</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Israel</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Jamaica</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Japan</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Kwajalein</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Libya</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>MET</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>MST</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>MST7MDT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Navajo</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>NZ</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>NZ-CHAT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Poland</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Portugal</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>PRC</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>PST8PDT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ROC</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>ROK</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Singapore</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Turkey</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>UCT</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Universal</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>UTC</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>W-SU</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>WET</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Zulu</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QCheckBox" name="rng_seed_checkbox">
-          <property name="text">
-           <string>控制随机数生成</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QComboBox" name="combo_sound">
-          <item>
-           <property name="text">
-            <string>单声道</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>立体声</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>环绕</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_language">
-          <property name="text">
-           <string>语言</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QPushButton" name="button_regenerate_console_id">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="layoutDirection">
-           <enum>Qt::RightToLeft</enum>
-          </property>
-          <property name="text">
-           <string>重置 ID</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QCheckBox" name="custom_rtc_checkbox">
-          <property name="text">
-           <string>自定义时钟</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1">
-         <widget class="QDateTimeEdit" name="custom_rtc_edit">
-          <property name="minimumDate">
-           <date>
-            <year>1970</year>
-            <month>1</month>
-            <day>1</day>
-           </date>
-          </property>
-          <property name="displayFormat">
-           <string>d MMM yyyy h:mm:ss AP</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QLineEdit" name="rng_seed_edit">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="font">
-           <font>
-            <family>Lucida Console</family>
-           </font>
-          </property>
-          <property name="inputMask">
-           <string notr="true">HHHHHHHH</string>
-          </property>
-          <property name="maxLength">
-           <number>8</number>
-          </property>
-         </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_region">
+            <property name="text">
+             <string>国家区域:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QComboBox" name="combo_time_zone">
+            <item>
+             <property name="text">
+              <string>自动</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>默认</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CET</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>CST6CDT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cuba</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>EET</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Egypt</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Eire</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>EST</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>EST5EDT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GB</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GB-Eire</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GMT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GMT+0</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GMT-0</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GMT0</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Greenwich</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Hongkong</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>HST</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Iceland</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Iran</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Israel</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Jamaica</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Japan</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Kwajalein</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Libya</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MET</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MST</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MST7MDT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Navajo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>NZ</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>NZ-CHAT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Poland</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Portugal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>PRC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>PST8PDT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ROC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ROK</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Singapore</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Turkey</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>UCT</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Universal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>UTC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>W-SU</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>WET</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Zulu</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="combo_region">
+            <item>
+             <property name="text">
+              <string>日本</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>美国</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>欧洲</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>澳大利亚</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>中国</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>韩国</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>台湾地区</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_timezone">
+            <property name="text">
+             <string>时钟:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="combo_language">
+            <property name="toolTip">
+             <string>注：这可以被覆盖时区的设置为自动选择</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>日语 (日本語)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>英语</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>法语 (français)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>德语 (Deutsch)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>意大利语 (italiano)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>西班牙语 (español)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>中文</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>韩语 (한국어)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>荷兰语 (Nederlands)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>葡萄牙语 (português)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>俄语 (Русский)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>台湾繁体</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>英式英语</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>加拿大法语</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>拉丁美洲西班牙语</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>简体中文</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>繁体中文 (正體中文)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QCheckBox" name="custom_rtc_checkbox">
+            <property name="text">
+             <string>自定义时钟</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_language">
+            <property name="text">
+             <string>语言</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QCheckBox" name="rng_seed_checkbox">
+            <property name="text">
+             <string>控制随机数生成</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QComboBox" name="combo_sound">
+            <item>
+             <property name="text">
+              <string>单声道</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>立体声</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>环绕</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_console_id">
+            <property name="text">
+             <string>设备 ID:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label_sound">
+            <property name="text">
+             <string>声音输出模式</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QDateTimeEdit" name="custom_rtc_edit">
+            <property name="minimumDate">
+             <date>
+              <year>1970</year>
+              <month>1</month>
+              <day>1</day>
+             </date>
+            </property>
+            <property name="displayFormat">
+             <string>d MMM yyyy h:mm:ss AP</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QLineEdit" name="rng_seed_edit">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <family>Lucida Console</family>
+             </font>
+            </property>
+            <property name="inputMask">
+             <string notr="true">HHHHHHHH</string>
+            </property>
+            <property name="maxLength">
+             <number>8</number>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QPushButton" name="button_regenerate_console_id">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="layoutDirection">
+             <enum>Qt::RightToLeft</enum>
+            </property>
+            <property name="text">
+             <string>重置</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -525,7 +529,7 @@
      <item>
       <widget class="QLabel" name="label_disable_info">
        <property name="text">
-        <string>系统设置只有当游戏没有运行.</string>
+        <string>系统设置仅在游戏未运行时可用。</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

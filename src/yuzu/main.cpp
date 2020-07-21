@@ -851,6 +851,9 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
     connect(game_list, &GameList::OpenTransferableShaderCacheRequested, this,
             &GMainWindow::OnTransferableShaderCacheOpenFile);
+    connect(game_list, &GameList::RemoveInstalledEntryRequested, this,
+            &GMainWindow::OnGameListRemoveInstalledEntry);
+    connect(game_list, &GameList::RemoveFileRequested, this, &GMainWindow::OnGameListRemoveFile);
     connect(game_list, &GameList::DumpRomFSRequested, this, &GMainWindow::OnGameListDumpRomFS);
     connect(game_list, &GameList::CopyTIDRequested, this, &GMainWindow::OnGameListCopyTID);
     connect(game_list, &GameList::NavigateToGamedbEntryRequested, this,
@@ -1240,14 +1243,20 @@ void GMainWindow::OnGameListLoadFile(QString game_path) {
     BootGame(game_path);
 }
 
-void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target) {
+void GMainWindow::OnGameListOpenFolder(GameListOpenTarget target, const std::string& game_path) {
     std::string path;
     QString open_target;
 
-    FileSys::PatchManager pm{program_id};
-    const auto control = pm.GetControlMetadata();
-    const bool has_user_save{control.first->GetDefaultNormalSaveSize() > 0};
-    const bool has_device_save{control.first->GetDeviceSaveDataSize() > 0};
+    const auto v_file = Core::GetGameFileFromPath(vfs, game_path);
+    const auto loader = Loader::GetLoader(v_file);
+    FileSys::NACP control{};
+    u64 program_id{};
+
+    loader->ReadControlData(control);
+    loader->ReadProgramId(program_id);
+
+    const bool has_user_save{control.GetDefaultNormalSaveSize() > 0};
+    const bool has_device_save{control.GetDeviceSaveDataSize() > 0};
 
     ASSERT_MSG(has_user_save != has_device_save, "Game uses both user and device savedata?");
 
@@ -1255,7 +1264,6 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     case GameListOpenTarget::SaveData: {
         open_target = tr("保存数据");
         const std::string nand_dir = FileUtil::GetUserPath(FileUtil::UserPath::NANDDir);
-        ASSERT(program_id != 0);
 
         if (has_user_save) {
             // User save data
@@ -1320,14 +1328,12 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 }
 
 void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
-    ASSERT(program_id != 0);
-
     const QString shader_dir =
         QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir));
-    const QString tranferable_shader_cache_folder_path =
+    const QString transferable_shader_cache_folder_path =
         shader_dir + QStringLiteral("opengl") + QDir::separator() + QStringLiteral("transferable");
     const QString transferable_shader_cache_file_path =
-        tranferable_shader_cache_folder_path + QDir::separator() +
+        transferable_shader_cache_folder_path + QDir::separator() +
         QString::fromStdString(fmt::format("{:016X}.bin", program_id));
 
     if (!QFile::exists(transferable_shader_cache_file_path)) {
@@ -1348,7 +1354,7 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     param << QDir::toNativeSeparators(transferable_shader_cache_file_path);
     QProcess::startDetached(explorer, param);
 #else
-    QDesktopServices::openUrl(QUrl::fromLocalFile(tranferable_shader_cache_folder_path));
+    QDesktopServices::openUrl(QUrl::fromLocalFile(transferable_shader_cache_folder_path));
 #endif
 }
 
@@ -1390,6 +1396,174 @@ static bool RomFSRawCopy(QProgressDialog& dialog, const FileSys::VirtualDir& src
     }
 
     return true;
+}
+
+void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryType type) {
+    const QString entry_type = [this, type] {
+        switch (type) {
+        case InstalledEntryType::Game:
+            return tr("目录");
+        case InstalledEntryType::Update:
+            return tr("Update");
+        case InstalledEntryType::AddOnContent:
+            return tr("DLC");
+        default:
+            return QString{};
+        }
+    }();
+
+    if (QMessageBox::question(
+            this, tr("删除条目"), tr("删除已安装的游戏 %1?").arg(entry_type),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    switch (type) {
+    case InstalledEntryType::Game:
+        RemoveBaseContent(program_id, entry_type);
+        [[fallthrough]];
+    case InstalledEntryType::Update:
+        RemoveUpdateContent(program_id, entry_type);
+        if (type != InstalledEntryType::Game) {
+            break;
+        }
+        [[fallthrough]];
+    case InstalledEntryType::AddOnContent:
+        RemoveAddOnContent(program_id, entry_type);
+        break;
+    }
+    FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) + DIR_SEP +
+                                   "game_list");
+    game_list->PopulateAsync(UISettings::values.game_dirs);
+}
+
+void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
+    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
+    const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(program_id) ||
+                     fs_controller.GetSDMCContents()->RemoveExistingEntry(program_id);
+
+    if (res) {
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了已安装的基本游戏。"));
+    } else {
+        QMessageBox::warning(
+            this, tr("错误删除 %1").arg(entry_type),
+            tr("基本游戏未安装在NAND中，因此无法删除。"));
+    }
+}
+
+void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type) {
+    const auto update_id = program_id | 0x800;
+    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
+    const auto res = fs_controller.GetUserNANDContents()->RemoveExistingEntry(update_id) ||
+                     fs_controller.GetSDMCContents()->RemoveExistingEntry(update_id);
+
+    if (res) {
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了已安装的更新。"));
+    } else {
+        QMessageBox::warning(this, tr("错误删除 %1").arg(entry_type),
+                             tr("没有为此标题安装更新。"));
+    }
+}
+
+void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) {
+    u32 count{};
+    const auto& fs_controller = Core::System::GetInstance().GetFileSystemController();
+    const auto dlc_entries = Core::System::GetInstance().GetContentProvider().ListEntriesFilter(
+        FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
+
+    for (const auto& entry : dlc_entries) {
+        if ((entry.title_id & DLC_BASE_TITLE_ID_MASK) == program_id) {
+            const auto res =
+                fs_controller.GetUserNANDContents()->RemoveExistingEntry(entry.title_id) ||
+                fs_controller.GetSDMCContents()->RemoveExistingEntry(entry.title_id);
+            if (res) {
+                ++count;
+            }
+        }
+    }
+
+    if (count == 0) {
+        QMessageBox::warning(this, tr("错误删除 %1").arg(entry_type),
+                             tr("没有为此标题安装DLC。"));
+        return;
+    }
+
+    QMessageBox::information(this, tr("成功删除"),
+                             tr("成功删除 %1 安装的 DLC.").arg(count));
+}
+
+void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target) {
+    const QString question = [this, target] {
+        switch (target) {
+        case GameListRemoveTarget::ShaderCache:
+            return tr("删除可传输着色器缓存？");
+        case GameListRemoveTarget::CustomConfiguration:
+            return tr("删除自定义游戏设置？");
+        default:
+            return QString{};
+        }
+    }();
+
+    if (QMessageBox::question(this, tr("删除文件"), question, QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) != QMessageBox::Yes) {
+        return;
+    }
+
+    switch (target) {
+    case GameListRemoveTarget::ShaderCache:
+        RemoveTransferableShaderCache(program_id);
+        break;
+    case GameListRemoveTarget::CustomConfiguration:
+        RemoveCustomConfiguration(program_id);
+        break;
+    }
+}
+
+void GMainWindow::RemoveTransferableShaderCache(u64 program_id) {
+    const QString shader_dir =
+        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir));
+    const QString transferable_shader_cache_folder_path =
+        shader_dir + QStringLiteral("opengl") + QDir::separator() + QStringLiteral("transferable");
+    const QString transferable_shader_cache_file_path =
+        transferable_shader_cache_folder_path + QDir::separator() +
+        QString::fromStdString(fmt::format("{:016X}.bin", program_id));
+
+    if (!QFile::exists(transferable_shader_cache_file_path)) {
+        QMessageBox::warning(this, tr("删除可传输着色器缓存时出错"),
+                             tr("此游戏的着色器缓存不存在。"));
+        return;
+    }
+
+    if (QFile::remove(transferable_shader_cache_file_path)) {
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了可转移的着色器缓存。"));
+    } else {
+        QMessageBox::warning(this, tr("删除可传输着色器缓存时出错"),
+                             tr("无法删除可转移的着色器缓存。"));
+    }
+}
+
+void GMainWindow::RemoveCustomConfiguration(u64 program_id) {
+    const QString config_dir =
+        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir));
+    const QString custom_config_file_path =
+        config_dir + QString::fromStdString(fmt::format("{:016X}.ini", program_id));
+
+    if (!QFile::exists(custom_config_file_path)) {
+        QMessageBox::warning(this, tr("删除自定义设置时出错"),
+                             tr("此游戏的自定义设置不存在。"));
+        return;
+    }
+
+    if (QFile::remove(custom_config_file_path)) {
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了自定义游戏设置。"));
+    } else {
+        QMessageBox::warning(this, tr("删除自定义设置时出错"),
+                             tr("无法删除自定义游戏设置。"));
+    }
 }
 
 void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path) {
@@ -1712,9 +1886,9 @@ void GMainWindow::OnMenuInstallToNAND() {
                                 : tr("%n 文件(s) 安装失败\n", "", failed_files.size()));
 
     QMessageBox::information(this, tr("安装结果"), install_results);
-    game_list->PopulateAsync(UISettings::values.game_dirs);
     FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) + DIR_SEP +
                                    "game_list");
+    game_list->PopulateAsync(UISettings::values.game_dirs);
     ui.action_Install_File_NAND->setEnabled(true);
 }
 
@@ -2151,17 +2325,28 @@ void GMainWindow::OnToggleFilterBar() {
 
 void GMainWindow::OnCaptureScreenshot() {
     OnPauseGame();
-    QFileDialog png_dialog(this, tr("捕获截图"), UISettings::values.screenshot_path,
-                           tr("PNG 图片 (*.png)"));
-    png_dialog.setAcceptMode(QFileDialog::AcceptSave);
-    png_dialog.setDefaultSuffix(QStringLiteral("png"));
-    if (png_dialog.exec()) {
-        const QString path = png_dialog.selectedFiles().first();
-        if (!path.isEmpty()) {
-            UISettings::values.screenshot_path = QFileInfo(path).path();
-            render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor, path);
+
+    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    const auto screenshot_path =
+        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ScreenshotsDir));
+    const auto date =
+        QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_hh-mm-ss-zzz"));
+    QString filename = QStringLiteral("%1%2_%3.png")
+                           .arg(screenshot_path)
+                           .arg(title_id, 16, 16, QLatin1Char{'0'})
+                           .arg(date);
+
+#ifdef _WIN32
+    if (UISettings::values.enable_screenshot_save_as) {
+        filename = QFileDialog::getSaveFileName(this, tr("捕捉截图"), filename,
+                                                tr("PNG 图片 (*.png)"));
+        if (filename.isEmpty()) {
+            OnStartGame();
+            return;
         }
     }
+#endif
+    render_window->CaptureScreenshot(UISettings::values.screenshot_resolution_factor, filename);
     OnStartGame();
 }
 
@@ -2177,13 +2362,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 789" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 793" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 789 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 793 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

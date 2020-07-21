@@ -478,28 +478,56 @@ void GameList::PopupContextMenu(const QPoint& menu_location) {
 
 void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, std::string path) {
     QAction* open_save_location = context_menu.addAction(tr("打开保存数据位置"));
-    QAction* open_lfs_location = context_menu.addAction(tr("打开 MOD 数据位置"));
+    QAction* open_mod_location = context_menu.addAction(tr("打开 MOD 数据位置"));
     QAction* open_transferable_shader_cache =
         context_menu.addAction(tr("打开可转让着色器缓存"));
     context_menu.addSeparator();
+    QMenu* remove_menu = context_menu.addMenu(tr("删除"));
+    QAction* remove_update = remove_menu->addAction(tr("删除已安装的更新"));
+    QAction* remove_dlc = remove_menu->addAction(tr("删除所有已安装的DLC"));
+    QAction* remove_shader_cache = remove_menu->addAction(tr("删除着色器缓存"));
+    QAction* remove_custom_config = remove_menu->addAction(tr("删除自定义设置"));
+    remove_menu->addSeparator();
+    QAction* remove_all_content = remove_menu->addAction(tr("删除所有已安装的目录"));
     QAction* dump_romfs = context_menu.addAction(tr("提取 RomFS"));
     QAction* copy_tid = context_menu.addAction(tr("复制游戏ID到剪贴板"));
     QAction* navigate_to_gamedb_entry = context_menu.addAction(tr("查看该游戏兼容性"));
     context_menu.addSeparator();
     QAction* properties = context_menu.addAction(tr("属性"));
 
-    open_save_location->setEnabled(program_id != 0);
+    open_save_location->setVisible(program_id != 0);
+    open_mod_location->setVisible(program_id != 0);
+    open_transferable_shader_cache->setVisible(program_id != 0);
+    remove_update->setVisible(program_id != 0);
+    remove_dlc->setVisible(program_id != 0);
+    remove_shader_cache->setVisible(program_id != 0);
+    remove_all_content->setVisible(program_id != 0);
     auto it = FindMatchingCompatibilityEntry(compatibility_list, program_id);
     navigate_to_gamedb_entry->setVisible(it != compatibility_list.end() && program_id != 0);
 
-    connect(open_save_location, &QAction::triggered, [this, program_id]() {
-        emit OpenFolderRequested(program_id, GameListOpenTarget::SaveData);
+    connect(open_save_location, &QAction::triggered, [this, program_id, path]() {
+        emit OpenFolderRequested(GameListOpenTarget::SaveData, path);
     });
-    connect(open_lfs_location, &QAction::triggered, [this, program_id]() {
-        emit OpenFolderRequested(program_id, GameListOpenTarget::ModData);
+    connect(open_mod_location, &QAction::triggered, [this, program_id, path]() {
+        emit OpenFolderRequested(GameListOpenTarget::ModData, path);
     });
     connect(open_transferable_shader_cache, &QAction::triggered,
             [this, program_id]() { emit OpenTransferableShaderCacheRequested(program_id); });
+    connect(remove_all_content, &QAction::triggered, [this, program_id]() {
+        emit RemoveInstalledEntryRequested(program_id, InstalledEntryType::Game);
+    });
+    connect(remove_update, &QAction::triggered, [this, program_id]() {
+        emit RemoveInstalledEntryRequested(program_id, InstalledEntryType::Update);
+    });
+    connect(remove_dlc, &QAction::triggered, [this, program_id]() {
+        emit RemoveInstalledEntryRequested(program_id, InstalledEntryType::AddOnContent);
+    });
+    connect(remove_shader_cache, &QAction::triggered, [this, program_id]() {
+        emit RemoveFileRequested(program_id, GameListRemoveTarget::ShaderCache);
+    });
+    connect(remove_custom_config, &QAction::triggered, [this, program_id]() {
+        emit RemoveFileRequested(program_id, GameListRemoveTarget::CustomConfiguration);
+    });
     connect(dump_romfs, &QAction::triggered,
             [this, program_id, path]() { emit DumpRomFSRequested(program_id, path); });
     connect(copy_tid, &QAction::triggered,

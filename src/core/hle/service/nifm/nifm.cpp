@@ -9,6 +9,7 @@
 #include "core/hle/kernel/writable_event.h"
 #include "core/hle/service/nifm/nifm.h"
 #include "core/hle/service/service.h"
+#include "core/network/network.h"
 #include "core/settings.h"
 
 namespace Service::NIFM {
@@ -61,7 +62,7 @@ public:
             {18, nullptr, "SetRequirementByRevision"},
             {19, nullptr, "GetRequirement"},
             {20, nullptr, "GetRevision"},
-            {21, nullptr, "GetAppletInfo"},
+            {21, &IRequest::GetAppletInfo, "GetAppletInfo"},
             {22, nullptr, "GetAdditionalInfo"},
             {23, nullptr, "SetKeptInSleep"},
             {24, nullptr, "RegisterSocketDescriptor"},
@@ -124,6 +125,13 @@ private:
         rb.Push(RESULT_SUCCESS);
     }
 
+    void GetAppletInfo(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+        IPC::ResponseBuilder rb{ctx, 2};
+        rb.Push(RESULT_SUCCESS);
+    }
+
     Kernel::EventPair event1, event2;
 };
 
@@ -173,6 +181,16 @@ private:
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_SUCCESS);
+    }
+    void GetCurrentIpAddress(Kernel::HLERequestContext& ctx) {
+        LOG_WARNING(Service_NIFM, "(STUBBED) called");
+
+        const auto [ipv4, error] = Network::GetHostIPv4Address();
+        UNIMPLEMENTED_IF(error != Network::Errno::SUCCESS);
+
+        IPC::ResponseBuilder rb{ctx, 3};
+        rb.Push(RESULT_SUCCESS);
+        rb.PushRaw(ipv4);
     }
     void CreateTemporaryNetworkProfile(Kernel::HLERequestContext& ctx) {
         LOG_DEBUG(Service_NIFM, "called");
@@ -235,7 +253,7 @@ IGeneralService::IGeneralService(Core::System& system)
         {9, nullptr, "SetNetworkProfile"},
         {10, &IGeneralService::RemoveNetworkProfile, "RemoveNetworkProfile"},
         {11, nullptr, "GetScanDataOld"},
-        {12, nullptr, "GetCurrentIpAddress"},
+        {12, &IGeneralService::GetCurrentIpAddress, "GetCurrentIpAddress"},
         {13, nullptr, "GetCurrentAccessPointOld"},
         {14, &IGeneralService::CreateTemporaryNetworkProfile, "CreateTemporaryNetworkProfile"},
         {15, nullptr, "GetCurrentIpConfigInfo"},
