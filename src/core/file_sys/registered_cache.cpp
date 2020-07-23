@@ -664,6 +664,7 @@ bool RegisteredCache::RemoveExistingEntry(u64 title_id) const {
                  "Previously installed entry (v{}) for title_id={:016X} detected! "
                  "Attempting to remove...",
                  GetEntryVersion(title_id).value_or(0), title_id);
+
         // Get all the ncas associated with the current CNMT and delete them
         const auto meta_old_id =
             GetNcaIDFromMetadata(title_id, ContentRecordType::Meta).value_or(NcaID{});
@@ -684,9 +685,11 @@ bool RegisteredCache::RemoveExistingEntry(u64 title_id) const {
         const auto deleted_control = delete_nca(control_id);
         const auto deleted_html = delete_nca(html_id);
         const auto deleted_legal = delete_nca(legal_id);
-        return deleted_meta && (deleted_program || deleted_data || deleted_control ||
-                                deleted_html || deleted_legal);
+
+        return deleted_meta && (deleted_meta || deleted_program || deleted_data ||
+                                deleted_control || deleted_html || deleted_legal);
     }
+
     return false;
 }
 
