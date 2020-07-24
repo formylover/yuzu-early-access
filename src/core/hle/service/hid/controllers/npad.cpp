@@ -511,12 +511,11 @@ void Controller_NPad::VibrateController(const std::vector<ControllerIds>& contro
 
         if (connected_controllers[controller_pos].is_connected &&
             !controller_ids[i].vibration_stop) {
-            const f32 amplitude = std::max(vibrations[0].amp_low, vibrations[0].amp_high);
-            // Amplitudes are too small, The motors can't spin with that little force
-            const auto new_amplitude = pow(amplitude, 0.5f) * (3.0f - 2.0f * pow(amplitude, 0.15f));
             using namespace Settings::NativeButton;
             const auto& button_state = buttons[controller_pos];
-            button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(new_amplitude);
+            button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(
+                vibrations[0].amp_high, vibrations[0].amp_low, vibrations[0].freq_high,
+                vibrations[0].freq_low);
         }
     }
     last_processed_vibration = vibrations.back();

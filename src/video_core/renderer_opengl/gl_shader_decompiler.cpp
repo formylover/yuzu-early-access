@@ -1919,7 +1919,7 @@ private:
     Expression Comparison(Operation operation) {
         static_assert(!unordered || type == Type::Float);
 
-        const Expression expr = GenerateBinaryInfix(operation, op, Type::Bool, type, type);
+        Expression expr = GenerateBinaryInfix(operation, op, Type::Bool, type, type);
 
         if constexpr (op.compare("!=") == 0 && type == Type::Float && !unordered) {
             // GLSL's operator!=(float, float) doesn't seem be ordered. This happens on both AMD's
@@ -1957,10 +1957,6 @@ private:
         code.AddLine("uaddCarry({}, {}, {});", VisitOperand(operation, 0).AsUint(),
                      VisitOperand(operation, 1).AsUint(), carry);
         return {fmt::format("({} != 0)", carry), Type::Bool};
-    }
-
-    Expression LogicalFIsNan(Operation operation) {
-        return GenerateUnary(operation, "isnan", Type::Bool, Type::Float);
     }
 
     Expression LogicalAssign(Operation operation) {
@@ -2776,15 +2772,6 @@ private:
 
     u32 GetNumPhysicalVaryings() const {
         return std::min<u32>(device.GetMaxVaryings(), Maxwell::NumVaryings);
-    }
-
-    bool IsRenderTargetEnabled(u32 render_target) const {
-        for (u32 component = 0; component < 4; ++component) {
-            if (header.ps.IsColorComponentOutputEnabled(render_target, component)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     const Device& device;
