@@ -139,11 +139,11 @@ private:
     static constexpr u64 page_table_size{1 << page_table_bits};
     static constexpr u64 page_table_mask{page_table_size - 1};
 
-    std::vector<PageEntry> page_table;
+    Core::System& system;
 
     VideoCore::RasterizerInterface& rasterizer;
 
-    Core::System& system;
+    std::vector<PageEntry> page_table;
 };
 
 } // namespace Tegra

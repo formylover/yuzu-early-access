@@ -15,7 +15,7 @@
 namespace Tegra {
 
 MemoryManager::MemoryManager(Core::System& system, VideoCore::RasterizerInterface& rasterizer)
-    : rasterizer{rasterizer}, system{system}, page_table(page_table_size) {}
+    : system{system}, rasterizer{rasterizer}, page_table(page_table_size) {}
 
 MemoryManager::~MemoryManager() = default;
 
