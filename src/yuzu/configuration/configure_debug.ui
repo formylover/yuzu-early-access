@@ -171,26 +171,6 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_6">
       <item>
-       <widget class="QCheckBox" name="dump_decompressed_nso">
-        <property name="whatsThis">
-         <string>选中后，任何尝试加载或修补的NSO yuzu都将被解压缩后复制到 yuzu/dump 目录.</string>
-        </property>
-        <property name="text">
-         <string>Dump 解压缩 NSOs</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="dump_exefs">
-        <property name="whatsThis">
-         <string>选中后，yuzu加载的任何游戏都将其ExeFS转储到 yuzu/dump 目录.</string>
-        </property>
-        <property name="text">
-         <string>转储 ExeFS</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
          <string>启用详细报表服务</string>
@@ -257,8 +237,6 @@
   <tabstop>open_log_button</tabstop>
   <tabstop>homebrew_args_edit</tabstop>
   <tabstop>enable_graphics_debugging</tabstop>
-  <tabstop>dump_decompressed_nso</tabstop>
-  <tabstop>dump_exefs</tabstop>
   <tabstop>reporting_services</tabstop>
   <tabstop>quest_flag</tabstop>
  </tabstops>

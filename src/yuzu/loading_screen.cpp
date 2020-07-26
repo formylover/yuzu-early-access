@@ -94,7 +94,7 @@ LoadingScreen::LoadingScreen(QWidget* parent)
     stage_translations = {
         {VideoCore::LoadCallbackStage::Prepare, tr("载入中...")},
         {VideoCore::LoadCallbackStage::Build, tr("加载着色器 %1 / %2")},
-        {VideoCore::LoadCallbackStage::Complete, tr("起动中...")},
+        {VideoCore::LoadCallbackStage::Complete, tr("启动中...")},
     };
     progressbar_style = {
         {VideoCore::LoadCallbackStage::Prepare, PROGRESSBAR_STYLE_PREPARE},

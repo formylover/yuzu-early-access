@@ -86,7 +86,6 @@ struct BehaviorFlags {
 static_assert(sizeof(BehaviorFlags) == 0x4, "BehaviorFlags is an invalid size");
 
 struct VoiceState {
-    bool dirty{};
     s64 played_sample_count{};
     s32 offset{};
     s32 wave_buffer_index{};

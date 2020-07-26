@@ -283,7 +283,7 @@ bool ServerVoiceInfo::ShouldSkip() const {
 }
 
 bool ServerVoiceInfo::UpdateForCommandGeneration(VoiceContext& voice_context) {
-    std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT> temp_dsp_voice_states{};
+    std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT> dsp_voice_states{};
     if (in_params.is_new) {
         ResetResources(voice_context);
         in_params.last_volume = in_params.volume;
@@ -293,10 +293,10 @@ bool ServerVoiceInfo::UpdateForCommandGeneration(VoiceContext& voice_context) {
     const s32 channel_count = in_params.channel_count;
     for (s32 i = 0; i < channel_count; i++) {
         const auto channel_resource = in_params.voice_channel_resource_id[i];
-        temp_dsp_voice_states[i] =
+        dsp_voice_states[i] =
             &voice_context.GetDspSharedState(static_cast<std::size_t>(channel_resource));
     }
-    return UpdateParametersForCommandGeneration(temp_dsp_voice_states);
+    return UpdateParametersForCommandGeneration(dsp_voice_states);
 }
 
 void ServerVoiceInfo::ResetResources(VoiceContext& voice_context) {
@@ -312,10 +312,10 @@ void ServerVoiceInfo::ResetResources(VoiceContext& voice_context) {
 }
 
 bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
-    std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& temp_dsp_voice_states) {
+    std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& dsp_voice_states) {
     const s32 channel_count = in_params.channel_count;
     if (in_params.wave_buffer_flush_request_count > 0) {
-        FlushWaveBuffers(in_params.wave_buffer_flush_request_count, temp_dsp_voice_states,
+        FlushWaveBuffers(in_params.wave_buffer_flush_request_count, dsp_voice_states,
                          channel_count);
         in_params.wave_buffer_flush_request_count = 0;
     }
@@ -325,13 +325,13 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
         for (std::size_t i = 0; i < AudioCommon::MAX_WAVE_BUFFERS; i++) {
             if (!in_params.wave_buffer[i].sent_to_dsp) {
                 for (s32 channel = 0; channel < channel_count; channel++) {
-                    temp_dsp_voice_states[channel]->is_wave_buffer_valid[i] = true;
+                    dsp_voice_states[channel]->is_wave_buffer_valid[i] = true;
                 }
                 in_params.wave_buffer[i].sent_to_dsp = true;
             }
         }
         in_params.should_depop = false;
-        return HasValidWaveBuffer(temp_dsp_voice_states[0]);
+        return HasValidWaveBuffer(dsp_voice_states[0]);
     }
     case ServerPlayState::Paused:
     case ServerPlayState::Stop: {
@@ -342,7 +342,7 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
         for (std::size_t i = 0; i < AudioCommon::MAX_WAVE_BUFFERS; i++) {
             in_params.wave_buffer[i].sent_to_dsp = true;
             for (s32 channel = 0; channel < channel_count; channel++) {
-                auto* dsp_state = temp_dsp_voice_states[channel];
+                auto* dsp_state = dsp_voice_states[channel];
 
                 if (dsp_state->is_wave_buffer_valid[i]) {
                     dsp_state->wave_buffer_index =
@@ -355,7 +355,7 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
         }
 
         for (s32 channel = 0; channel < channel_count; channel++) {
-            auto* dsp_state = temp_dsp_voice_states[channel];
+            auto* dsp_state = dsp_voice_states[channel];
             dsp_state->offset = 0;
             dsp_state->played_sample_count = 0;
             dsp_state->fraction = 0;
@@ -375,14 +375,14 @@ bool ServerVoiceInfo::UpdateParametersForCommandGeneration(
 }
 
 void ServerVoiceInfo::FlushWaveBuffers(
-    u8 flush_count, std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& temp_dsp_voice_states,
+    u8 flush_count, std::array<VoiceState*, AudioCommon::MAX_CHANNEL_COUNT>& dsp_voice_states,
     s32 channel_count) {
     auto wave_head = in_params.wave_bufffer_head;
 
     for (u8 i = 0; i < flush_count; i++) {
         in_params.wave_buffer[wave_head].sent_to_dsp = true;
         for (s32 channel = 0; channel < channel_count; channel++) {
-            auto* dsp_state = temp_dsp_voice_states[channel];
+            auto* dsp_state = dsp_voice_states[channel];
             dsp_state->wave_buffer_consumed++;
             dsp_state->is_wave_buffer_valid[wave_head] = false;
             dsp_state->wave_buffer_index =
@@ -436,9 +436,7 @@ const VoiceState& VoiceContext::GetState(std::size_t i) const {
 
 VoiceState& VoiceContext::GetDspSharedState(std::size_t i) {
     ASSERT(i < voice_count);
-    auto& voice_state = dsp_voice_states.at(i);
-    voice_state.dirty = true;
-    return voice_state;
+    return dsp_voice_states.at(i);
 }
 
 const VoiceState& VoiceContext::GetDspSharedState(std::size_t i) const {
@@ -522,14 +520,8 @@ void VoiceContext::SortInfo() {
 }
 
 void VoiceContext::UpdateStateByDspShared() {
-    for (std::size_t i = 0; i < voice_count; i++) {
-        auto& dsp_state = dsp_voice_states[i];
-        if (!dsp_state.dirty) {
-            continue;
-        }
-        dsp_state.dirty = false;
-        voice_states[i] = dsp_state;
-    }
+    std::memcpy(voice_states.data(), dsp_voice_states.data(),
+                sizeof(VoiceState) * dsp_voice_states.size());
 }
 
 } // namespace AudioCore
