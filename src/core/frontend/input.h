@@ -33,9 +33,6 @@ public:
     virtual bool GetAnalogDirectionStatus(AnalogDirection direction) const {
         return {};
     }
-    virtual bool SetRumblePlay(f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) const {
-        return {};
-    }
 };
 
 /// An abstract class template for a factory that can create input devices.

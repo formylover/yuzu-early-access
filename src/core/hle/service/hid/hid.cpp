@@ -770,12 +770,12 @@ void Hid::EndPermitVibrationSession(Kernel::HLERequestContext& ctx) {
 
 void Hid::SendVibrationValue(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto controller_id{rp.PopRaw<Controller_NPad::ControllerIds>()};
+    const auto controller_id{rp.Pop<u32>()};
     const auto vibration_values{rp.PopRaw<Controller_NPad::Vibration>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    LOG_DEBUG(Service_HID, "called, controller_id={}, applet_resource_user_id={}",
-              controller_id.controller, applet_resource_user_id);
+    LOG_DEBUG(Service_HID, "called, controller_id={}, applet_resource_user_id={}", controller_id,
+              applet_resource_user_id);
 
     IPC::ResponseBuilder rb{ctx, 2};
     rb.Push(RESULT_SUCCESS);
@@ -793,13 +793,14 @@ void Hid::SendVibrationValues(Kernel::HLERequestContext& ctx) {
     const auto controllers = ctx.ReadBuffer(0);
     const auto vibrations = ctx.ReadBuffer(1);
 
-    std::vector<Controller_NPad::ControllerIds> controller_list(
-        controllers.size() / sizeof(Controller_NPad::ControllerIds));
+    std::vector<u32> controller_list(controllers.size() / sizeof(u32));
     std::vector<Controller_NPad::Vibration> vibration_list(vibrations.size() /
                                                            sizeof(Controller_NPad::Vibration));
 
     std::memcpy(controller_list.data(), controllers.data(), controllers.size());
     std::memcpy(vibration_list.data(), vibrations.data(), vibrations.size());
+    std::transform(controller_list.begin(), controller_list.end(), controller_list.begin(),
+                   [](u32 controller_id) { return controller_id - 3; });
 
     applet_resource->GetController<Controller_NPad>(HidController::NPad)
         .VibrateController(controller_list, vibration_list);
