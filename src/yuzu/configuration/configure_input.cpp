@@ -96,6 +96,8 @@ ConfigureInput::ConfigureInput(QWidget* parent)
     connect(ui->mouse_enabled, &QCheckBox::stateChanged, this, &ConfigureInput::UpdateUIEnabled);
     connect(ui->keyboard_enabled, &QCheckBox::stateChanged, this, &ConfigureInput::UpdateUIEnabled);
     connect(ui->debug_enabled, &QCheckBox::stateChanged, this, &ConfigureInput::UpdateUIEnabled);
+    connect(ui->vibration_enabled, &QCheckBox::stateChanged, this,
+            &ConfigureInput::UpdateUIEnabled);
     connect(ui->touchscreen_enabled, &QCheckBox::stateChanged, this,
             &ConfigureInput::UpdateUIEnabled);
 
@@ -142,6 +144,7 @@ void ConfigureInput::ApplyConfiguration() {
     Settings::values.debug_pad_enabled = ui->debug_enabled->isChecked();
     Settings::values.mouse_enabled = ui->mouse_enabled->isChecked();
     Settings::values.keyboard_enabled = ui->keyboard_enabled->isChecked();
+    Settings::values.vibration_enabled = ui->vibration_enabled->isChecked();
     Settings::values.touchscreen.enabled = ui->touchscreen_enabled->isChecked();
 }
 
@@ -213,6 +216,7 @@ void ConfigureInput::LoadConfiguration() {
     ui->debug_enabled->setChecked(Settings::values.debug_pad_enabled);
     ui->mouse_enabled->setChecked(Settings::values.mouse_enabled);
     ui->keyboard_enabled->setChecked(Settings::values.keyboard_enabled);
+    ui->vibration_enabled->setChecked(Settings::values.vibration_enabled);
     ui->touchscreen_enabled->setChecked(Settings::values.touchscreen.enabled);
 
     UpdateUIEnabled();
@@ -238,6 +242,7 @@ void ConfigureInput::RestoreDefaults() {
     ui->mouse_enabled->setCheckState(Qt::Unchecked);
     ui->keyboard_enabled->setCheckState(Qt::Unchecked);
     ui->debug_enabled->setCheckState(Qt::Unchecked);
+    ui->vibration_enabled->setCheckState(Qt::Checked);
     ui->touchscreen_enabled->setCheckState(Qt::Checked);
     UpdateUIEnabled();
 }

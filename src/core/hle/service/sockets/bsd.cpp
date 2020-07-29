@@ -150,7 +150,7 @@ void BSD::Socket(Kernel::HLERequestContext& ctx) {
     const u32 type = rp.Pop<u32>();
     const u32 protocol = rp.Pop<u32>();
 
-    LOG_DEBUG(Service, "called domain={} type={} protocol={}", domain, type, protocol);
+    LOG_DEBUG(Service, "called. domain={} type={} protocol={}", domain, type, protocol);
 
     const auto [fd, bsd_errno] = SocketImpl(static_cast<Domain>(domain), static_cast<Type>(type),
                                             static_cast<Protocol>(protocol));
@@ -176,7 +176,7 @@ void BSD::Poll(Kernel::HLERequestContext& ctx) {
     const s32 nfds = rp.Pop<s32>();
     const s32 timeout = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called nfds={} timeout={}", nfds, timeout);
+    LOG_DEBUG(Service, "called. nfds={} timeout={}", nfds, timeout);
 
     ExecuteWork(ctx, "BSD:Poll", timeout != 0,
                 PollWork{
@@ -191,7 +191,7 @@ void BSD::Accept(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={}", fd);
+    LOG_DEBUG(Service, "called. fd={}", fd);
 
     ExecuteWork(ctx, "BSD:Accept", IsBlockingSocket(fd),
                 AcceptWork{
@@ -204,7 +204,7 @@ void BSD::Bind(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} addrlen={}", fd, ctx.GetReadBufferSize());
+    LOG_DEBUG(Service, "called. fd={} addrlen={}", fd, ctx.GetReadBufferSize());
 
     BuildErrnoResponse(ctx, BindImpl(fd, ctx.ReadBuffer()));
 }
@@ -213,7 +213,7 @@ void BSD::Connect(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} addrlen={}", fd, ctx.GetReadBufferSize());
+    LOG_DEBUG(Service, "called. fd={} addrlen={}", fd, ctx.GetReadBufferSize());
 
     ExecuteWork(ctx, "BSD:Connect", IsBlockingSocket(fd),
                 ConnectWork{
@@ -226,7 +226,7 @@ void BSD::GetPeerName(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={}", fd);
+    LOG_DEBUG(Service, "called. fd={}", fd);
 
     std::vector<u8> write_buffer(ctx.GetWriteBufferSize());
     const Errno bsd_errno = GetPeerNameImpl(fd, write_buffer);
@@ -244,7 +244,7 @@ void BSD::GetSockName(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={}", fd);
+    LOG_DEBUG(Service, "called. fd={}", fd);
 
     std::vector<u8> write_buffer(ctx.GetWriteBufferSize());
     const Errno bsd_errno = GetSockNameImpl(fd, write_buffer);
@@ -263,7 +263,7 @@ void BSD::Listen(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const s32 backlog = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} backlog={}", fd, backlog);
+    LOG_DEBUG(Service, "called. fd={} backlog={}", fd, backlog);
 
     BuildErrnoResponse(ctx, ListenImpl(fd, backlog));
 }
@@ -274,7 +274,7 @@ void BSD::Fcntl(Kernel::HLERequestContext& ctx) {
     const s32 cmd = rp.Pop<s32>();
     const s32 arg = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} cmd={} arg={}", fd, cmd, arg);
+    LOG_DEBUG(Service, "called. fd={} cmd={} arg={}", fd, cmd, arg);
 
     const auto [ret, bsd_errno] = FcntlImpl(fd, static_cast<FcntlCmd>(cmd), arg);
 
@@ -302,7 +302,7 @@ void BSD::SetSockOpt(Kernel::HLERequestContext& ctx) {
         optval = reinterpret_cast<const u8*>(values.data());
     }
 
-    LOG_DEBUG(Service, "called fd={} level={} optname=0x{:x} optlen={}", fd, level,
+    LOG_DEBUG(Service, "called. fd={} level={} optname=0x{:x} optlen={}", fd, level,
               static_cast<u32>(optname), optlen);
 
     BuildErrnoResponse(ctx, SetSockOptImpl(fd, level, optname, optlen, optval));
@@ -314,7 +314,7 @@ void BSD::Shutdown(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const s32 how = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} how={}", fd, how);
+    LOG_DEBUG(Service, "called. fd={} how={}", fd, how);
 
     BuildErrnoResponse(ctx, ShutdownImpl(fd, how));
 }
@@ -325,7 +325,7 @@ void BSD::Recv(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const u32 flags = rp.Pop<u32>();
 
-    LOG_DEBUG(Service, "called fd={} flags=0x{:x} len={}", fd, flags, ctx.GetWriteBufferSize());
+    LOG_DEBUG(Service, "called. fd={} flags=0x{:x} len={}", fd, flags, ctx.GetWriteBufferSize());
 
     ExecuteWork(ctx, "BSD:Recv", IsBlockingSocket(fd),
                 RecvWork{
@@ -341,7 +341,7 @@ void BSD::RecvFrom(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const u32 flags = rp.Pop<u32>();
 
-    LOG_DEBUG(Service, "called fd={} flags=0x{:x} len={} addrlen={}", fd, flags,
+    LOG_DEBUG(Service, "called. fd={} flags=0x{:x} len={} addrlen={}", fd, flags,
               ctx.GetWriteBufferSize(0), ctx.GetWriteBufferSize(1));
 
     ExecuteWork(ctx, "BSD:RecvFrom", IsBlockingSocket(fd),
@@ -359,7 +359,7 @@ void BSD::Send(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const u32 flags = rp.Pop<u32>();
 
-    LOG_DEBUG(Service, "called fd={} flags=0x{:x} len={}", fd, flags, ctx.GetReadBufferSize());
+    LOG_DEBUG(Service, "called. fd={} flags=0x{:x} len={}", fd, flags, ctx.GetReadBufferSize());
 
     ExecuteWork(ctx, "BSD:Send", IsBlockingSocket(fd),
                 SendWork{
@@ -374,7 +374,7 @@ void BSD::SendTo(Kernel::HLERequestContext& ctx) {
     const s32 fd = rp.Pop<s32>();
     const u32 flags = rp.Pop<u32>();
 
-    LOG_DEBUG(Service, "called fd={} flags=0x{} len={} addrlen={}", fd, flags,
+    LOG_DEBUG(Service, "called. fd={} flags=0x{} len={} addrlen={}", fd, flags,
               ctx.GetReadBufferSize(0), ctx.GetReadBufferSize(1));
 
     ExecuteWork(ctx, "BSD:SendTo", IsBlockingSocket(fd),
@@ -390,7 +390,7 @@ void BSD::Write(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={} len={}", fd, ctx.GetReadBufferSize());
+    LOG_DEBUG(Service, "called. fd={} len={}", fd, ctx.GetReadBufferSize());
 
     ExecuteWork(ctx, "BSD:Write", IsBlockingSocket(fd),
                 SendWork{
@@ -404,7 +404,7 @@ void BSD::Close(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const s32 fd = rp.Pop<s32>();
 
-    LOG_DEBUG(Service, "called fd={}", fd);
+    LOG_DEBUG(Service, "called. fd={}", fd);
 
     BuildErrnoResponse(ctx, CloseImpl(fd));
 }
@@ -439,6 +439,7 @@ std::pair<s32, Errno> BSD::SocketImpl(Domain domain, Type type, Protocol protoco
 
     [[maybe_unused]] const bool unk_flag = (static_cast<u32>(type) & 0x20000000) != 0;
     UNIMPLEMENTED_IF_MSG(unk_flag, "Unknown flag in type");
+    type = static_cast<Type>(static_cast<u32>(type) & ~0x20000000);
 
     const s32 fd = FindFreeFileDescriptorHandle();
     if (fd < 0) {
@@ -462,6 +463,11 @@ std::pair<s32, Errno> BSD::PollImpl(std::vector<u8>& write_buffer, std::vector<u
                                     s32 nfds, s32 timeout) {
     if (write_buffer.size() < nfds * sizeof(PollFD)) {
         return {-1, Errno::INVAL};
+    }
+
+    if (nfds == 0) {
+        // When no entries are provided, -1 is returned with errno zero
+        return {-1, Errno::SUCCESS};
     }
 
     const size_t length = std::min(read_buffer.size(), write_buffer.size());

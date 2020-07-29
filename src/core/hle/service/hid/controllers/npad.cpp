@@ -500,17 +500,22 @@ void Controller_NPad::SetNpadMode(u32 npad_id, NPadAssignments assignment_mode) 
     }
 }
 
-void Controller_NPad::VibrateController(const std::vector<u32>& controller_ids,
+void Controller_NPad::VibrateController(const std::vector<ControllerIds>& controller_ids,
                                         const std::vector<Vibration>& vibrations) {
-    LOG_DEBUG(Service_HID, "(STUBBED) called");
 
-    if (!can_controllers_vibrate) {
+    if (!Settings::values.vibration_enabled || !can_controllers_vibrate) {
         return;
     }
     for (std::size_t i = 0; i < controller_ids.size(); i++) {
-        std::size_t controller_pos = NPadIdToIndex(static_cast<u32>(i));
-        if (connected_controllers[controller_pos].is_connected) {
-            // TODO(ogniK): Vibrate the physical controller
+        const auto controller_pos = NPadIdToIndex(controller_ids[i].controller);
+
+        if (connected_controllers[controller_pos].is_connected &&
+            !controller_ids[i].vibration_stop) {
+            using namespace Settings::NativeButton;
+            const auto& button_state = buttons[controller_pos];
+            button_state[A - BUTTON_HID_BEGIN]->SetRumblePlay(
+                vibrations[0].amp_high, vibrations[0].amp_low, vibrations[0].freq_high,
+                vibrations[0].freq_low);
         }
     }
     last_processed_vibration = vibrations.back();

@@ -71,6 +71,23 @@ public:
         return state.axes.at(axis) / 32767.0f;
     }
 
+    bool RumblePlay(f32 amp_low, f32 amp_high, int time) {
+        const u16 raw_amp_low = static_cast<u16>(amp_low * 0xFFFF);
+        const u16 raw_amp_high = static_cast<u16>(amp_high * 0xFFFF);
+        // Lower drastically the number of state changes
+        if (raw_amp_low >> 13 == last_state_rumble_low >> 13 &&
+            raw_amp_high >> 13 == last_state_rumble_high >> 13) {
+            if (!(raw_amp_low + raw_amp_high == 0 &&
+                  last_state_rumble_low + last_state_rumble_high != 0)) {
+                return true;
+            }
+        }
+        last_state_rumble_low = raw_amp_low;
+        last_state_rumble_high = raw_amp_high;
+        printf("%d %d \n", raw_amp_low, raw_amp_high);
+        return SDL_JoystickRumble(sdl_joystick.get(), raw_amp_low, raw_amp_high, time);
+    }
+
     std::tuple<float, float> GetAnalog(int axis_x, int axis_y) const {
         float x = GetAxis(axis_x);
         float y = GetAxis(axis_y);
@@ -127,6 +144,8 @@ private:
     } state;
     std::string guid;
     int port;
+    u16 last_state_rumble_high;
+    u16 last_state_rumble_low;
     std::unique_ptr<SDL_Joystick, decltype(&SDL_JoystickClose)> sdl_joystick;
     mutable std::mutex mutex;
 };
@@ -189,7 +208,7 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickBySDLID(SDL_JoystickID sdl_
 void SDLState::InitJoystick(int joystick_index) {
     SDL_Joystick* sdl_joystick = SDL_JoystickOpen(joystick_index);
     if (!sdl_joystick) {
-        LOG_ERROR(Input, "failed to open joystick {}", joystick_index);
+        LOG_ERROR(Input, "Failed to open joystick {}", joystick_index);
         return;
     }
     const std::string guid = GetGUID(sdl_joystick);
@@ -283,6 +302,12 @@ public:
 
     bool GetStatus() const override {
         return joystick->GetButton(button);
+    }
+
+    bool SetRumblePlay(f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) const override {
+        const f32 new_amp_low = pow(amp_low, 0.5f) * (3.0f - 2.0f * pow(amp_low, 0.15f));
+        const f32 new_amp_high = pow(amp_high, 0.5f) * (3.0f - 2.0f * pow(amp_high, 0.15f));
+        return joystick->RumblePlay(new_amp_low, new_amp_high, SDL_HAPTIC_INFINITY);
     }
 
 private:

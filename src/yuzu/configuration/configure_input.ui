@@ -337,14 +337,15 @@
         <string>其他</string>
        </property>
        <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="1">
+         <widget class="QCheckBox" name="mouse_enabled">
+          <property name="text">
+           <string>鼠标</string>
+          </property>
+         </widget>
+        </item>
         <item row="1" column="1">
          <widget class="QCheckBox" name="keyboard_enabled">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>23</height>
-           </size>
-          </property>
           <property name="text">
            <string>键盘</string>
           </property>
@@ -358,22 +359,16 @@
          </widget>
         </item>
         <item row="3" column="1">
-         <widget class="QCheckBox" name="touchscreen_enabled">
+         <widget class="QCheckBox" name="vibration_enabled">
           <property name="text">
-           <string>触摸屏</string>
+           <string>震动控制器 </string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="mouse_enabled">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>23</height>
-           </size>
-          </property>
+        <item row="4" column="1">
+         <widget class="QCheckBox" name="touchscreen_enabled">
           <property name="text">
-           <string>鼠标</string>
+           <string>触摸屏</string>
           </property>
          </widget>
         </item>
@@ -419,7 +414,7 @@
           </property>
          </spacer>
         </item>
-        <item row="3" column="3">
+        <item row="4" column="3">
          <widget class="QPushButton" name="touchscreen_advanced">
           <property name="text">
            <string>高级</string>

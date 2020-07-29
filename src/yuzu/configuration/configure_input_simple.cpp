@@ -54,6 +54,7 @@ void HandheldOnProfileSelect() {
     Settings::values.keyboard_enabled = false;
     Settings::values.mouse_enabled = false;
     Settings::values.debug_pad_enabled = false;
+    Settings::values.vibration_enabled = true;
     Settings::values.touchscreen.enabled = true;
 }
 
@@ -69,6 +70,7 @@ void DualJoyconsDockedOnProfileSelect() {
     Settings::values.keyboard_enabled = false;
     Settings::values.mouse_enabled = false;
     Settings::values.debug_pad_enabled = false;
+    Settings::values.vibration_enabled = true;
     Settings::values.touchscreen.enabled = true;
 }
 
