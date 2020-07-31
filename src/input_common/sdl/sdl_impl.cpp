@@ -84,7 +84,6 @@ public:
         }
         last_state_rumble_low = raw_amp_low;
         last_state_rumble_high = raw_amp_high;
-        printf("%d %d \n", raw_amp_low, raw_amp_high);
         return SDL_JoystickRumble(sdl_joystick.get(), raw_amp_low, raw_amp_high, time);
     }
 
