@@ -1827,7 +1827,7 @@ void GMainWindow::OnMenuInstallToNAND() {
 
     ui.action_Install_File_NAND->setEnabled(false);
 
-    install_progress = new QProgressDialog(QStringLiteral(""), tr("取消"), 0, total_size, this);
+    install_progress = new QProgressDialog(QString{}, tr("取消"), 0, total_size, this);
     install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
                                      ~Qt::WindowMaximizeButtonHint);
     install_progress->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1877,12 +1877,12 @@ void GMainWindow::OnMenuInstallToNAND() {
     install_progress->close();
 
     const QString install_results =
-        (new_files.isEmpty() ? QStringLiteral("")
+        (new_files.isEmpty() ? QString{}
                              : tr("%n 文件(s) 是新安装的\n", "", new_files.size())) +
         (overwritten_files.isEmpty()
-             ? QStringLiteral("")
+             ? QString{}
              : tr("%n 文件(s) 被覆盖\n", "", overwritten_files.size())) +
-        (failed_files.isEmpty() ? QStringLiteral("")
+        (failed_files.isEmpty() ? QString{}
                                 : tr("%n 文件(s) 安装失败\n", "", failed_files.size()));
 
     QMessageBox::information(this, tr("安装结果"), install_results);
@@ -2362,13 +2362,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 823" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 828" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 823 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 828 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2385,8 +2385,7 @@ void GMainWindow::UpdateStatusBar() {
 
     if (shaders_building != 0) {
         shader_building_label->setText(
-            tr("构建: %1 着色器").arg(shaders_building) +
-            (shaders_building != 1 ? QString::fromStdString("s") : QString::fromStdString("")));
+            tr("构建: %n 着色器(s)", "", static_cast<int>(shaders_building)));
         shader_building_label->setVisible(true);
     } else {
         shader_building_label->setVisible(false);
