@@ -587,7 +587,7 @@ void GMainWindow::InitializeWidgets() {
     renderer_status_button->setObjectName(QStringLiteral("RendererStatusBarButton"));
     renderer_status_button->setCheckable(true);
     renderer_status_button->setFocusPolicy(Qt::NoFocus);
-    connect(renderer_status_button, &QPushButton::toggled, [=](bool checked) {
+    connect(renderer_status_button, &QPushButton::toggled, [this](bool checked) {
         renderer_status_button->setText(checked ? tr("VULKAN") : tr("OPENGL"));
     });
     renderer_status_button->toggle();
@@ -599,7 +599,7 @@ void GMainWindow::InitializeWidgets() {
 #else
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
                                        Settings::RendererBackend::Vulkan);
-    connect(renderer_status_button, &QPushButton::clicked, [=] {
+    connect(renderer_status_button, &QPushButton::clicked, [this] {
         if (emulation_running) {
             return;
         }
@@ -1243,20 +1243,29 @@ void GMainWindow::OnGameListLoadFile(QString game_path) {
     BootGame(game_path);
 }
 
-void GMainWindow::OnGameListOpenFolder(GameListOpenTarget target, const std::string& game_path) {
+void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target,
+                                       const std::string& game_path) {
     std::string path;
     QString open_target;
 
-    const auto v_file = Core::GetGameFileFromPath(vfs, game_path);
-    const auto loader = Loader::GetLoader(v_file);
-    FileSys::NACP control{};
-    u64 program_id{};
+    const auto [user_save_size, device_save_size] = [this, &program_id, &game_path] {
+        FileSys::PatchManager pm{program_id};
+        const auto control = pm.GetControlMetadata().first;
+        if (control != nullptr) {
+            return std::make_pair(control->GetDefaultNormalSaveSize(),
+                                  control->GetDeviceSaveDataSize());
+        } else {
+            const auto file = Core::GetGameFileFromPath(vfs, game_path);
+            const auto loader = Loader::GetLoader(file);
 
-    loader->ReadControlData(control);
-    loader->ReadProgramId(program_id);
+            FileSys::NACP nacp{};
+            loader->ReadControlData(nacp);
+            return std::make_pair(nacp.GetDefaultNormalSaveSize(), nacp.GetDeviceSaveDataSize());
+        }
+    }();
 
-    const bool has_user_save{control.GetDefaultNormalSaveSize() > 0};
-    const bool has_device_save{control.GetDeviceSaveDataSize() > 0};
+    const bool has_user_save{user_save_size > 0};
+    const bool has_device_save{device_save_size > 0};
 
     ASSERT_MSG(has_user_save != has_device_save, "Game uses both user and device savedata?");
 
@@ -2362,13 +2371,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 835" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 838" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 835 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 838 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

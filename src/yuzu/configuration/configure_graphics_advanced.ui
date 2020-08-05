@@ -92,7 +92,7 @@
            <string>启用异步着色器编译，这可以减少着色器卡顿，此功能是实验性的。</string>
           </property>
           <property name="text">
-           <string>使用异步着色器构建（实验性）</string>
+           <string>使用异步着色器构建（仅用于实验性，OpenGL或程序集着色器）</string>
           </property>
          </widget>
         </item>

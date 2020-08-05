@@ -28,7 +28,6 @@
 #include "video_core/shader/compiler_settings.h"
 #include "video_core/shader/memory_util.h"
 #include "video_core/shader_cache.h"
-#include "video_core/shader_notify.h"
 
 namespace Vulkan {
 
@@ -206,43 +205,24 @@ std::array<Shader*, Maxwell::MaxShaderProgram> VKPipelineCache::GetShaders() {
     return last_shaders = shaders;
 }
 
-VKGraphicsPipeline* VKPipelineCache::GetGraphicsPipeline(
-    const GraphicsPipelineCacheKey& key, VideoCommon::Shader::AsyncShaders& async_shaders) {
+VKGraphicsPipeline& VKPipelineCache::GetGraphicsPipeline(const GraphicsPipelineCacheKey& key) {
     MICROPROFILE_SCOPE(Vulkan_PipelineCache);
 
     if (last_graphics_pipeline && last_graphics_key == key) {
-        return last_graphics_pipeline;
+        return *last_graphics_pipeline;
     }
     last_graphics_key = key;
-
-    if (device.UseAsynchronousShaders() && async_shaders.IsShaderAsync(system.GPU())) {
-        std::unique_lock lock{pipeline_cache};
-        const auto [pair, is_cache_miss] = graphics_cache.try_emplace(key);
-        if (is_cache_miss) {
-            system.GPU().ShaderNotify().MarkSharderBuilding();
-            LOG_INFO(Render_Vulkan, "Compile 0x{:016X}", key.Hash());
-            const auto [program, bindings] = DecompileShaders(key.fixed_state);
-            async_shaders.QueueVulkanShader(this, device, scheduler, descriptor_pool,
-                                            update_descriptor_queue, renderpass_cache, bindings,
-                                            program, key);
-        }
-        last_graphics_pipeline = pair->second.get();
-        return last_graphics_pipeline;
-    }
 
     const auto [pair, is_cache_miss] = graphics_cache.try_emplace(key);
     auto& entry = pair->second;
     if (is_cache_miss) {
-        system.GPU().ShaderNotify().MarkSharderBuilding();
         LOG_INFO(Render_Vulkan, "Compile 0x{:016X}", key.Hash());
-        const auto [program, bindings] = DecompileShaders(key.fixed_state);
+        const auto [program, bindings] = DecompileShaders(key);
         entry = std::make_unique<VKGraphicsPipeline>(device, scheduler, descriptor_pool,
                                                      update_descriptor_queue, renderpass_cache, key,
                                                      bindings, program);
-        system.GPU().ShaderNotify().MarkShaderComplete();
     }
-    last_graphics_pipeline = entry.get();
-    return last_graphics_pipeline;
+    return *(last_graphics_pipeline = entry.get());
 }
 
 VKComputePipeline& VKPipelineCache::GetComputePipeline(const ComputePipelineCacheKey& key) {
@@ -281,8 +261,13 @@ VKComputePipeline& VKPipelineCache::GetComputePipeline(const ComputePipelineCach
     }
 
     const Specialization specialization{
+        .base_binding = 0,
         .workgroup_size = key.workgroup_size,
         .shared_memory_size = key.shared_memory_size,
+        .point_size = std::nullopt,
+        .enabled_attributes = {},
+        .attribute_types = {},
+        .ndc_minus_one_to_one = false,
     };
     const SPIRVShader spirv_shader{Decompile(device, shader->GetIR(), ShaderType::Compute,
                                              shader->GetRegistry(), specialization),
@@ -290,12 +275,6 @@ VKComputePipeline& VKPipelineCache::GetComputePipeline(const ComputePipelineCach
     entry = std::make_unique<VKComputePipeline>(device, scheduler, descriptor_pool,
                                                 update_descriptor_queue, spirv_shader);
     return *entry;
-}
-
-void VKPipelineCache::EmplacePipeline(std::unique_ptr<VKGraphicsPipeline> pipeline) {
-    std::unique_lock lock{pipeline_cache};
-    graphics_cache.at(pipeline->GetCacheKey()) = std::move(pipeline);
-    system.GPU().ShaderNotify().MarkShaderComplete();
 }
 
 void VKPipelineCache::OnShaderRemoval(Shader* shader) {
@@ -333,7 +312,8 @@ void VKPipelineCache::OnShaderRemoval(Shader* shader) {
 }
 
 std::pair<SPIRVProgram, std::vector<VkDescriptorSetLayoutBinding>>
-VKPipelineCache::DecompileShaders(const FixedPipelineState& fixed_state) {
+VKPipelineCache::DecompileShaders(const GraphicsPipelineCacheKey& key) {
+    const auto& fixed_state = key.fixed_state;
     auto& memory_manager = system.GPU().MemoryManager();
     const auto& gpu = system.GPU().Maxwell3D();
 

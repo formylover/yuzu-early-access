@@ -382,8 +382,6 @@ bool VKDevice::Create() {
 
     graphics_queue = logical.GetQueue(graphics_family);
     present_queue = logical.GetQueue(present_family);
-
-    use_asynchronous_shaders = Settings::values.use_asynchronous_shaders.GetValue();
     return true;
 }
 
@@ -773,8 +771,9 @@ std::vector<VkDeviceQueueCreateInfo> VKDevice::GetDeviceQueueCreateInfos() const
             .pNext = nullptr,
             .flags = 0,
             .queueFamilyIndex = queue_family,
+            .queueCount = 1,
+            .pQueuePriorities = nullptr,
         });
-        ci.queueCount = 1;
         ci.pQueuePriorities = &QUEUE_PRIORITY;
     }
 

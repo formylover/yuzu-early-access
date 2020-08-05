@@ -78,7 +78,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(const VKDevice& device, VKScheduler& sche
                                        const GraphicsPipelineCacheKey& key,
                                        vk::Span<VkDescriptorSetLayoutBinding> bindings,
                                        const SPIRVProgram& program)
-    : device{device}, scheduler{scheduler}, hash{key.Hash()}, cache_key{key},
+    : device{device}, scheduler{scheduler}, fixed_state{key.fixed_state}, hash{key.Hash()},
       descriptor_set_layout{CreateDescriptorSetLayout(bindings)},
       descriptor_allocator{descriptor_pool, *descriptor_set_layout},
       update_descriptor_queue{update_descriptor_queue}, layout{CreatePipelineLayout()},
@@ -181,7 +181,7 @@ std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
 
 vk::Pipeline VKGraphicsPipeline::CreatePipeline(const RenderPassParams& renderpass_params,
                                                 const SPIRVProgram& program) const {
-    const auto& state = cache_key.fixed_state;
+    const auto& state = fixed_state;
     const auto& viewport_swizzles = state.viewport_swizzles;
 
     FixedPipelineState::DynamicState dynamic;

@@ -14,7 +14,6 @@
 #include "common/assert.h"
 #include "common/logging/log.h"
 #include "common/microprofile.h"
-#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/settings.h"
 #include "video_core/engines/kepler_compute.h"
@@ -401,22 +400,8 @@ RasterizerVulkan::RasterizerVulkan(Core::System& system, Core::Frontend::EmuWind
       buffer_cache(*this, system, device, memory_manager, scheduler, staging_pool),
       sampler_cache(device),
       fence_manager(system, *this, device, scheduler, texture_cache, buffer_cache, query_cache),
-      query_cache(system, *this, device, scheduler),
-      wfi_event{device.GetLogical().CreateNewEvent()}, async_shaders{renderer} {
+      query_cache(system, *this, device, scheduler), wfi_event{device.GetLogical().CreateEvent()} {
     scheduler.SetQueryCache(query_cache);
-    if (device.UseAsynchronousShaders()) {
-        // The following is subject to move into the allocate workers method, to be api agnostic
-
-        // Max worker threads we should allow
-        constexpr u32 MAX_THREADS = 4;
-        // Deduce how many threads we can use
-        const auto threads_used = std::thread::hardware_concurrency() / 4;
-        // Always allow at least 1 thread regardless of our settings
-        const auto max_worker_count = std::max(1U, threads_used);
-        // Don't use more than MAX_THREADS
-        const auto worker_count = std::min(max_worker_count, MAX_THREADS);
-        async_shaders.AllocateWorkers(worker_count);
-    }
 }
 
 RasterizerVulkan::~RasterizerVulkan() = default;
@@ -427,8 +412,6 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     FlushWork();
 
     query_cache.UpdateCounters();
-
-    SCOPE_EXIT({ system.GPU().TickWork(); });
 
     const auto& gpu = system.GPU().Maxwell3D();
     GraphicsPipelineCacheKey key;
@@ -456,15 +439,10 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     key.renderpass_params = GetRenderPassParams(texceptions);
     key.padding = 0;
 
-    auto* pipeline = pipeline_cache.GetGraphicsPipeline(key, async_shaders);
-    if (pipeline == nullptr || pipeline->GetHandle() == VK_NULL_HANDLE) {
-        // Async graphics pipeline was not ready.
-        return;
-    }
+    auto& pipeline = pipeline_cache.GetGraphicsPipeline(key);
+    scheduler.BindGraphicsPipeline(pipeline.GetHandle());
 
-    scheduler.BindGraphicsPipeline(pipeline->GetHandle());
-
-    const auto renderpass = pipeline->GetRenderPass();
+    const auto renderpass = pipeline.GetRenderPass();
     const auto [framebuffer, render_area] = ConfigureFramebuffers(renderpass);
     scheduler.RequestRenderpass(renderpass, framebuffer, render_area);
 
@@ -474,8 +452,8 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
 
     BeginTransformFeedback();
 
-    const auto pipeline_layout = pipeline->GetLayout();
-    const auto descriptor_set = pipeline->CommitDescriptorSet();
+    const auto pipeline_layout = pipeline.GetLayout();
+    const auto descriptor_set = pipeline.CommitDescriptorSet();
     scheduler.Record([pipeline_layout, descriptor_set, draw_params](vk::CommandBuffer cmdbuf) {
         if (descriptor_set) {
             cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
@@ -485,6 +463,8 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     });
 
     EndTransformFeedback();
+
+    system.GPU().TickWork();
 }
 
 void RasterizerVulkan::Clear() {
@@ -835,8 +815,13 @@ bool RasterizerVulkan::WalkAttachmentOverlaps(const CachedSurfaceView& attachmen
 
 std::tuple<VkFramebuffer, VkExtent2D> RasterizerVulkan::ConfigureFramebuffers(
     VkRenderPass renderpass) {
-    FramebufferCacheKey key{renderpass, std::numeric_limits<u32>::max(),
-                            std::numeric_limits<u32>::max(), std::numeric_limits<u32>::max()};
+    FramebufferCacheKey key{
+        .renderpass = renderpass,
+        .width = std::numeric_limits<u32>::max(),
+        .height = std::numeric_limits<u32>::max(),
+        .layers = std::numeric_limits<u32>::max(),
+        .views = {},
+    };
 
     const auto try_push = [&key](const View& view) {
         if (!view) {

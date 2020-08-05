@@ -29,7 +29,7 @@ void InnerFence::Queue() {
     }
     ASSERT(!event);
 
-    event = device.GetLogical().CreateNewEvent();
+    event = device.GetLogical().CreateEvent();
     ticks = scheduler.Ticks();
 
     scheduler.RequestOutsideRenderPassOperationContext();

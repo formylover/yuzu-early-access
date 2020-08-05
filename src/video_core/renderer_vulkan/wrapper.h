@@ -721,7 +721,7 @@ public:
 
     ShaderModule CreateShaderModule(const VkShaderModuleCreateInfo& ci) const;
 
-    Event CreateNewEvent() const;
+    Event CreateEvent() const;
 
     SwapchainKHR CreateSwapchainKHR(const VkSwapchainCreateInfoKHR& ci) const;
 
