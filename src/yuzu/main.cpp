@@ -2407,8 +2407,8 @@ void GMainWindow::UpdateStatusBar() {
     } else {
         emu_speed_label->setText(tr("速度: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    game_fps_label->setText(tr("游戏: %1 FPS").arg(results.game_fps, 0, 'f', 0));
-    emu_frametime_label->setText(tr("帧: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
+    game_fps_label->setText(tr("帧率: %1 FPS").arg(results.game_fps, 0, 'f', 0));
+    emu_frametime_label->setText(tr("帧间: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
     emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
     game_fps_label->setVisible(true);
