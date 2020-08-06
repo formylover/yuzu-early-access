@@ -67,7 +67,7 @@ static void SetAnalogButton(const Common::ParamPackage& input_param,
 
 static QString ButtonToText(const Common::ParamPackage& param) {
     if (!param.Has("engine")) {
-        return QObject::tr("[没有设置]");
+        return QObject::tr("[not set]");
     }
 
     if (param.Get("engine", "") == "keyboard") {
@@ -309,7 +309,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     QMenu context_menu;
                     context_menu.addAction(tr("清除"), [&] {
                         buttons_param[button_id].Clear();
-                        button_map[button_id]->setText(tr("[not set]"));
+                        button_map[button_id]->setText(tr("[没有设置]"));
                     });
                     context_menu.addAction(tr("恢复默认"), [&] {
                         buttons_param[button_id] = Common::ParamPackage{
@@ -341,7 +341,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         QMenu context_menu;
                         context_menu.addAction(tr("清除"), [&] {
                             analogs_param[analog_id].Erase(analog_sub_buttons[sub_button_id]);
-                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
+                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[没有设置]"));
                         });
                         context_menu.addAction(tr("恢复默认"), [&] {
                             Common::ParamPackage params{InputCommon::GenerateKeyboardParam(
