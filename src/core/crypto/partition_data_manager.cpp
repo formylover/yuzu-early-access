@@ -27,7 +27,7 @@
 #include "core/file_sys/vfs_offset.h"
 #include "core/file_sys/vfs_vector.h"
 
-using namespace Common;
+using Common::AsArray;
 
 namespace Core::Crypto {
 

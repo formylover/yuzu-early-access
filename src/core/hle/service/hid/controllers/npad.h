@@ -50,7 +50,7 @@ public:
     };
     static_assert(sizeof(NPadType) == 4, "NPadType is an invalid size");
 
-    struct ControllerIds {
+    struct ControllerID {
         union {
             u32 raw{};
             BitField<0, 1, u32> unknown1;
@@ -59,7 +59,7 @@ public:
             BitField<12, 1, u32> vibration_stop;
         };
     };
-    static_assert(sizeof(ControllerIds) == 4, "ControllerIds is an invalid size");
+    static_assert(sizeof(ControllerID) == 4, "ControllerID is an invalid size");
 
     struct Vibration {
         f32 amp_low;
@@ -123,7 +123,7 @@ public:
 
     void SetNpadMode(u32 npad_id, NPadAssignments assignment_mode);
 
-    void VibrateController(const std::vector<ControllerIds>& controller_ids,
+    void VibrateController(const std::vector<ControllerID>& controller_ids,
                            const std::vector<Vibration>& vibrations);
 
     std::shared_ptr<Kernel::ReadableEvent> GetStyleSetChangedEvent(u32 npad_id) const;

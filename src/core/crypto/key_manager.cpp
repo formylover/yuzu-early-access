@@ -40,7 +40,7 @@ namespace Core::Crypto {
 constexpr u64 CURRENT_CRYPTO_REVISION = 0x5;
 constexpr u64 FULL_TICKET_SIZE = 0x400;
 
-using namespace Common;
+using Common::AsArray;
 
 // clang-format off
 constexpr std::array eticket_source_hashes{

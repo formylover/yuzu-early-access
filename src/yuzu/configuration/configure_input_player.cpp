@@ -67,7 +67,7 @@ static void SetAnalogButton(const Common::ParamPackage& input_param,
 
 static QString ButtonToText(const Common::ParamPackage& param) {
     if (!param.Has("engine")) {
-        return QObject::tr("[not set]");
+        return QObject::tr("[没有设置]");
     }
 
     if (param.Get("engine", "") == "keyboard") {
@@ -117,7 +117,7 @@ static QString ButtonToText(const Common::ParamPackage& param) {
 
 static QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) {
     if (!param.Has("engine")) {
-        return QObject::tr("[not set]");
+        return QObject::tr("[没有设置]");
     }
 
     if (param.Get("engine", "") == "analog_from_button") {

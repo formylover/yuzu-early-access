@@ -772,7 +772,7 @@ void Hid::EndPermitVibrationSession(Kernel::HLERequestContext& ctx) {
 
 void Hid::SendVibrationValue(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
-    const auto controller_id{rp.PopRaw<Controller_NPad::ControllerIds>()};
+    const auto controller_id{rp.PopRaw<Controller_NPad::ControllerID>()};
     const auto vibration_values{rp.PopRaw<Controller_NPad::Vibration>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
@@ -795,8 +795,8 @@ void Hid::SendVibrationValues(Kernel::HLERequestContext& ctx) {
     const auto controllers = ctx.ReadBuffer(0);
     const auto vibrations = ctx.ReadBuffer(1);
 
-    std::vector<Controller_NPad::ControllerIds> controller_list(
-        controllers.size() / sizeof(Controller_NPad::ControllerIds));
+    std::vector<Controller_NPad::ControllerID> controller_list(
+        controllers.size() / sizeof(Controller_NPad::ControllerID));
     std::vector<Controller_NPad::Vibration> vibration_list(vibrations.size() /
                                                            sizeof(Controller_NPad::Vibration));
 
