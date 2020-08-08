@@ -78,21 +78,16 @@ public:
         // Lower drastically the number of state changes
         if (raw_amp_low >> 11 == last_state_rumble_low >> 11 &&
             raw_amp_high >> 11 == last_state_rumble_high >> 11) {
-            if (!(raw_amp_low + raw_amp_high == 0 &&
-                  last_state_rumble_low + last_state_rumble_high != 0)) {
+            if (raw_amp_low + raw_amp_high != 0 ||
+                last_state_rumble_low + last_state_rumble_high == 0) {
                 return false;
             }
         }
         // Don't change state if last vibration was < 20ms
-        std::chrono::time_point<std::chrono::system_clock> now;
-        now = std::chrono::system_clock::now();
+        const auto now = std::chrono::system_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last_vibration) <
             std::chrono::milliseconds(20)) {
-            if (raw_amp_low + raw_amp_high == 0) {
-                return true;
-            } else {
-                return false;
-            }
+            return raw_amp_low + raw_amp_high == 0;
         }
 
         last_vibration = now;
