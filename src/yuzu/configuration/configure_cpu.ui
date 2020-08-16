@@ -40,6 +40,11 @@
             </item>
             <item>
              <property name="text">
+              <string>不安全</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>启动调试模式</string>
              </property>
             </item>
@@ -54,6 +59,53 @@
           </property>
           <property name="text">
            <string>我们建议将精确度设置为"准确"。</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout">
+     <item>
+      <widget class="QGroupBox" name="unsafe_group">
+       <property name="title">
+        <string>不安全的CPU优化设置</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel">
+          <property name="wordWrap">
+            <bool>1</bool>
+          </property>
+          <property name="text">
+           <string>这些设置降低了速度的准确性。</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_unfuse_fma">
+          <property name="text">
+           <string>Unfuse FMA (在没有FMA的情况下提高CPU的性能)</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;此选项通过降低不具有本机FMA支持的CPU上的乘加指令的准确性来提高速度。&lt;/div&gt;
+           </string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="cpuopt_unsafe_reduce_fp_error">
+          <property name="text">
+           <string>更快的 FRSQRTE 和 FRECPE</string>
+          </property>
+          <property name="toolTip">
+           <string>
+            &lt;div&gt;通过使用不太准确的本机近似，此选项可提高某些近似浮点函数的速度。&lt;/div&gt;
+           </string>
           </property>
          </widget>
         </item>

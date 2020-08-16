@@ -148,7 +148,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
             const QString hat_str = QString::fromStdString(param.Get("hat", ""));
             const QString direction_str = QString::fromStdString(param.Get("direction", ""));
 
-            return QObject::tr("Hat %1%2").arg(hat_str, direction_str);
+            return QObject::tr("Hat %1 %2").arg(hat_str, direction_str);
         }
 
         if (param.Has("axis")) {
@@ -352,22 +352,22 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
     // Player Connected checkbox
     connect(ui->groupConnectedController, &QGroupBox::toggled,
-            [&](bool checked) { emit Connected(checked); });
+            [this](bool checked) { emit Connected(checked); });
 
     // Set up controller type. Only Player 1 can choose Handheld.
     ui->comboControllerType->clear();
 
     QStringList controller_types = {
-        QStringLiteral("Pro Controller"),
-        QStringLiteral("Dual Joycons"),
-        QStringLiteral("Left Joycon"),
-        QStringLiteral("Right Joycon"),
+        tr("Pro Controller"),
+        tr("Dual Joycons"),
+        tr("Left Joycon"),
+        tr("Right Joycon"),
     };
 
     if (player_index == 0) {
-        controller_types.append(QStringLiteral("Handheld"));
+        controller_types.append(tr("Handheld"));
         connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged),
-                [&](int index) {
+                [this](int index) {
                     emit HandheldStateChanged(GetControllerTypeFromIndex(index) ==
                                               Settings::ControllerType::Handheld);
                 });
@@ -379,7 +379,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         ui->buttonHome->setEnabled(false);
         ui->groupConnectedController->setCheckable(false);
         QStringList debug_controller_types = {
-            QStringLiteral("Pro Controller"),
+            tr("Pro Controller"),
         };
         ui->comboControllerType->addItems(debug_controller_types);
     } else {
@@ -388,17 +388,18 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
     UpdateControllerIcon();
     UpdateControllerAvailableButtons();
-    connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged), [&](int) {
+    connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged), [this](int) {
         UpdateControllerIcon();
         UpdateControllerAvailableButtons();
     });
 
-    connect(ui->comboDevices, qOverload<int>(&QComboBox::currentIndexChanged),
-            [&] { UpdateMappingWithDefaults(); });
+    connect(ui->comboDevices, qOverload<int>(&QComboBox::currentIndexChanged), this,
+            &ConfigureInputPlayer::UpdateMappingWithDefaults);
 
     ui->buttonRefreshDevices->setIcon(QIcon::fromTheme(QStringLiteral("view-refresh")));
     UpdateInputDevices();
-    connect(ui->buttonRefreshDevices, &QPushButton::clicked, [&] { emit RefreshInputDevices(); });
+    connect(ui->buttonRefreshDevices, &QPushButton::clicked,
+            [this] { emit RefreshInputDevices(); });
 
     timeout_timer->setSingleShot(true);
     connect(timeout_timer.get(), &QTimer::timeout, [this] { SetPollingResult({}, true); });
@@ -711,26 +712,22 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
 void ConfigureInputPlayer::UpdateControllerIcon() {
     // We aren't using Qt's built in theme support here since we aren't drawing an icon (and its
     // "nonstandard" to use an image through the icon support)
-    QString stylesheet{};
-    switch (GetControllerTypeFromIndex(ui->comboControllerType->currentIndex())) {
-    case Settings::ControllerType::ProController:
-        stylesheet = QStringLiteral("image: url(:/controller/pro_controller%0)");
-        break;
-    case Settings::ControllerType::DualJoyconDetached:
-        stylesheet = QStringLiteral("image: url(:/controller/dual_joycon%0)");
-        break;
-    case Settings::ControllerType::LeftJoycon:
-        stylesheet = QStringLiteral("image: url(:/controller/single_joycon_left_vertical%0)");
-        break;
-    case Settings::ControllerType::RightJoycon:
-        stylesheet = QStringLiteral("image: url(:/controller/single_joycon_right_vertical%0)");
-        break;
-    case Settings::ControllerType::Handheld:
-        stylesheet = QStringLiteral("image: url(:/controller/handheld%0)");
-        break;
-    default:
-        break;
-    }
+    const QString stylesheet = [this] {
+        switch (GetControllerTypeFromIndex(ui->comboControllerType->currentIndex())) {
+        case Settings::ControllerType::ProController:
+            return QStringLiteral("image: url(:/controller/pro_controller%0)");
+        case Settings::ControllerType::DualJoyconDetached:
+            return QStringLiteral("image: url(:/controller/dual_joycon%0)");
+        case Settings::ControllerType::LeftJoycon:
+            return QStringLiteral("image: url(:/controller/single_joycon_left_vertical%0)");
+        case Settings::ControllerType::RightJoycon:
+            return QStringLiteral("image: url(:/controller/single_joycon_right_vertical%0)");
+        case Settings::ControllerType::Handheld:
+            return QStringLiteral("image: url(:/controller/handheld%0)");
+        default:
+            return QString{};
+        }
+    }();
 
     const QString theme = [this] {
         if (QIcon::themeName().contains(QStringLiteral("dark"))) {
@@ -748,12 +745,12 @@ void ConfigureInputPlayer::UpdateControllerIcon() {
 void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
     auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     if (debug) {
-        layout = Settings::ControllerType::DualJoyconDetached;
+        layout = Settings::ControllerType::ProController;
     }
 
     // List of all the widgets that will be hidden by any of the following layouts that need
     // "unhidden" after the controller type changes
-    const std::vector<QWidget*> layout_show = {
+    const std::array<QWidget*, 9> layout_show = {
         ui->buttonShoulderButtonsSLSR,
         ui->horizontalSpacerShoulderButtonsWidget,
         ui->horizontalSpacerShoulderButtonsWidget2,
@@ -772,11 +769,6 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
     std::vector<QWidget*> layout_hidden;
     switch (layout) {
     case Settings::ControllerType::ProController:
-        layout_hidden = {
-            ui->buttonShoulderButtonsSLSR,
-            ui->horizontalSpacerShoulderButtonsWidget2,
-        };
-        break;
     case Settings::ControllerType::DualJoyconDetached:
     case Settings::ControllerType::Handheld:
         layout_hidden = {

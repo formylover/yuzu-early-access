@@ -29,7 +29,8 @@ enum class GPUAccuracy : u32 {
 
 enum class CPUAccuracy {
     Accurate = 0,
-    DebugMode = 1,
+    Unsafe = 1,
+    DebugMode = 2,
 };
 
 extern bool configuring_global;
@@ -88,6 +89,9 @@ struct Values {
     bool cpuopt_const_prop;
     bool cpuopt_misc_ir;
     bool cpuopt_reduce_misalign_checks;
+
+    bool cpuopt_unsafe_unfuse_fma;
+    bool cpuopt_unsafe_reduce_fp_error;
 
     // Renderer
     Setting<RendererBackend> renderer_backend;
