@@ -6,7 +6,6 @@
 #include <QKeySequence>
 #include <QSettings>
 #include "common/file_util.h"
-#include "configure_input_simple.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/hid/controllers/npad.h"
 #include "input_common/main.h"
@@ -30,28 +29,28 @@ Config::~Config() {
 }
 
 const std::array<int, Settings::NativeButton::NumButtons> Config::default_buttons = {
-    Qt::Key_A, Qt::Key_S, Qt::Key_Z,    Qt::Key_X,  Qt::Key_3,     Qt::Key_4,    Qt::Key_Q,
-    Qt::Key_W, Qt::Key_1, Qt::Key_2,    Qt::Key_N,  Qt::Key_M,     Qt::Key_F,    Qt::Key_T,
-    Qt::Key_H, Qt::Key_G, Qt::Key_Left, Qt::Key_Up, Qt::Key_Right, Qt::Key_Down, Qt::Key_J,
-    Qt::Key_I, Qt::Key_L, Qt::Key_K,    Qt::Key_D,  Qt::Key_C,     Qt::Key_B,    Qt::Key_V,
+    Qt::Key_A, Qt::Key_S, Qt::Key_Z, Qt::Key_X, Qt::Key_3, Qt::Key_4, Qt::Key_Q,
+    Qt::Key_W, Qt::Key_1, Qt::Key_2, Qt::Key_N, Qt::Key_M, Qt::Key_F, Qt::Key_T,
+    Qt::Key_H, Qt::Key_G, Qt::Key_D, Qt::Key_C, Qt::Key_B, Qt::Key_V,
 };
 
-const std::array<std::array<int, 5>, Settings::NativeAnalog::NumAnalogs> Config::default_analogs{{
+const std::array<std::array<int, 4>, Settings::NativeAnalog::NumAnalogs> Config::default_analogs{{
     {
         Qt::Key_Up,
         Qt::Key_Down,
         Qt::Key_Left,
         Qt::Key_Right,
-        Qt::Key_E,
     },
     {
         Qt::Key_I,
         Qt::Key_K,
         Qt::Key_J,
         Qt::Key_L,
-        Qt::Key_R,
     },
 }};
+
+const int Config::default_lstick_mod = Qt::Key_E;
+const int Config::default_rstick_mod = Qt::Key_R;
 
 const std::array<int, Settings::NativeMouseButton::NumMouseButtons> Config::default_mouse_buttons =
     {
@@ -241,10 +240,10 @@ void Config::ReadPlayerValues() {
         player.connected =
             ReadSetting(QStringLiteral("player_%1_connected").arg(p), false).toBool();
 
-        player.type = static_cast<Settings::ControllerType>(
+        player.controller_type = static_cast<Settings::ControllerType>(
             qt_config
                 ->value(QStringLiteral("player_%1_type").arg(p),
-                        static_cast<u8>(Settings::ControllerType::DualJoycon))
+                        static_cast<u8>(Settings::ControllerType::ProController))
                 .toUInt());
 
         player.body_color_left = qt_config
@@ -298,12 +297,6 @@ void Config::ReadPlayerValues() {
             }
         }
     }
-
-    std::stable_partition(
-        Settings::values.players.begin(),
-        Settings::values.players.begin() +
-            Service::HID::Controller_NPad::NPadIdToIndex(Service::HID::NPAD_HANDHELD),
-        [](const auto& player) { return player.connected; });
 }
 
 void Config::ReadDebugValues() {
@@ -393,13 +386,6 @@ void Config::ReadTouchscreenValues() {
         ReadSetting(QStringLiteral("touchscreen_diameter_x"), 15).toUInt();
     Settings::values.touchscreen.diameter_y =
         ReadSetting(QStringLiteral("touchscreen_diameter_y"), 15).toUInt();
-}
-
-void Config::ApplyDefaultProfileIfInputInvalid() {
-    if (!std::any_of(Settings::values.players.begin(), Settings::values.players.end(),
-                     [](const Settings::PlayerInput& in) { return in.connected; })) {
-        ApplyInputProfileConfiguration(UISettings::values.profile_index);
-    }
 }
 
 void Config::ReadAudioValues() {
@@ -506,7 +492,7 @@ void Config::ReadDataStorageValues() {
     Settings::values.gamecard_current_game =
         ReadSetting(QStringLiteral("gamecard_current_game"), false).toBool();
     Settings::values.gamecard_path =
-        ReadSetting(QStringLiteral("gamecard_path"), QStringLiteral("")).toString().toStdString();
+        ReadSetting(QStringLiteral("gamecard_path"), QString{}).toString().toStdString();
 
     qt_config->endGroup();
 }
@@ -520,7 +506,7 @@ void Config::ReadDebuggingValues() {
     Settings::values.use_gdbstub = ReadSetting(QStringLiteral("use_gdbstub"), false).toBool();
     Settings::values.gdbstub_port = ReadSetting(QStringLiteral("gdbstub_port"), 24689).toInt();
     Settings::values.program_args =
-        ReadSetting(QStringLiteral("program_args"), QStringLiteral("")).toString().toStdString();
+        ReadSetting(QStringLiteral("program_args"), QString{}).toString().toStdString();
     Settings::values.dump_exefs = ReadSetting(QStringLiteral("dump_exefs"), false).toBool();
     Settings::values.dump_nso = ReadSetting(QStringLiteral("dump_nso"), false).toBool();
     Settings::values.reporting_services =
@@ -553,8 +539,7 @@ void Config::ReadDisabledAddOnValues() {
         const auto d_size = qt_config->beginReadArray(QStringLiteral("disabled"));
         for (int j = 0; j < d_size; ++j) {
             qt_config->setArrayIndex(j);
-            out.push_back(
-                ReadSetting(QStringLiteral("d"), QStringLiteral("")).toString().toStdString());
+            out.push_back(ReadSetting(QStringLiteral("d"), QString{}).toString().toStdString());
         }
         qt_config->endArray();
         Settings::values.disabled_addons.insert_or_assign(title_id, out);
@@ -788,13 +773,10 @@ void Config::ReadUIValues() {
     UISettings::values.first_start = ReadSetting(QStringLiteral("firstStart"), true).toBool();
     UISettings::values.callout_flags = ReadSetting(QStringLiteral("calloutFlags"), 0).toUInt();
     UISettings::values.show_console = ReadSetting(QStringLiteral("showConsole"), false).toBool();
-    UISettings::values.profile_index = ReadSetting(QStringLiteral("profileIndex"), 0).toUInt();
     UISettings::values.pause_when_in_background =
         ReadSetting(QStringLiteral("pauseWhenInBackground"), false).toBool();
     UISettings::values.hide_mouse =
         ReadSetting(QStringLiteral("hideInactiveMouse"), false).toBool();
-
-    ApplyDefaultProfileIfInputInvalid();
 
     qt_config->endGroup();
 }
@@ -869,8 +851,9 @@ void Config::SavePlayerValues() {
         const auto& player = Settings::values.players[p];
 
         WriteSetting(QStringLiteral("player_%1_connected").arg(p), player.connected, false);
-        WriteSetting(QStringLiteral("player_%1_type").arg(p), static_cast<u8>(player.type),
-                     static_cast<u8>(Settings::ControllerType::DualJoycon));
+        WriteSetting(QStringLiteral("player_%1_type").arg(p),
+                     static_cast<u8>(player.controller_type),
+                     static_cast<u8>(Settings::ControllerType::ProController));
 
         WriteSetting(QStringLiteral("player_%1_body_color_left").arg(p), player.body_color_left,
                      Settings::JOYCON_BODY_NEON_BLUE);
@@ -1037,7 +1020,7 @@ void Config::SaveDataStorageValues() {
     WriteSetting(QStringLiteral("gamecard_current_game"), Settings::values.gamecard_current_game,
                  false);
     WriteSetting(QStringLiteral("gamecard_path"),
-                 QString::fromStdString(Settings::values.gamecard_path), QStringLiteral(""));
+                 QString::fromStdString(Settings::values.gamecard_path), QString{});
 
     qt_config->endGroup();
 }
@@ -1050,7 +1033,7 @@ void Config::SaveDebuggingValues() {
     WriteSetting(QStringLiteral("use_gdbstub"), Settings::values.use_gdbstub, false);
     WriteSetting(QStringLiteral("gdbstub_port"), Settings::values.gdbstub_port, 24689);
     WriteSetting(QStringLiteral("program_args"),
-                 QString::fromStdString(Settings::values.program_args), QStringLiteral(""));
+                 QString::fromStdString(Settings::values.program_args), QString{});
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
     WriteSetting(QStringLiteral("dump_nso"), Settings::values.dump_nso, false);
     WriteSetting(QStringLiteral("quest_flag"), Settings::values.quest_flag, false);
@@ -1077,8 +1060,7 @@ void Config::SaveDisabledAddOnValues() {
         qt_config->beginWriteArray(QStringLiteral("disabled"));
         for (std::size_t j = 0; j < elem.second.size(); ++j) {
             qt_config->setArrayIndex(static_cast<int>(j));
-            WriteSetting(QStringLiteral("d"), QString::fromStdString(elem.second[j]),
-                         QStringLiteral(""));
+            WriteSetting(QStringLiteral("d"), QString::fromStdString(elem.second[j]), QString{});
         }
         qt_config->endArray();
         ++i;
@@ -1262,7 +1244,6 @@ void Config::SaveUIValues() {
     WriteSetting(QStringLiteral("firstStart"), UISettings::values.first_start, true);
     WriteSetting(QStringLiteral("calloutFlags"), UISettings::values.callout_flags, 0);
     WriteSetting(QStringLiteral("showConsole"), UISettings::values.show_console, false);
-    WriteSetting(QStringLiteral("profileIndex"), UISettings::values.profile_index, 0);
     WriteSetting(QStringLiteral("pauseWhenInBackground"),
                  UISettings::values.pause_when_in_background, false);
     WriteSetting(QStringLiteral("hideInactiveMouse"), UISettings::values.hide_mouse, false);

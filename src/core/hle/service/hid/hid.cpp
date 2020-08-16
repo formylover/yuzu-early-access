@@ -38,11 +38,9 @@
 namespace Service::HID {
 
 // Updating period for each HID device.
-// TODO(ogniK): Find actual polling rate of hid
-constexpr auto pad_update_ns = std::chrono::nanoseconds{1000000000 / 66};
-[[maybe_unused]] constexpr auto accelerometer_update_ns =
-    std::chrono::nanoseconds{1000000000 / 100};
-[[maybe_unused]] constexpr auto gyroscope_update_ticks = std::chrono::nanoseconds{1000000000 / 100};
+// HID is polled every 15ms, this value was derived from
+// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering#joy-con-status-data-packet
+constexpr auto pad_update_ns = std::chrono::nanoseconds{15 * 1000 * 1000}; // (15ms, 66.6Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
 IAppletResource::IAppletResource(Core::System& system)

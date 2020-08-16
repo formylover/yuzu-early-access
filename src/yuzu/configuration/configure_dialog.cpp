@@ -84,12 +84,12 @@ Q_DECLARE_METATYPE(QList<QWidget*>);
 
 void ConfigureDialog::PopulateSelectionList() {
     const std::array<std::pair<QString, QList<QWidget*>>, 6> items{
-        {{tr("通用"), {ui->generalTab, ui->webTab, ui->debugTab, ui->uiTab}},
+        {{tr("通用"), {ui->generalTab, ui->hotkeysTab, ui->uiTab, ui->webTab, ui->debugTab}},
          {tr("系统"), {ui->systemTab, ui->profileManagerTab, ui->serviceTab, ui->filesystemTab}},
          {tr("CPU"), {ui->cpuTab, ui->cpuDebugTab}},
          {tr("图形"), {ui->graphicsTab, ui->graphicsAdvancedTab}},
          {tr("声音"), {ui->audioTab}},
-         {tr("控制"), {ui->inputTab, ui->hotkeysTab}}},
+         {tr("控制"), ui->inputTab->GetSubTabs()}},
     };
 
     [[maybe_unused]] const QSignalBlocker blocker(ui->selectorList);
@@ -121,7 +121,7 @@ void ConfigureDialog::UpdateVisibleTabs() {
         {ui->generalTab, tr("通用")},
         {ui->systemTab, tr("系统")},
         {ui->profileManagerTab, tr("简介")},
-        {ui->inputTab, tr("输入")},
+        {ui->inputTab, tr("控制")},
         {ui->hotkeysTab, tr("热键")},
         {ui->cpuTab, tr("CPU")},
         {ui->cpuDebugTab, tr("调试")},
@@ -142,6 +142,6 @@ void ConfigureDialog::UpdateVisibleTabs() {
     const QList<QWidget*> tabs = qvariant_cast<QList<QWidget*>>(items[0]->data(Qt::UserRole));
 
     for (const auto tab : tabs) {
-        ui->tabWidget->addTab(tab, widgets.at(tab));
+        ui->tabWidget->addTab(tab, tab->accessibleName());
     }
 }
