@@ -410,7 +410,7 @@ bool GameList::isEmpty() const {
              type == GameListItemType::SysNandDir)) {
             item_model->invisibleRootItem()->removeRow(child->row());
             i--;
-        };
+        }
     }
     return !item_model->invisibleRootItem()->hasChildren();
 }

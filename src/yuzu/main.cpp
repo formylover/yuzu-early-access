@@ -898,6 +898,8 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Open_FAQ, &QAction::triggered, this, &GMainWindow::OnOpenFAQ);
     connect(ui.action_Restart, &QAction::triggered, this, [this] { BootGame(QString(game_path)); });
     connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
+    connect(ui.action_Configure_Current_Game, &QAction::triggered, this,
+            &GMainWindow::OnConfigurePerGame);
 
     // View
     connect(ui.action_Single_Window_Mode, &QAction::triggered, this,
@@ -1171,6 +1173,7 @@ void GMainWindow::ShutdownGame() {
     ui.action_Pause->setEnabled(false);
     ui.action_Stop->setEnabled(false);
     ui.action_Restart->setEnabled(false);
+    ui.action_Configure_Current_Game->setEnabled(false);
     ui.action_Report_Compatibility->setEnabled(false);
     ui.action_Load_Amiibo->setEnabled(false);
     ui.action_Capture_Screenshot->setEnabled(false);
@@ -1731,26 +1734,7 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
         return;
     }
 
-    ConfigurePerGame dialog(this, title_id);
-    dialog.LoadFromFile(v_file);
-    auto result = dialog.exec();
-    if (result == QDialog::Accepted) {
-        dialog.ApplyConfiguration();
-
-        const auto reload = UISettings::values.is_game_list_reload_pending.exchange(false);
-        if (reload) {
-            game_list->PopulateAsync(UISettings::values.game_dirs);
-        }
-
-        // Do not cause the global config to write local settings into the config file
-        Settings::RestoreGlobalState();
-
-        if (!Core::System::GetInstance().IsPoweredOn()) {
-            config->Save();
-        }
-    } else {
-        Settings::RestoreGlobalState();
-    }
+    OpenPerGameConfiguration(title_id, file);
 }
 
 void GMainWindow::OnMenuLoadFile() {
@@ -2079,6 +2063,7 @@ void GMainWindow::OnStartGame() {
     ui.action_Pause->setEnabled(true);
     ui.action_Stop->setEnabled(true);
     ui.action_Restart->setEnabled(true);
+    ui.action_Configure_Current_Game->setEnabled(true);
     ui.action_Report_Compatibility->setEnabled(true);
 
     discord_rpc->Update();
@@ -2268,6 +2253,36 @@ void GMainWindow::OnConfigure() {
     UpdateStatusButtons();
 }
 
+void GMainWindow::OnConfigurePerGame() {
+    const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
+    OpenPerGameConfiguration(title_id, game_path.toStdString());
+}
+
+void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_name) {
+    const auto v_file = Core::GetGameFileFromPath(vfs, file_name);
+
+    ConfigurePerGame dialog(this, title_id);
+    dialog.LoadFromFile(v_file);
+    auto result = dialog.exec();
+    if (result == QDialog::Accepted) {
+        dialog.ApplyConfiguration();
+
+        const auto reload = UISettings::values.is_game_list_reload_pending.exchange(false);
+        if (reload) {
+            game_list->PopulateAsync(UISettings::values.game_dirs);
+        }
+
+        // Do not cause the global config to write local settings into the config file
+        Settings::RestoreGlobalState();
+
+        if (!Core::System::GetInstance().IsPoweredOn()) {
+            config->Save();
+        }
+    } else {
+        Settings::RestoreGlobalState();
+    }
+}
+
 void GMainWindow::OnLoadAmiibo() {
     const QString extensions{QStringLiteral("*.bin")};
     const QString file_filter = tr("Amiibo 文件 (%1);; 所有的文件 (*.*)").arg(extensions);
@@ -2371,13 +2386,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 877" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 883" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 877 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 883 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
