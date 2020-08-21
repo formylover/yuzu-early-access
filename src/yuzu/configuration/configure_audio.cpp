@@ -63,7 +63,7 @@ void ConfigureAudio::SetConfiguration() {
             ui->volume_combo_box->setCurrentIndex(1);
             ui->volume_slider->setEnabled(true);
         }
-        ConfigurationShared::SetHighlight(ui->volume_layout, "volume_layout",
+        ConfigurationShared::SetHighlight(ui->volume_layout,
                                           !Settings::values.volume.UsingGlobal());
     }
     SetVolumeIndicatorText(ui->volume_slider->sliderPosition());
