@@ -181,8 +181,8 @@ static void InitializeLogging() {
     log_filter.ParseFilterString(Settings::values.log_filter);
     Log::SetGlobalFilter(log_filter);
 
-    const std::string& log_dir = FileUtil::GetUserPath(FileUtil::UserPath::LogDir);
-    FileUtil::CreateFullPath(log_dir);
+    const std::string& log_dir = Common::FS::GetUserPath(Common::FS::UserPath::LogDir);
+    Common::FS::CreateFullPath(log_dir);
     Log::AddBackend(std::make_unique<Log::FileBackend>(log_dir + LOG_FILE));
 #ifdef _WIN32
     Log::AddBackend(std::make_unique<Log::DebuggerBackend>());
@@ -1045,7 +1045,7 @@ bool GMainWindow::LoadROM(const QString& filename) {
     }
     game_path = filename;
 
-    system.TelemetrySession().AddField(Telemetry::FieldType::App, "Frontend", "Qt");
+    system.TelemetrySession().AddField(Common::Telemetry::FieldType::App, "Frontend", "Qt");
     return true;
 }
 
@@ -1127,7 +1127,7 @@ void GMainWindow::BootGame(const QString& filename) {
         title_name = metadata.first->GetApplicationName();
     }
     if (res != Loader::ResultStatus::Success || title_name.empty()) {
-        title_name = FileUtil::GetFilename(filename.toStdString());
+        title_name = Common::FS::GetFilename(filename.toStdString());
     }
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
     UpdateWindowTitle(title_name, title_version);
@@ -1275,7 +1275,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     switch (target) {
     case GameListOpenTarget::SaveData: {
         open_target = tr("保存数据");
-        const std::string nand_dir = FileUtil::GetUserPath(FileUtil::UserPath::NANDDir);
+        const std::string nand_dir = Common::FS::GetUserPath(Common::FS::UserPath::NANDDir);
 
         if (has_user_save) {
             // User save data
@@ -1310,16 +1310,16 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
                                   FileSys::SaveDataType::SaveData, program_id, {}, 0);
         }
 
-        if (!FileUtil::Exists(path)) {
-            FileUtil::CreateFullPath(path);
-            FileUtil::CreateDir(path);
+        if (!Common::FS::Exists(path)) {
+            Common::FS::CreateFullPath(path);
+            Common::FS::CreateDir(path);
         }
 
         break;
     }
     case GameListOpenTarget::ModData: {
         open_target = tr("Mod 数据");
-        const auto load_dir = FileUtil::GetUserPath(FileUtil::UserPath::LoadDir);
+        const auto load_dir = Common::FS::GetUserPath(Common::FS::UserPath::LoadDir);
         path = fmt::format("{}{:016X}", load_dir, program_id);
         break;
     }
@@ -1341,7 +1341,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
 void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
     const QString shader_dir =
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::ShaderDir));
     const QString transferable_shader_cache_folder_path =
         shader_dir + QStringLiteral("opengl") + QDir::separator() + QStringLiteral("transferable");
     const QString transferable_shader_cache_file_path =
@@ -1444,8 +1444,8 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
         RemoveAddOnContent(program_id, entry_type);
         break;
     }
-    FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) + DIR_SEP +
-                                   "game_list");
+    Common::FS::DeleteDirRecursively(Common::FS::GetUserPath(Common::FS::UserPath::CacheDir) +
+                                     DIR_SEP + "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
 }
 
@@ -1535,7 +1535,7 @@ void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget targ
 
 void GMainWindow::RemoveTransferableShaderCache(u64 program_id) {
     const QString shader_dir =
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ShaderDir));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::ShaderDir));
     const QString transferable_shader_cache_folder_path =
         shader_dir + QStringLiteral("opengl") + QDir::separator() + QStringLiteral("transferable");
     const QString transferable_shader_cache_file_path =
@@ -1559,7 +1559,7 @@ void GMainWindow::RemoveTransferableShaderCache(u64 program_id) {
 
 void GMainWindow::RemoveCustomConfiguration(u64 program_id) {
     const QString config_dir =
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ConfigDir));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::ConfigDir));
     const QString custom_config_file_path =
         config_dir + QString::fromStdString(fmt::format("{:016X}.ini", program_id));
 
@@ -1606,7 +1606,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     }
 
     const auto path = fmt::format(
-        "{}{:016X}/romfs", FileUtil::GetUserPath(FileUtil::UserPath::DumpDir), *romfs_title_id);
+        "{}{:016X}/romfs", Common::FS::GetUserPath(Common::FS::UserPath::DumpDir), *romfs_title_id);
 
     FileSys::VirtualFile romfs;
 
@@ -1686,13 +1686,13 @@ void GMainWindow::OnGameListNavigateToGamedbEntry(u64 program_id,
 void GMainWindow::OnGameListOpenDirectory(const QString& directory) {
     QString path;
     if (directory == QStringLiteral("SDMC")) {
-        path = QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::SDMCDir) +
+        path = QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::SDMCDir) +
                                       "Nintendo/Contents/registered");
     } else if (directory == QStringLiteral("UserNAND")) {
-        path = QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir) +
+        path = QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::NANDDir) +
                                       "user/Contents/registered");
     } else if (directory == QStringLiteral("SysNAND")) {
-        path = QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::NANDDir) +
+        path = QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::NANDDir) +
                                       "system/Contents/registered");
     } else {
         path = directory;
@@ -1706,8 +1706,10 @@ void GMainWindow::OnGameListOpenDirectory(const QString& directory) {
 
 void GMainWindow::OnGameListAddDirectory() {
     const QString dir_path = QFileDialog::getExistingDirectory(this, tr("选择目录"));
-    if (dir_path.isEmpty())
+    if (dir_path.isEmpty()) {
         return;
+    }
+
     UISettings::GameDir game_dir{dir_path, false, true};
     if (!UISettings::values.game_dirs.contains(game_dir)) {
         UISettings::values.game_dirs.append(game_dir);
@@ -1879,8 +1881,8 @@ void GMainWindow::OnMenuInstallToNAND() {
                                 : tr("%n 文件(s) 安装失败\n", "", failed_files.size()));
 
     QMessageBox::information(this, tr("安装结果"), install_results);
-    FileUtil::DeleteDirRecursively(FileUtil::GetUserPath(FileUtil::UserPath::CacheDir) + DIR_SEP +
-                                   "game_list");
+    Common::FS::DeleteDirRecursively(Common::FS::GetUserPath(Common::FS::UserPath::CacheDir) +
+                                     DIR_SEP + "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
     ui.action_Install_File_NAND->setEnabled(true);
 }
@@ -2330,7 +2332,7 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
 
 void GMainWindow::OnOpenYuzuFolder() {
     QDesktopServices::openUrl(QUrl::fromLocalFile(
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::UserDir))));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::UserDir))));
 }
 
 void GMainWindow::OnAbout() {
@@ -2352,7 +2354,7 @@ void GMainWindow::OnCaptureScreenshot() {
 
     const u64 title_id = Core::System::GetInstance().CurrentProcess()->GetTitleID();
     const auto screenshot_path =
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ScreenshotsDir));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::ScreenshotsDir));
     const auto date =
         QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_hh-mm-ss-zzz"));
     QString filename = QStringLiteral("%1%2_%3.png")
@@ -2386,13 +2388,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 883" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 893" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 883 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 893 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2555,18 +2557,18 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
         if (res == QMessageBox::Cancel)
             return;
 
-        FileUtil::Delete(FileUtil::GetUserPath(FileUtil::UserPath::KeysDir) +
-                         "prod.keys_autogenerated");
-        FileUtil::Delete(FileUtil::GetUserPath(FileUtil::UserPath::KeysDir) +
-                         "console.keys_autogenerated");
-        FileUtil::Delete(FileUtil::GetUserPath(FileUtil::UserPath::KeysDir) +
-                         "title.keys_autogenerated");
+        Common::FS::Delete(Common::FS::GetUserPath(Common::FS::UserPath::KeysDir) +
+                           "prod.keys_autogenerated");
+        Common::FS::Delete(Common::FS::GetUserPath(Common::FS::UserPath::KeysDir) +
+                           "console.keys_autogenerated");
+        Common::FS::Delete(Common::FS::GetUserPath(Common::FS::UserPath::KeysDir) +
+                           "title.keys_autogenerated");
     }
 
     Core::Crypto::KeyManager& keys = Core::Crypto::KeyManager::Instance();
     if (keys.BaseDeriveNecessary()) {
         Core::Crypto::PartitionDataManager pdm{vfs->OpenDirectory(
-            FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir), FileSys::Mode::Read)};
+            Common::FS::GetUserPath(Common::FS::UserPath::SysDataDir), FileSys::Mode::Read)};
 
         const auto function = [this, &keys, &pdm] {
             keys.PopulateFromPartitionData(pdm);
@@ -2898,7 +2900,7 @@ int main(int argc, char* argv[]) {
     // If you start a bundle (binary) on OSX without the Terminal, the working directory is "/".
     // But since we require the working directory to be the executable path for the location of
     // the user folder in the Qt Frontend, we need to cd into that working directory
-    const std::string bin_path = FileUtil::GetBundleDirectory() + DIR_SEP + "..";
+    const std::string bin_path = Common::FS::GetBundleDirectory() + DIR_SEP + "..";
     chdir(bin_path.c_str());
 #endif
 

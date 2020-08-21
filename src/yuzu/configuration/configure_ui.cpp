@@ -65,9 +65,9 @@ ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::Configur
     // Set screenshot path to user specification.
     connect(ui->screenshot_path_button, &QToolButton::pressed, this, [this] {
         const QString& filename =
-            QFileDialog::getExistingDirectory(
-                this, tr("选择屏幕截图路径..."),
-                QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ScreenshotsDir))) +
+            QFileDialog::getExistingDirectory(this, tr("选择屏幕截图路径..."),
+                                              QString::fromStdString(Common::FS::GetUserPath(
+                                                  Common::FS::UserPath::ScreenshotsDir))) +
             QDir::separator();
         if (!filename.isEmpty()) {
             ui->screenshot_path_edit->setText(filename);
@@ -86,8 +86,8 @@ void ConfigureUi::ApplyConfiguration() {
     UISettings::values.row_2_text_id = ui->row_2_text_combobox->currentData().toUInt();
 
     UISettings::values.enable_screenshot_save_as = ui->enable_screenshot_save_as->isChecked();
-    FileUtil::GetUserPath(FileUtil::UserPath::ScreenshotsDir,
-                          ui->screenshot_path_edit->text().toStdString());
+    Common::FS::GetUserPath(Common::FS::UserPath::ScreenshotsDir,
+                            ui->screenshot_path_edit->text().toStdString());
     Settings::Apply();
 }
 
@@ -105,7 +105,7 @@ void ConfigureUi::SetConfiguration() {
 
     ui->enable_screenshot_save_as->setChecked(UISettings::values.enable_screenshot_save_as);
     ui->screenshot_path_edit->setText(
-        QString::fromStdString(FileUtil::GetUserPath(FileUtil::UserPath::ScreenshotsDir)));
+        QString::fromStdString(Common::FS::GetUserPath(Common::FS::UserPath::ScreenshotsDir)));
 }
 
 void ConfigureUi::changeEvent(QEvent* event) {
