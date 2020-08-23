@@ -375,6 +375,7 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
         auto& libnx_entry = npad.libnx.npad[npad.libnx.common.last_entry_index];
 
         libnx_entry.connection_status.raw = 0;
+        libnx_entry.connection_status.IsConnected.Assign(1);
 
         switch (controller_type) {
         case NPadControllerType::None:
@@ -387,9 +388,12 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             main_controller.pad.pad_states.raw = pad_state.pad_states.raw;
             main_controller.pad.l_stick = pad_state.l_stick;
             main_controller.pad.r_stick = pad_state.r_stick;
+
+            libnx_entry.connection_status.IsWired.Assign(1);
             break;
         case NPadControllerType::Handheld:
             handheld_entry.connection_status.raw = 0;
+            handheld_entry.connection_status.IsConnected.Assign(1);
             handheld_entry.connection_status.IsWired.Assign(1);
             handheld_entry.connection_status.IsLeftJoyConnected.Assign(1);
             handheld_entry.connection_status.IsRightJoyConnected.Assign(1);
@@ -398,6 +402,12 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             handheld_entry.pad.pad_states.raw = pad_state.pad_states.raw;
             handheld_entry.pad.l_stick = pad_state.l_stick;
             handheld_entry.pad.r_stick = pad_state.r_stick;
+
+            libnx_entry.connection_status.IsWired.Assign(1);
+            libnx_entry.connection_status.IsLeftJoyConnected.Assign(1);
+            libnx_entry.connection_status.IsRightJoyConnected.Assign(1);
+            libnx_entry.connection_status.IsLeftJoyWired.Assign(1);
+            libnx_entry.connection_status.IsRightJoyWired.Assign(1);
             break;
         case NPadControllerType::JoyDual:
             dual_entry.connection_status.raw = 0;
@@ -408,28 +418,32 @@ void Controller_NPad::OnUpdate(const Core::Timing::CoreTiming& core_timing, u8* 
             dual_entry.pad.l_stick = pad_state.l_stick;
             dual_entry.pad.r_stick = pad_state.r_stick;
 
-            libnx_entry.connection_status.IsConnected.Assign(1);
             libnx_entry.connection_status.IsLeftJoyConnected.Assign(1);
             libnx_entry.connection_status.IsRightJoyConnected.Assign(1);
             break;
         case NPadControllerType::JoyLeft:
             left_entry.connection_status.raw = 0;
             left_entry.connection_status.IsConnected.Assign(1);
+            left_entry.connection_status.IsLeftJoyConnected.Assign(1);
             left_entry.pad.pad_states.raw = pad_state.pad_states.raw;
             left_entry.pad.l_stick = pad_state.l_stick;
             left_entry.pad.r_stick = pad_state.r_stick;
+
+            libnx_entry.connection_status.IsLeftJoyConnected.Assign(1);
             break;
         case NPadControllerType::JoyRight:
             right_entry.connection_status.raw = 0;
             right_entry.connection_status.IsConnected.Assign(1);
+            right_entry.connection_status.IsRightJoyConnected.Assign(1);
             right_entry.pad.pad_states.raw = pad_state.pad_states.raw;
             right_entry.pad.l_stick = pad_state.l_stick;
             right_entry.pad.r_stick = pad_state.r_stick;
+
+            libnx_entry.connection_status.IsRightJoyConnected.Assign(1);
             break;
         case NPadControllerType::Pokeball:
             pokeball_entry.connection_status.raw = 0;
             pokeball_entry.connection_status.IsConnected.Assign(1);
-            pokeball_entry.connection_status.IsWired.Assign(1);
             pokeball_entry.pad.pad_states.raw = pad_state.pad_states.raw;
             pokeball_entry.pad.l_stick = pad_state.l_stick;
             pokeball_entry.pad.r_stick = pad_state.r_stick;
