@@ -90,6 +90,16 @@ constexpr int GetIndexFromControllerType(Settings::ControllerType type) {
 
 QString GetKeyName(int key_code) {
     switch (key_code) {
+    case Qt::LeftButton:
+        return QObject::tr("Click 0");
+    case Qt::RightButton:
+        return QObject::tr("Click 1");
+    case Qt::MiddleButton:
+        return QObject::tr("Click 2");
+    case Qt::BackButton:
+        return QObject::tr("Click 3");
+    case Qt::ForwardButton:
+        return QObject::tr("Click 4");
     case Qt::Key_Shift:
         return QObject::tr("Shift");
     case Qt::Key_Control:
@@ -232,12 +242,11 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
     setFocusPolicy(Qt::ClickFocus);
 
     button_map = {
-        ui->buttonA,         ui->buttonB,         ui->buttonX,         ui->buttonY,
-        ui->buttonLStick,    ui->buttonRStick,    ui->buttonL,         ui->buttonR,
-        ui->buttonZL,        ui->buttonZR,        ui->buttonPlus,      ui->buttonMinus,
-        ui->buttonDpadLeft,  ui->buttonDpadUp,    ui->buttonDpadRight, ui->buttonDpadDown,
-        ui->buttonSL,        ui->buttonSR,        ui->buttonHome,      ui->buttonScreenshot,
-        ui->buttonLStickMod, ui->buttonRStickMod,
+        ui->buttonA,        ui->buttonB,      ui->buttonX,         ui->buttonY,
+        ui->buttonLStick,   ui->buttonRStick, ui->buttonL,         ui->buttonR,
+        ui->buttonZL,       ui->buttonZR,     ui->buttonPlus,      ui->buttonMinus,
+        ui->buttonDpadLeft, ui->buttonDpadUp, ui->buttonDpadRight, ui->buttonDpadDown,
+        ui->buttonSL,       ui->buttonSR,     ui->buttonHome,      ui->buttonScreenshot,
     };
 
     analog_map_buttons = {{
@@ -258,7 +267,6 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
     analog_map_deadzone_label = {ui->labelLStickDeadzone, ui->labelRStickDeadzone};
     analog_map_deadzone_slider = {ui->sliderLStickDeadzone, ui->sliderRStickDeadzone};
     analog_map_modifier_groupbox = {ui->buttonLStickModGroup, ui->buttonRStickModGroup};
-    analog_map_modifier_button = {ui->buttonLStickMod, ui->buttonRStickMod};
     analog_map_modifier_label = {ui->labelLStickModifierRange, ui->labelRStickModifierRange};
     analog_map_modifier_slider = {ui->sliderLStickModifierRange, ui->sliderRStickModifierRange};
     analog_map_range_groupbox = {ui->buttonLStickRangeGroup, ui->buttonRStickRangeGroup};
@@ -320,15 +328,6 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     InputCommon::Polling::DeviceType::AnalogPreferred);
             });
         }
-
-        connect(analog_map_modifier_button[analog_id], &QPushButton::clicked, [=, this] {
-            HandleClick(
-                analog_map_modifier_button[analog_id],
-                [=, this](const Common::ParamPackage& params) {
-                    SetAnalogParam(params, analogs_param[analog_id], "modifier");
-                },
-                InputCommon::Polling::DeviceType::AnalogPreferred);
-        });
 
         connect(analog_map_range_spinbox[analog_id], qOverload<int>(&QSpinBox::valueChanged),
                 [=, this] {
@@ -532,6 +531,13 @@ void ConfigureInputPlayer::RestoreDefaults() {
         buttons_param[button_id] = Common::ParamPackage{
             InputCommon::GenerateKeyboardParam(Config::default_buttons[button_id])};
     }
+
+    // Reset Modifier Buttons
+    lstick_mod =
+        Common::ParamPackage(InputCommon::GenerateKeyboardParam(Config::default_lstick_mod));
+    rstick_mod =
+        Common::ParamPackage(InputCommon::GenerateKeyboardParam(Config::default_rstick_mod));
+
     // Reset Analogs
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
@@ -555,6 +561,9 @@ void ConfigureInputPlayer::ClearAll() {
         buttons_param[button_id].Clear();
     }
 
+    lstick_mod.Clear();
+    rstick_mod.Clear();
+
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
             const auto* const analog_button = analog_map_buttons[analog_id][sub_button_id];
@@ -574,6 +583,9 @@ void ConfigureInputPlayer::UpdateUI() {
     for (int button = 0; button < Settings::NativeButton::NumButtons; ++button) {
         button_map[button]->setText(ButtonToText(buttons_param[button]));
     }
+
+    ui->buttonLStickMod->setText(ButtonToText(lstick_mod));
+    ui->buttonRStickMod->setText(ButtonToText(rstick_mod));
 
     for (int analog_id = 0; analog_id < Settings::NativeAnalog::NumAnalogs; ++analog_id) {
         for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM; ++sub_button_id) {
@@ -652,9 +664,9 @@ void ConfigureInputPlayer::HandleClick(
     button->setText(tr("[等待]"));
     button->setFocus();
 
-    // The first two input devices are always Any and Keyboard. If the user filtered to a
-    // controller, then they don't want keyboard input
-    want_keyboard_keys = ui->comboDevices->currentIndex() < 2;
+    // The first two input devices are always Any and Keyboard/Mouse. If the user filtered to a
+    // controller, then they don't want keyboard/mouse input
+    want_keyboard_mouse = ui->comboDevices->currentIndex() < 2;
 
     input_setter = new_input_setter;
 
@@ -663,6 +675,9 @@ void ConfigureInputPlayer::HandleClick(
     for (auto& poller : device_pollers) {
         poller->Start();
     }
+
+    QWidget::grabMouse();
+    QWidget::grabKeyboard();
 
     if (type == InputCommon::Polling::DeviceType::Button) {
         InputCommon::GetGCButtons()->BeginConfiguration();
@@ -681,6 +696,9 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
         poller->Stop();
     }
 
+    QWidget::releaseMouse();
+    QWidget::releaseKeyboard();
+
     InputCommon::GetGCButtons()->EndConfiguration();
     InputCommon::GetGCAnalogs()->EndConfiguration();
 
@@ -692,13 +710,29 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
     input_setter = std::nullopt;
 }
 
+void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
+    if (!input_setter || !event) {
+        return;
+    }
+
+    if (want_keyboard_mouse) {
+        SetPollingResult(Common::ParamPackage{InputCommon::GenerateKeyboardParam(event->button())},
+                         false);
+    } else {
+        // We don't want any mouse buttons, so don't stop polling
+        return;
+    }
+
+    SetPollingResult({}, true);
+}
+
 void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
     if (!input_setter || !event) {
         return;
     }
 
     if (event->key() != Qt::Key_Escape) {
-        if (want_keyboard_keys) {
+        if (want_keyboard_mouse) {
             SetPollingResult(Common::ParamPackage{InputCommon::GenerateKeyboardParam(event->key())},
                              false);
         } else {
@@ -706,6 +740,7 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
             return;
         }
     }
+
     SetPollingResult({}, true);
 }
 

@@ -143,7 +143,7 @@
             </item>
             <item>
              <property name="text">
-              <string>键盘</string>
+              <string>键盘/鼠标</string>
              </property>
             </item>
            </widget>
