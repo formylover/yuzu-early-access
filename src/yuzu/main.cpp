@@ -15,6 +15,7 @@
 #endif
 
 // VFS includes must be before glad as they will conflict with Windows file api, which uses defines.
+#include "applets/controller.h"
 #include "applets/error.h"
 #include "applets/profile_select.h"
 #include "applets/software_keyboard.h"
@@ -23,7 +24,9 @@
 #include "configuration/configure_per_game.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
+#include "core/frontend/applets/controller.h"
 #include "core/frontend/applets/general_frontend.h"
+#include "core/frontend/applets/software_keyboard.h"
 #include "core/hle/service/acc/profile_manager.h"
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
@@ -88,7 +91,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/file_sys/romfs.h"
 #include "core/file_sys/savedata_factory.h"
 #include "core/file_sys/submission_package.h"
-#include "core/frontend/applets/software_keyboard.h"
 #include "core/hle/kernel/process.h"
 #include "core/hle/service/am/am.h"
 #include "core/hle/service/filesystem/filesystem.h"
@@ -98,6 +100,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/perf_stats.h"
 #include "core/settings.h"
 #include "core/telemetry_session.h"
+#include "input_common/main.h"
 #include "video_core/gpu.h"
 #include "video_core/shader_notify.h"
 #include "yuzu/about_dialog.h"
@@ -190,9 +193,9 @@ static void InitializeLogging() {
 }
 
 GMainWindow::GMainWindow()
-    : config(new Config()), emu_thread(nullptr),
-      vfs(std::make_shared<FileSys::RealVfsFilesystem>()),
-      provider(std::make_unique<FileSys::ManualContentProvider>()) {
+    : input_subsystem{std::make_shared<InputCommon::InputSubsystem>()},
+      config{std::make_unique<Config>()}, vfs{std::make_shared<FileSys::RealVfsFilesystem>()},
+      provider{std::make_unique<FileSys::ManualContentProvider>()} {
     InitializeLogging();
 
     LoadTranslation();
@@ -286,6 +289,23 @@ GMainWindow::~GMainWindow() {
         delete render_window;
 }
 
+void GMainWindow::ControllerSelectorReconfigureControllers(
+    const Core::Frontend::ControllerParameters& parameters) {
+    QtControllerSelectorDialog dialog(this, parameters, input_subsystem.get());
+    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
+                          Qt::WindowSystemMenuHint);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.exec();
+
+    emit ControllerSelectorReconfigureFinished();
+
+    // Don't forget to apply settings.
+    Settings::Apply();
+    config->Save();
+
+    UpdateStatusButtons();
+}
+
 void GMainWindow::ProfileSelectorSelectProfile() {
     const Service::Account::ProfileManager manager;
     int index = 0;
@@ -294,10 +314,12 @@ void GMainWindow::ProfileSelectorSelectProfile() {
         dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
                               Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
         dialog.setWindowModality(Qt::WindowModal);
+
         if (dialog.exec() == QDialog::Rejected) {
             emit ProfileSelectorFinishedSelection(std::nullopt);
             return;
         }
+
         index = dialog.GetIndex();
     }
 
@@ -477,7 +499,7 @@ void GMainWindow::InitializeWidgets() {
 #ifdef YUZU_ENABLE_COMPATIBILITY_REPORTING
     ui.action_Report_Compatibility->setVisible(true);
 #endif
-    render_window = new GRenderWindow(this, emu_thread.get());
+    render_window = new GRenderWindow(this, emu_thread.get(), input_subsystem);
     render_window->hide();
 
     game_list = new GameList(vfs, provider.get(), this);
@@ -969,13 +991,14 @@ bool GMainWindow::LoadROM(const QString& filename) {
     system.SetFilesystem(vfs);
 
     system.SetAppletFrontendSet({
-        nullptr,                                     // Parental Controls
-        std::make_unique<QtErrorDisplay>(*this),     //
-        nullptr,                                     // Photo Viewer
-        std::make_unique<QtProfileSelector>(*this),  //
-        std::make_unique<QtSoftwareKeyboard>(*this), //
-        std::make_unique<QtWebBrowser>(*this),       //
-        nullptr,                                     // E-Commerce
+        std::make_unique<QtControllerSelector>(*this), // Controller Selector
+        nullptr,                                       // E-Commerce
+        std::make_unique<QtErrorDisplay>(*this),       // Error Display
+        nullptr,                                       // Parental Controls
+        nullptr,                                       // Photo Viewer
+        std::make_unique<QtProfileSelector>(*this),    // Profile Selector
+        std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard
+        std::make_unique<QtWebBrowser>(*this),         // Web Browser
     });
 
     system.RegisterHostThread();
@@ -2050,6 +2073,7 @@ void GMainWindow::OnStartGame() {
 
     emu_thread->SetRunning(true);
 
+    qRegisterMetaType<Core::Frontend::ControllerParameters>("Core::Frontend::ControllerParameters");
     qRegisterMetaType<Core::Frontend::SoftwareKeyboardParameters>(
         "Core::Frontend::SoftwareKeyboardParameters");
     qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
@@ -2217,7 +2241,7 @@ void GMainWindow::OnConfigure() {
     const auto old_theme = UISettings::values.theme;
     const bool old_discord_presence = UISettings::values.enable_discord_presence;
 
-    ConfigureDialog configure_dialog(this, hotkey_registry);
+    ConfigureDialog configure_dialog(this, hotkey_registry, input_subsystem.get());
     connect(&configure_dialog, &ConfigureDialog::LanguageChanged, this,
             &GMainWindow::OnLanguageChanged);
 
@@ -2388,13 +2412,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 913" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 922" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 913 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 922 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
