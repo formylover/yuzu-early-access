@@ -675,9 +675,8 @@ void Hid::MergeSingleJoyAsDualJoy(Kernel::HLERequestContext& ctx) {
     const auto npad_id_2{rp.Pop<u32>()};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 
-    LOG_DEBUG(Service_HID,
-              "(STUBBED) called, npad_id_1={}, npad_id_2={}, applet_resource_user_id={}", npad_id_1,
-              npad_id_2, applet_resource_user_id);
+    LOG_DEBUG(Service_HID, "called, npad_id_1={}, npad_id_2={}, applet_resource_user_id={}",
+              npad_id_1, npad_id_2, applet_resource_user_id);
 
     auto& controller = applet_resource->GetController<Controller_NPad>(HidController::NPad);
     controller.MergeSingleJoyAsDualJoy(npad_id_1, npad_id_2);
