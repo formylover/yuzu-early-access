@@ -193,7 +193,7 @@ void ConfigureMotionTouch::ConnectEvents() {
 
 void ConfigureMotionTouch::OnCemuhookUDPTest() {
     ui->udp_test->setEnabled(false);
-    ui->udp_test->setText(tr("测试中));
+    ui->udp_test->setText(tr("测试中"));
     udp_test_in_progress = true;
     InputCommon::CemuhookUDP::TestCommunication(
         ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toInt()),
