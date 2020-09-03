@@ -1569,3 +1569,8 @@ QWidget#controllerPlayer7,
 QWidget#controllerPlayer8 {
     background: transparent;
 }
+
+/* touchscreen mapping widget */
+TouchScreenPreview {
+    qproperty-dotHighlightColor: #3daee9;
+}

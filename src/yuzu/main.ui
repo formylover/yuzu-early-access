@@ -293,7 +293,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>设置当前游戏..</string>
+    <string>设置当前游戏...</string>
    </property>
   </action>
  </widget>

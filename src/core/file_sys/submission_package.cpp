@@ -22,7 +22,7 @@ namespace FileSys {
 
 NSP::NSP(VirtualFile file_)
     : file(std::move(file_)), status{Loader::ResultStatus::Success},
-      pfs(std::make_shared<PartitionFilesystem>(file)) {
+      pfs(std::make_shared<PartitionFilesystem>(file)), keys{Core::Crypto::KeyManager::Instance()} {
     if (pfs->GetStatus() != Loader::ResultStatus::Success) {
         status = pfs->GetStatus();
         return;
