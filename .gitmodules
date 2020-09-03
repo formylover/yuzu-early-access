@@ -38,5 +38,5 @@
 	path = externals/opus/opus
 	url = https://github.com/kiku233/opus.git
 [submodule "externals/libusb/libusb"]
-	path = externals/libusbw/libusb
+	path = externals/libusb/libusb
 	url = https://github.com/kiku233/libusb.git
