@@ -53,10 +53,10 @@ class GameListItem : public QStandardItem {
 
 public:
     // used to access type from item index
-    static const int TypeRole = Qt::UserRole + 1;
-    static const int SortRole = Qt::UserRole + 2;
+    static constexpr int TypeRole = Qt::UserRole + 1;
+    static constexpr int SortRole = Qt::UserRole + 2;
     GameListItem() = default;
-    GameListItem(const QString& string) : QStandardItem(string) {
+    explicit GameListItem(const QString& string) : QStandardItem(string) {
         setData(string, SortRole);
     }
 };
@@ -69,10 +69,10 @@ public:
  */
 class GameListItemPath : public GameListItem {
 public:
-    static const int TitleRole = SortRole + 1;
-    static const int FullPathRole = SortRole + 2;
-    static const int ProgramIdRole = SortRole + 3;
-    static const int FileTypeRole = SortRole + 4;
+    static constexpr int TitleRole = SortRole + 1;
+    static constexpr int FullPathRole = SortRole + 2;
+    static constexpr int ProgramIdRole = SortRole + 3;
+    static constexpr int FileTypeRole = SortRole + 4;
 
     GameListItemPath() = default;
     GameListItemPath(const QString& game_path, const std::vector<u8>& picture_data,
@@ -114,18 +114,22 @@ public:
             const auto& row1 = row_data.at(UISettings::values.row_1_text_id);
             const int row2_id = UISettings::values.row_2_text_id;
 
-            if (role == SortRole)
+            if (role == SortRole) {
                 return row1.toLower();
+            }
 
-            if (row2_id == 4) // None
+            // None
+            if (row2_id == 4) {
                 return row1;
+            }
 
             const auto& row2 = row_data.at(row2_id);
 
-            if (row1 == row2)
+            if (row1 == row2) {
                 return row1;
+            }
 
-            return QString(row1 + QStringLiteral("\n    ") + row2);
+            return QStringLiteral("%1\n    %2").arg(row1, row2);
         }
 
         return GameListItem::data(role);
@@ -135,7 +139,7 @@ public:
 class GameListItemCompat : public GameListItem {
     Q_DECLARE_TR_FUNCTIONS(GameListItemCompat)
 public:
-    static const int CompatNumberRole = SortRole;
+    static constexpr int CompatNumberRole = SortRole;
     GameListItemCompat() = default;
     explicit GameListItemCompat(const QString& compatibility) {
         setData(type(), TypeRole);
@@ -185,7 +189,7 @@ public:
  */
 class GameListItemSize : public GameListItem {
 public:
-    static const int SizeRole = SortRole;
+    static constexpr int SizeRole = SortRole;
 
     GameListItemSize() = default;
     explicit GameListItemSize(const qulonglong size_bytes) {
@@ -221,7 +225,7 @@ public:
 
 class GameListDir : public GameListItem {
 public:
-    static const int GameDirRole = Qt::UserRole + 2;
+    static constexpr int GameDirRole = Qt::UserRole + 2;
 
     explicit GameListDir(UISettings::GameDir& directory,
                          GameListItemType dir_type = GameListItemType::CustomDir)
@@ -297,7 +301,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-        setData(QObject::tr("添加游戏目录"), Qt::DisplayRole);
+        setData(QObject::tr("Add New Game Directory"), Qt::DisplayRole);
     }
 
     int type() const override {

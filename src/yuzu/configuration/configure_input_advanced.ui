@@ -2599,7 +2599,7 @@
                <item row="6" column="0">
                 <widget class="QLabel" name="motion_touch">
                  <property name="text">
-                  <string>运动 / 触控</string>
+                  <string>体感 / 触控</string>
                  </property>
                 </widget>
                </item>
