@@ -775,7 +775,7 @@ void Module::Interface::ListQualifiedUsers(Kernel::HLERequestContext& ctx) {
 }
 
 void Module::Interface::LoadOpenContext(Kernel::HLERequestContext& ctx) {
-    LOG_WARNING(Service_ACC, "(Partial Implementation) called");
+    LOG_WARNING(Service_ACC, "(STUBBED) called");
 
     // This is similar to GetBaasAccountManagerForApplication
     // This command is used concurrently with ListOpenContextStoredUsers
