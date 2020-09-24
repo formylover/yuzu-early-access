@@ -270,9 +270,11 @@ void CommandGenerator::GenerateBiquadFilterCommandForVoice(ServerVoiceInfo& voic
         }
 
         // Generate biquad filter
-        GenerateBiquadFilterCommand(mix_buffer_count, biquad_filter, dsp_state.biquad_filter_state,
-                                    mix_buffer_count + channel, mix_buffer_count + channel,
-                                    worker_params.sample_count, voice_info.GetInParams().node_id);
+        //        GenerateBiquadFilterCommand(mix_buffer_count, biquad_filter,
+        //        dsp_state.biquad_filter_state,
+        //                                    mix_buffer_count + channel, mix_buffer_count +
+        //                                    channel, worker_params.sample_count,
+        //                                    voice_info.GetInParams().node_id);
     }
 }
 
@@ -300,9 +302,8 @@ void AudioCore::CommandGenerator::GenerateBiquadFilterCommand(
 
     for (int i = 0; i < sample_count; ++i) {
         const auto sample = static_cast<s64>(input[i]);
-        const auto f = (sample * n0 + s0 + 0x2000) >> 14;
-        const auto y = static_cast<s64>(std::clamp(f, int32_min, int32_max));
-
+        const auto f = (sample * n0 + s0 + 0x4000) >> 15;
+        const auto y = std::clamp(f, int32_min, int32_max);
         s0 = sample * n1 + y * d0 + s1;
         s1 = sample * n2 + y * d1;
         output[i] = static_cast<s32>(y);
@@ -388,32 +389,17 @@ void CommandGenerator::GenerateI3dl2ReverbEffectCommand(s32 mix_buffer_offset, E
 
 void CommandGenerator::GenerateBiquadFilterEffectCommand(s32 mix_buffer_offset, EffectBase* info,
                                                          bool enabled) {
-    auto* effect = dynamic_cast<EffectBiquadFilter*>(info);
-    const auto& params = effect->GetParams();
-    const auto channel_count = params.channel_count;
-
     if (!enabled) {
-        for (s32 i = 0; i < channel_count; i++) {
+        return;
+    }
+    const auto& params = dynamic_cast<EffectBiquadFilter*>(info)->GetParams();
+    const auto channel_count = params.channel_count;
+    for (s32 i = 0; i < channel_count; i++) {
+        // TODO(ogniK): Actually implement biquad filter
+        if (params.input[i] != params.output[i]) {
             const auto* input = GetMixBuffer(mix_buffer_offset + params.input[i]);
             auto* output = GetMixBuffer(mix_buffer_offset + params.output[i]);
             ApplyMix<1>(output, input, 32768, worker_params.sample_count);
-        }
-    } else {
-        const BiquadFilterParameter filter_params{
-            .enabled = true,
-            .numerator = params.numerator,
-            .denominator = params.denominator,
-        };
-        auto& states = effect->GetState();
-        const auto need_init = params.status == ParameterStatus::Initialized ||
-                               params.status == ParameterStatus::Updating;
-        for (s32 i = 0; i < channel_count; i++) {
-            if (need_init) {
-                states[i].fill(0);
-            }
-            GenerateBiquadFilterCommand(mix_buffer_offset, filter_params, states[i],
-                                        params.input[i], params.output[i],
-                                        worker_params.sample_count, 0);
         }
     }
 }
