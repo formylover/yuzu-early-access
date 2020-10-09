@@ -292,8 +292,8 @@ GMainWindow::~GMainWindow() {
 void GMainWindow::ControllerSelectorReconfigureControllers(
     const Core::Frontend::ControllerParameters& parameters) {
     QtControllerSelectorDialog dialog(this, parameters, input_subsystem.get());
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
-                          Qt::WindowSystemMenuHint);
+    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
+                          Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.exec();
 
@@ -311,8 +311,9 @@ void GMainWindow::ProfileSelectorSelectProfile() {
     int index = 0;
     if (manager.GetUserCount() != 1) {
         QtProfileSelectionDialog dialog(this);
-        dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
-                              Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+        dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
+                              Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
+                              Qt::WindowCloseButtonHint);
         dialog.setWindowModality(Qt::WindowModal);
 
         if (dialog.exec() == QDialog::Rejected) {
@@ -335,8 +336,9 @@ void GMainWindow::ProfileSelectorSelectProfile() {
 void GMainWindow::SoftwareKeyboardGetText(
     const Core::Frontend::SoftwareKeyboardParameters& parameters) {
     QtSoftwareKeyboardDialog dialog(this, parameters);
-    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint |
-                          Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint);
+    dialog.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint |
+                          Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
+                          Qt::WindowCloseButtonHint);
     dialog.setWindowModality(Qt::WindowModal);
 
     if (dialog.exec() == QDialog::Rejected) {
@@ -2413,13 +2415,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 998" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1013" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 998 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1013 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

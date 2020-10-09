@@ -99,6 +99,7 @@ private:
     void ActivateNpadWithRevision(Kernel::HLERequestContext& ctx);
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StopSixAxisSensor(Kernel::HLERequestContext& ctx);
+    void EnableSixAxisSensorFusion(Kernel::HLERequestContext& ctx);
     void SetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx);
     void GetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx);
     void ResetGyroscopeZeroDriftMode(Kernel::HLERequestContext& ctx);
@@ -122,6 +123,8 @@ private:
     void SetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx);
     void GetNpadHandheldActivationMode(Kernel::HLERequestContext& ctx);
     void SwapNpadAssignment(Kernel::HLERequestContext& ctx);
+    void IsUnintendedHomeButtonInputProtectionEnabled(Kernel::HLERequestContext& ctx);
+    void EnableUnintendedHomeButtonInputProtection(Kernel::HLERequestContext& ctx);
     void BeginPermitVibrationSession(Kernel::HLERequestContext& ctx);
     void EndPermitVibrationSession(Kernel::HLERequestContext& ctx);
     void SendVibrationValue(Kernel::HLERequestContext& ctx);

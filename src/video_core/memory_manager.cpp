@@ -44,6 +44,10 @@ GPUVAddr MemoryManager::MapAllocate(VAddr cpu_addr, std::size_t size, std::size_
     return Map(cpu_addr, *FindFreeRange(size, align), size);
 }
 
+GPUVAddr MemoryManager::MapLow(VAddr cpu_addr, std::size_t size) {
+    return Map(cpu_addr, *FindFreeRange(size, 1, true), size);
+}
+
 void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     if (!size) {
         return;
@@ -53,6 +57,36 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     system.GPU().FlushAndInvalidateRegion(*GpuToCpuAddress(gpu_addr), size);
 
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
+}
+
+GPUVAddr MemoryManager::GpuAddressFromPinned(u32 pinned_address) {
+    if (pinned_map.find(pinned_address) == pinned_map.end()) {
+        // TODO(ameerj): investigate ZLA bug that can't resolve the pinned address.
+        return 0x0;
+    }
+    // ASSERT(pinned_map.find(pinned_address) != pinned_map.end());
+    return pinned_map[pinned_address];
+}
+
+u32 MemoryManager::PinAddress(GPUVAddr addr, u64 size) {
+    pin_id++;
+    pinned_map[pin_id] = addr;
+    return pin_id << 8;
+}
+
+void MemoryManager::UnpinAddress(GPUVAddr addr) {
+    const auto it = pinned_map.find(static_cast<u32>(addr));
+
+    // Some addresses provided by nvdec never get mapped/pinned
+    if (it == pinned_map.end()) {
+        return;
+    }
+
+    pinned_map.erase(it);
+}
+
+void MemoryManager::ClearPins() {
+    pinned_map.clear();
 }
 
 std::optional<GPUVAddr> MemoryManager::AllocateFixed(GPUVAddr gpu_addr, std::size_t size) {
@@ -108,7 +142,8 @@ void MemoryManager::SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::s
     page_table[PageEntryIndex(gpu_addr)] = page_entry;
 }
 
-std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size_t align) const {
+std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size_t align,
+                                                     bool start_low) const {
     if (!align) {
         align = page_size;
     } else {
@@ -117,6 +152,9 @@ std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size
 
     u64 available_size{};
     GPUVAddr gpu_addr{address_space_start};
+    if (start_low) {
+        gpu_addr = GPUVAddr{address_space_start_low};
+    }
     while (gpu_addr + available_size < address_space_size) {
         if (GetPageEntry(gpu_addr + available_size).IsUnmapped()) {
             available_size += page_size;
@@ -176,6 +214,7 @@ template u8 MemoryManager::Read<u8>(GPUVAddr addr) const;
 template u16 MemoryManager::Read<u16>(GPUVAddr addr) const;
 template u32 MemoryManager::Read<u32>(GPUVAddr addr) const;
 template u64 MemoryManager::Read<u64>(GPUVAddr addr) const;
+template s64 MemoryManager::Read<s64>(GPUVAddr addr) const;
 template void MemoryManager::Write<u8>(GPUVAddr addr, u8 data);
 template void MemoryManager::Write<u16>(GPUVAddr addr, u16 data);
 template void MemoryManager::Write<u32>(GPUVAddr addr, u32 data);
@@ -307,6 +346,10 @@ void MemoryManager::CopyBlock(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr, std
     std::vector<u8> tmp_buffer(size);
     ReadBlock(gpu_src_addr, tmp_buffer.data(), size);
     WriteBlock(gpu_dest_addr, tmp_buffer.data(), size);
+}
+
+u32 MemoryManager::Read32(VAddr addr) {
+    return system.Memory().Read32(addr);
 }
 
 void MemoryManager::CopyBlockUnsafe(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr,

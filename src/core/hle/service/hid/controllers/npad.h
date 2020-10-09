@@ -54,17 +54,6 @@ public:
     };
     static_assert(sizeof(NPadType) == 4, "NPadType is an invalid size");
 
-    struct ControllerID {
-        union {
-            u32 raw{};
-            BitField<0, 1, u32> unknown1;
-            BitField<1, 1, u32> unknown2;
-            BitField<8, 4, u32> controller;
-            BitField<12, 1, u32> vibration_stop;
-        };
-    };
-    static_assert(sizeof(ControllerID) == 4, "ControllerID is an invalid size");
-
     struct Vibration {
         f32 amp_low;
         f32 freq_low;
@@ -136,7 +125,7 @@ public:
 
     void SetNpadMode(u32 npad_id, NPadAssignments assignment_mode);
 
-    void VibrateController(const std::vector<ControllerID>& controller_ids,
+    void VibrateController(const std::vector<u32>& controllers,
                            const std::vector<Vibration>& vibrations);
 
     Vibration GetLastVibration() const;
@@ -157,6 +146,8 @@ public:
     bool IsSixAxisSensorAtRest() const;
     void SetSixAxisEnabled(bool six_axis_status);
     LedPattern GetLedPattern(u32 npad_id);
+    bool IsUnintendedHomeButtonInputProtectionEnabled(u32 npad_id) const;
+    void SetUnintendedHomeButtonInputProtectionEnabled(bool is_protection_enabled, u32 npad_id);
     void SetVibrationEnabled(bool can_vibrate);
     bool IsVibrationEnabled() const;
     void ClearAllConnectedControllers();
@@ -398,6 +389,7 @@ private:
     std::array<Kernel::EventPair, 10> styleset_changed_events;
     Vibration last_processed_vibration{};
     std::array<ControllerHolder, 10> connected_controllers{};
+    std::array<bool, 10> unintended_home_button_input_protection{};
     GyroscopeZeroDriftMode gyroscope_zero_drift_mode{GyroscopeZeroDriftMode::Standard};
     bool can_controllers_vibrate{true};
     bool sixaxis_sensors_enabled{true};
