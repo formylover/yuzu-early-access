@@ -34,12 +34,23 @@ public:
     H264BitWriter();
     ~H264BitWriter();
 
+    /// The following Write methods are based on clause 9.1 in the H.264 specification.
+    /// WriteSe and WriteUe write in the Exp-Golomb-coded syntax
     void WriteU(s32 value, s32 value_sz);
     void WriteSe(s32 value);
     void WriteUe(s32 value);
+
+    /// Finalize the bitstream
     void End();
+
+    /// append a bit to the stream, equivalent value to the state parameter
     void WriteBit(bool state);
+
+    /// Based on section 7.3.2.1.1.1 and Table 7-4 in the H.264 specification
+    /// Writes the scaling matrices of the sream
     void WriteScalingList(const std::vector<u8>& list, s32 start, s32 count);
+
+    /// Return the bitstream as a vector.
     std::vector<u8>& GetByteArray();
     const std::vector<u8>& GetByteArray() const;
 
@@ -74,6 +85,7 @@ public:
     explicit H264(GPU& gpu);
     ~H264();
 
+    /// Compose the H264 header of the frame for FFmpeg decoding
     std::vector<u8>& ComposeFrameHeader(NvdecCommon::NvdecRegisters& state,
                                         bool is_first_frame = false);
 

@@ -4,11 +4,13 @@
 
 #include <array>
 #include "common/assert.h"
-#include "nvdec.h"
-#include "vic.h"
+#include "video_core/command_classes/nvdec.h"
+#include "video_core/command_classes/vic.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
+#include "video_core/rasterizer_interface.h"
+#include "video_core/renderer_base.h"
 #include "video_core/texture_cache/surface_params.h"
 
 extern "C" {
@@ -17,58 +19,56 @@ extern "C" {
 
 namespace Tegra {
 
+// #pragma optimize("", off)
 Vic::Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor)
     : gpu(gpu), nvdec_processor(std::move(nvdec_processor)) {}
 Vic::~Vic() = default;
 
-void Vic::VicDeviceWrite(u32 offset, u32 arguments) {
-    LOG_DEBUG(Service_NVDRV, "GOT OFFSET 0x{:X} WITH DATA 0x{:X}", offset * 4, arguments);
+void Vic::VicStateWrite(u32 offset, u32 arguments) {
     u8* state_offset = reinterpret_cast<u8*>(&vic_state) + offset * sizeof(u32);
     std::memcpy(state_offset, &arguments, sizeof(u32));
 }
 
 void Vic::ProcessMethod(Vic::Method method, const std::vector<u32>& arguments) {
     LOG_DEBUG(HW_GPU, "Vic method 0x{:X}", static_cast<u32>(method));
-    VicDeviceWrite(static_cast<u32>(method), arguments[0]);
-
+    VicStateWrite(static_cast<u32>(method), arguments[0]);
+    const u64 arg = static_cast<u64>(arguments[0]) << 8;
     switch (method) {
     case Method::Execute:
         Execute();
         break;
     case Method::SetConfigStructOffset:
-        config_struct_address = gpu.MemoryManager().GpuAddressFromPinned(arguments[0]);
+        config_struct_address = arg;
         break;
     case Method::SetOutputSurfaceLumaOffset:
-        output_surface_luma_address = gpu.MemoryManager().GpuAddressFromPinned(arguments[0]);
+        output_surface_luma_address = arg;
         break;
     case Method::SetOutputSurfaceChromaUOffset:
-        output_surface_chroma_u_address = gpu.MemoryManager().GpuAddressFromPinned(arguments[0]);
+        output_surface_chroma_u_address = arg;
         break;
     case Method::SetOutputSurfaceChromaVOffset:
-        output_surface_chroma_v_address = gpu.MemoryManager().GpuAddressFromPinned(arguments[0]);
+        output_surface_chroma_v_address = arg;
         break;
     default:
-        LOG_DEBUG(Service_NVDRV, "NV-Vic unimplemented method {}", static_cast<u32>(method));
+        break;
     }
 }
 
 void Vic::Execute() {
     if (output_surface_luma_address == 0) {
-        // TODO(ameerj): Invetigate Link's Awakening bug causing this.
-        LOG_CRITICAL(Service_NVDRV, "VIC LUMA ADDRESS NOT SET. RECEIVED PINNED 0x{:X}",
-                     vic_state.output_surface.luma_offset);
-        // This seems to be the fallback actual address to write to.
-        output_surface_luma_address = gpu.MemoryManager().GpuAddressFromPinned(
-            vic_state.surfacex_slots[0][0].luma_offset - 1);
+        LOG_ERROR(Service_NVDRV, "VIC Luma address not set. Recieved 0x{:X}",
+                  vic_state.output_surface.luma_offset);
         return;
     }
 
     const VicConfig config{gpu.MemoryManager().Read<u64>(config_struct_address + 0x20)};
-
-    switch (static_cast<VideoPixelFormat>(config.pixel_format.Value())) {
-    case VideoPixelFormat::Rgba8: {
+    const VideoPixelFormat pixel_format =
+        static_cast<VideoPixelFormat>(config.pixel_format.Value());
+    switch (pixel_format) {
+    case VideoPixelFormat::BGRA8:
+    case VideoPixelFormat::RGBA8: {
         LOG_DEBUG(Service_NVDRV, "Writing RGB Frame");
-        const auto frame = nvdec_processor->GetFrame();
+        const auto* frame = nvdec_processor->GetFrame();
 
         if (!frame || frame->width == 0 || frame->height == 0) {
             return;
@@ -76,25 +76,32 @@ void Vic::Execute() {
 
         if (scaler_ctx == nullptr || frame->width != scaler_width ||
             frame->height != scaler_height) {
+            const AVPixelFormat target_format =
+                (pixel_format == VideoPixelFormat::RGBA8) ? AV_PIX_FMT_RGBA : AV_PIX_FMT_BGRA;
+
             sws_freeContext(scaler_ctx);
             scaler_ctx = nullptr;
-            // FFmpeg returns all frames in YUV420, convert it into RGBA format
+
+            // FFmpeg returns all frames in YUV420, convert it into expected format
             scaler_ctx =
                 sws_getContext(frame->width, frame->height, AV_PIX_FMT_YUV420P, frame->width,
-                               frame->height, AV_PIX_FMT_RGBA, 0, nullptr, nullptr, nullptr);
+                               frame->height, target_format, 0, nullptr, nullptr, nullptr);
 
             scaler_width = frame->width;
             scaler_height = frame->height;
         }
 
-        // Get RGB frame
+        // Get Converted frame
         const std::size_t linear_size = frame->width * frame->height * 4;
-        u8* rgb_frame_buffer = static_cast<u8*>(av_malloc(linear_size));
-        const std::array<int, 1> rgb_stride{frame->width * 4};
-        const std::array<u8*, 1> rgb_frame_buf_addr{rgb_frame_buffer};
+
+        using AVMallocPtr = std::unique_ptr<u8, decltype(&av_free)>;
+        AVMallocPtr converted_frame_buffer{static_cast<u8*>(av_malloc(linear_size)), av_free};
+
+        const std::array<int, 1> converted_stride{frame->width * 4};
+        const std::array<u8*, 1> converted_frame_buf_addr{converted_frame_buffer.get()};
 
         sws_scale(scaler_ctx, frame->data, frame->linesize, 0, frame->height,
-                  rgb_frame_buf_addr.data(), rgb_stride.data());
+                  converted_frame_buf_addr.data(), converted_stride.data());
 
         const u32 blk_kind = static_cast<u32>(config.block_linear_kind);
         if (blk_kind != 0) {
@@ -104,25 +111,29 @@ void Vic::Execute() {
                                                             block_height, 0);
             std::vector<u8> swizzled_data(size);
             Tegra::Texture::CopySwizzledData(frame->width, frame->height, 1, 4, 4,
-                                             swizzled_data.data(), rgb_frame_buffer, false,
-                                             block_height, 0, 1);
+                                             swizzled_data.data(), converted_frame_buffer.get(),
+                                             false, block_height, 0, 1);
 
+            // std::fill(swizzled_data.begin(), swizzled_data.end(), 125);
             gpu.Maxwell3D().OnMemoryWrite();
+
             gpu.MemoryManager().WriteBlock(output_surface_luma_address, swizzled_data.data(), size);
+
+            gpu.Renderer().Rasterizer().TickFrame();
+
         } else {
             // send pitch linear frame
             gpu.Maxwell3D().OnMemoryWrite();
-            gpu.MemoryManager().WriteBlock(output_surface_luma_address, rgb_frame_buf_addr.data(),
-                                           linear_size);
+            gpu.MemoryManager().WriteBlock(output_surface_luma_address,
+                                           converted_frame_buf_addr.data(), linear_size);
         }
 
-        av_free(rgb_frame_buffer);
         break;
     }
     case VideoPixelFormat::Yuv420: {
         LOG_DEBUG(Service_NVDRV, "Writing YUV420 Frame");
 
-        const auto frame = nvdec_processor->GetFrame();
+        const auto* frame = nvdec_processor->GetFrame();
 
         if (!frame || frame->width == 0 || frame->height == 0) {
             return;
@@ -130,14 +141,13 @@ void Vic::Execute() {
 
         const std::size_t surface_width = config.surface_width_minus1 + 1;
         const std::size_t surface_height = config.surface_height_minus1 + 1;
-        const std::size_t src_half_width = frame->width / 2;
         const std::size_t half_width = surface_width / 2;
         const std::size_t half_height = config.surface_height_minus1 / 2;
         const std::size_t aligned_width = (surface_width + 0xff) & ~0xff;
 
-        const auto luma_ptr = frame->data[0];
-        const auto chroma_b_ptr = frame->data[1];
-        const auto chroma_r_ptr = frame->data[2];
+        const auto* luma_ptr = frame->data[0];
+        const auto* chroma_b_ptr = frame->data[1];
+        const auto* chroma_r_ptr = frame->data[2];
         const auto stride = frame->linesize[0];
         const auto half_stride = frame->linesize[1];
 

@@ -19,7 +19,7 @@
 //
 
 #include "common/bit_util.h"
-#include "h264.h"
+#include "video_core/command_classes/codecs/h264.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 
@@ -28,7 +28,6 @@ H264::H264(GPU& gpu) : gpu(gpu) {}
 
 H264::~H264() = default;
 
-/// Compose the H264 header of the frame for FFmpeg decoding
 std::vector<u8>& H264::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state, bool is_first_frame) {
     H264DecoderContext context{};
     gpu.MemoryManager().ReadBlock(state.picture_info_offset, &context, sizeof(H264DecoderContext));
@@ -57,7 +56,7 @@ std::vector<u8>& H264::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state, bo
 
         writer.WriteUe(0);
         writer.WriteUe(0);
-        writer.WriteBit(false); // TODO QpprimeYZeroTransformBypassFlag
+        writer.WriteBit(false); // QpprimeYZeroTransformBypassFlag
         writer.WriteBit(false); // Scaling matrix present flag
 
         const s32 order_cnt_type = static_cast<s32>((context.h264_parameter_set.flags >> 14) & 3);
@@ -250,13 +249,11 @@ void H264BitWriter::WriteExpGolombCodedInt(s32 value) {
 }
 
 void H264BitWriter::WriteExpGolombCodedUInt(u32 value) {
-    const s32 size = 32 - Common::CountLeadingZeroes32((s32)value + 1);
-
+    const s32 size = 32 - Common::CountLeadingZeroes32(static_cast<s32>(value + 1));
     WriteBits(1, size);
 
-    value -= (1u << (size - 1)) - 1;
-
-    WriteBits((s32)value, size - 1);
+    value -= (1U << (size - 1)) - 1;
+    WriteBits(static_cast<s32>(value), size - 1);
 }
 
 s32 H264BitWriter::GetFreeBufferBits() {

@@ -22,11 +22,15 @@ public:
     explicit Nvdec(GPU& gpu);
     ~Nvdec();
 
+    /// Writes the method into the state, Invoke Execute() if encountered
     void ProcessMethod(Nvdec::Method method, const std::vector<u32>& arguments);
+
+    /// Return most recently decoded frame
     AVFrame* GetFrame();
     const AVFrame* GetFrame() const;
 
 private:
+    /// Invoke codec to decode a frame
     void Execute();
 
     GPU& gpu;

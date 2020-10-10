@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <map>
 #include <vector>
 #include "common/common_types.h"
@@ -31,9 +32,9 @@ private:
             : start_addr{start_addr}, end_addr{start_addr + size} {}
 
         constexpr BufferMap(GPUVAddr start_addr, std::size_t size, VAddr cpu_addr,
-                            bool is_allocated, u32 pin_address)
-            : pin_id{pin_address}, start_addr{start_addr}, end_addr{start_addr + size},
-              cpu_addr{cpu_addr}, is_allocated{is_allocated} {}
+                            bool is_allocated)
+            : start_addr{start_addr}, end_addr{start_addr + size}, cpu_addr{cpu_addr},
+              is_allocated{is_allocated} {}
 
         constexpr VAddr StartAddr() const {
             return start_addr;
@@ -54,7 +55,6 @@ private:
         constexpr bool IsAllocated() const {
             return is_allocated;
         }
-        u32 pin_id{};
 
     private:
         GPUVAddr start_addr{};
@@ -69,8 +69,14 @@ private:
         IocGetSyncpoint = 0xC0080002,
         IocGetWaitbase = 0xC0080003,
         IocMapBuffer = 0xC01C0009,
+        IocMapBuffer2 = 0xC0340009,
+        IocMapBuffer3 = 0xC0140009,
+        IocMapBuffer4 = 0xC00C0009,
         IocMapBufferEx = 0xC03C0009,
-        IocUnmapBufferEx = 0xC03C000A,
+        IocUnmapBuffer = 0xC03C000A,
+        IocUnmapBuffer2 = 0xC01C000A,
+        IocUnmapBuffer3 = 0xC034000A,
+        IocUnmapBuffer4 = 0xC00C000A,
     };
 
     struct IoctlSetNvmapFD {
@@ -156,19 +162,22 @@ private:
     };
     static_assert(sizeof(IoctlMapBuffer) == 0x0C, "IoctlMapBuffer is incorrect size");
 
+    // Used by stubs
     struct IoctlMapBufferEx {
         u32 unknown;
         u32 address_1;
         u32 address_2;
-        INSERT_PADDING_BYTES(0x30); // TODO(DarkLordZach): RE this structure
+        INSERT_PADDING_BYTES(0x30);
     };
     static_assert(sizeof(IoctlMapBufferEx) == 0x3C, "IoctlMapBufferEx is incorrect size");
 
+    // Used by stubs
     struct IoctlUnmapBufferEx {
-        INSERT_PADDING_BYTES(0x3C); // TODO(DarkLordZach): RE this structure
+        INSERT_PADDING_BYTES(0x3C);
     };
     static_assert(sizeof(IoctlUnmapBufferEx) == 0x3C, "IoctlUnmapBufferEx is incorrect size");
 
+    // Used by stubs
     struct IoctlSubmitStub {
         u32 command_buffer_count;
         u32 relocations_count;
@@ -188,17 +197,20 @@ private:
     u32 UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& output);
     u32 MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
     u32 UnmapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
+
+    // STUBBED fallback functions if user has nvdec disabled
     u32 SubmitStub(const std::vector<u8>& input, std::vector<u8>& output);
     u32 MapBufferStub(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::shared_ptr<nvmap> nvmap_dev;
 
     std::optional<BufferMap> FindBufferMap(GPUVAddr gpu_addr) const;
-    void AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr, bool is_allocated,
-                      u32 pin_id);
+    void AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr, bool is_allocated);
     std::optional<std::size_t> RemoveBufferMap(GPUVAddr gpu_addr);
 
     // This is expected to be ordered, therefore we must use a map, not unordered_map
     std::map<GPUVAddr, BufferMap> buffer_mappings;
+
+    std::vector<MapBufferEntry> queued_unmaps;
 };
 } // namespace Service::Nvidia::Devices

@@ -66,16 +66,18 @@ public:
     explicit Vic(GPU& gpu, std::shared_ptr<Tegra::Nvdec> nvdec_processor);
     ~Vic();
 
+    /// Write to the device state.
     void ProcessMethod(Vic::Method method, const std::vector<u32>& arguments);
 
 private:
     void Execute();
 
-    void VicDeviceWrite(u32 offset, u32 arguments);
+    void VicStateWrite(u32 offset, u32 arguments);
     VicRegisters vic_state{};
 
     enum class VideoPixelFormat : u64_le {
-        Rgba8 = 0x1f,
+        RGBA8 = 0x1f,
+        BGRA8 = 0x20,
         Yuv420 = 0x44,
     };
 

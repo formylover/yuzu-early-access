@@ -31,9 +31,9 @@ void SyncptIncrManager::Increment(u32 id) {
     IncrementAllDone();
 }
 
-u32 SyncptIncrManager::IncrementWhenDone(u32 classId, u32 id) {
+u32 SyncptIncrManager::IncrementWhenDone(u32 class_id, u32 id) {
     const u32 handle = current_id++;
-    increments.push_back(SyncptIncr{handle, classId, id});
+    increments.push_back(SyncptIncr{handle, class_id, id});
 
     return handle;
 }
@@ -50,9 +50,7 @@ void SyncptIncrManager::SignalDone(u32 handle) {
 }
 
 void SyncptIncrManager::IncrementAllDone() {
-    // Increment all sequential pending increments that are already done.
     std::size_t done_count = 0;
-
     for (; done_count < increments.size(); done_count++) {
         if (!increments[done_count].complete) {
             break;

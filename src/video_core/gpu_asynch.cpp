@@ -46,7 +46,11 @@ void GPUAsynch::PushCommandBuffer(Tegra::ChCommandHeaderList& entries) {
     if (!cdma_pusher) {
         cdma_pusher = std::make_unique<Tegra::CDmaPusher>(*this);
     }
+
+    // SubmitCommandBuffer would make the nvdec operations async, this is not currently working
+    // TODO(ameerj): RE proper async nvdec operation
     // gpu_thread.SubmitCommandBuffer(std::move(entries));
+
     cdma_pusher->Push(std::move(entries));
     cdma_pusher->DispatchCalls();
 }

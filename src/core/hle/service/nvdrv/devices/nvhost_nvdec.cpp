@@ -36,11 +36,12 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
     if (system.GPU().UseNvdec()) {
         // This command is sent when the video stream has ended, flush all video contexts
         // This is usually sent in the folowing order: vic, nvdec, vic.
-        // Inform the GPU to clear buffers when this is detected.
+        // Inform the GPU to clear any remaining nvdec buffers when this is detected.
         if (command.raw == 0xC01C000A) {
             Tegra::ChCommandHeaderList cmdlist(1);
             cmdlist[0] = Tegra::ChCommandHeader{0xDEADB33F};
             system.GPU().PushCommandBuffer(cmdlist);
+            system.GPU().MemoryManager().InvalidateQueuedCaches();
         }
 
         switch (static_cast<IoctlCommand>(command.raw)) {
@@ -53,31 +54,21 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
         case IoctlCommand::IocGetWaitbase:
             return GetWaitbase(input, output);
         case IoctlCommand::IocMapBuffer:
-            return MapBuffer(input, output);
+        case IoctlCommand::IocMapBuffer2:
+        case IoctlCommand::IocMapBuffer3:
         case IoctlCommand::IocMapBufferEx:
             return MapBuffer(input, output);
-        case IoctlCommand::IocUnmapBufferEx:
+        case IoctlCommand::IocUnmapBuffer:
+        case IoctlCommand::IocUnmapBuffer2:
+        case IoctlCommand::IocUnmapBuffer3:
+        case IoctlCommand::IocUnmapBuffer4:
             return UnmapBuffer(input, output);
         case IoctlCommand::IocSetSubmitTimeout:
             return SetSubmitTimeout(input, output);
         }
-        if (command.group == 0) {
-            if (command.cmd == 9) {
-                return MapBuffer(input, output);
-            }
-            if (command.cmd == 0xa) {
-                return UnmapBuffer(input, output);
-            }
-        }
-        if (command.group == 0) {
-            if (command.cmd == 1) {
-                return Submit(input, output);
-            }
-        }
-
     } else {
         // Fall back to stubbed management if user disables nvdec
-        // TODO: Fix crashing that is caused in some instances due to ioctl commands
+        // TODO: remove stubs once the implmentation is shown not cause incompatibilities.
         switch (static_cast<IoctlCommand>(command.raw)) {
         case IoctlCommand::IocSetNVMAPfdCommand:
             return SetNVMAPfd(input, output);
@@ -91,7 +82,7 @@ u32 nvhost_nvdec::ioctl(Ioctl command, const std::vector<u8>& input, const std::
             return MapBufferStub(input, output);
         case IoctlCommand::IocMapBufferEx:
             return MapBufferEx(input, output);
-        case IoctlCommand::IocUnmapBufferEx:
+        case IoctlCommand::IocUnmapBuffer:
             return UnmapBufferEx(input, output);
         }
     }
@@ -112,16 +103,16 @@ u32 nvhost_nvdec::SetNVMAPfd(const std::vector<u8>& input, std::vector<u8>& outp
 // TODO(ameerj): move overlapping functionality into an nvdec_common
 
 // Splice vectors will copy count amount of type T from the input vector into the dst vector.
-template <class T>
-std::size_t splice_vectors(const std::vector<u8>& input, std::vector<T>& dst, std::size_t count,
-                           std::size_t offset) {
+template <typename T>
+static std::size_t SpliceVectors(const std::vector<u8>& input, std::vector<T>& dst,
+                                 std::size_t count, std::size_t offset) {
     std::memcpy(dst.data(), input.data() + offset, count * sizeof(T));
     return offset += count * sizeof(T);
 }
 
 // Write vectors will write data to the output buffer
-template <class T>
-std::size_t write_vectors(std::vector<u8>& dst, std::vector<T>& src, std::size_t offset) {
+template <typename T>
+static std::size_t WriteVectors(std::vector<u8>& dst, std::vector<T>& src, std::size_t offset) {
     std::memcpy(dst.data() + offset, src.data(), src.size() * sizeof(T));
     return offset += src.size() * sizeof(T);
 }
@@ -132,26 +123,32 @@ u32 nvhost_nvdec::Submit(const std::vector<u8>& input, std::vector<u8>& output) 
     LOG_DEBUG(Service_NVDRV, "called VIC Submit, cmd_buffer_count={}", params.cmd_buffer_count);
 
     // Instantiate param buffers
-    // TODO(ameerj): utilize async gpu related buffers
     std::size_t offset = sizeof(IoctlSubmit);
     std::vector<CommandBuffer> command_buffers(params.cmd_buffer_count);
-    // std::vector<Reloc> relocs(params.relocation_count);
-    // std::vector<u32> reloc_shifts(params.relocation_count);
-    // std::vector<SyncptIncr> syncpt_increments(params.syncpoint_count);
-    // std::vector<SyncptIncr> wait_checks(params.syncpoint_count);
-    // std::vector<Fence> fences(params.fence_count);
+    std::vector<Reloc> relocs(params.relocation_count);
+    std::vector<u32> reloc_shifts(params.relocation_count);
+    std::vector<SyncptIncr> syncpt_increments(params.syncpoint_count);
+    std::vector<SyncptIncr> wait_checks(params.syncpoint_count);
+    std::vector<Fence> fences(params.fence_count);
 
     // splice input into their respective buffers
-    offset = splice_vectors(input, command_buffers, params.cmd_buffer_count, offset);
-    // offset = splice_vectors(input, relocs, params.relocation_count, offset);
-    // offset = splice_vectors(input, reloc_shifts, params.relocation_count, offset);
-    // offset = splice_vectors(input, syncpt_increments, params.syncpoint_count, offset);
-    // offset = splice_vectors(input, wait_checks, params.syncpoint_count, offset);
-    // offset = splice_vectors(input, fences, params.fence_count, offset);
+    offset = SpliceVectors(input, command_buffers, params.cmd_buffer_count, offset);
+    offset = SpliceVectors(input, relocs, params.relocation_count, offset);
+    offset = SpliceVectors(input, reloc_shifts, params.relocation_count, offset);
+    offset = SpliceVectors(input, syncpt_increments, params.syncpoint_count, offset);
+    offset = SpliceVectors(input, wait_checks, params.syncpoint_count, offset);
+    offset = SpliceVectors(input, fences, params.fence_count, offset);
 
     auto& gpu = system.GPU();
 
-    // TODO: Use fences for async gpu syncpoint management
+    for (int i = 0; i < syncpt_increments.size(); i++) {
+        fences[i].id = syncpt_increments[i].id;
+        ASSERT(fences[i].id != 0xffffffff);
+        for (u32 j = 0; j < syncpt_increments[i].increments; ++j) {
+            gpu.IncrementSyncPoint(fences[i].id);
+        }
+        fences[i].value = gpu.GetSyncpointValue(fences[i].id);
+    }
 
     for (const auto& cmd_buffer : command_buffers) {
         auto object = nvmap_dev->GetObject(cmd_buffer.memory_id);
@@ -168,11 +165,20 @@ u32 nvhost_nvdec::Submit(const std::vector<u8>& input, std::vector<u8>& output) 
                                       cmdlist.size() * sizeof(u32));
         gpu.PushCommandBuffer(cmdlist);
     }
+    gpu.IncrementSyncPoint(fences[0].id);
+    fences[0].value = gpu.GetSyncpointValue(fences[0].id);
+
+    Tegra::ChCommandHeaderList final_list{Tegra::ChCommandHeader{(4 << 28) | fences[0].id}};
+    gpu.PushCommandBuffer(final_list);
 
     std::memcpy(output.data(), &params, sizeof(IoctlSubmit));
-
-    // Some games expect command_buffers to be written back.
-    offset = write_vectors(output, command_buffers, sizeof(IoctlSubmit));
+    // Some games expect command_buffers to be written back
+    offset = sizeof(IoctlSubmit);
+    offset = WriteVectors(output, command_buffers, offset);
+    offset = WriteVectors(output, relocs, offset);
+    offset = WriteVectors(output, reloc_shifts, offset);
+    offset = WriteVectors(output, syncpt_increments, offset);
+    offset = WriteVectors(output, wait_checks, offset);
 
     return NvErrCodes::Success;
 }
@@ -182,8 +188,8 @@ u32 nvhost_nvdec::GetSyncpoint(const std::vector<u8>& input, std::vector<u8>& ou
     std::memcpy(&params, input.data(), input.size());
     LOG_DEBUG(Service_NVDRV, "called GetSyncpoint, id={}", params.param);
 
-    // We found that this causes deadlocks with async gpu, along with degraded performance.
-    // TODO: RE the nvdec async implementation
+    // We found that implementing this causes deadlocks with async gpu, along with degraded
+    // performance. TODO: RE the nvdec async implementation
     params.value = 0;
     std::memcpy(output.data(), &params, sizeof(IoctlGetSyncpoint));
     return NvErrCodes::Success;
@@ -203,7 +209,7 @@ u32 nvhost_nvdec::MapBuffer(const std::vector<u8>& input, std::vector<u8>& outpu
     std::memcpy(&params, input.data(), sizeof(IoctlMapBuffer));
     std::vector<MapBufferEntry> cmd_buffer_handles(params.num_entries);
 
-    splice_vectors(input, cmd_buffer_handles, params.num_entries, sizeof(IoctlMapBuffer));
+    SpliceVectors(input, cmd_buffer_handles, params.num_entries, sizeof(IoctlMapBuffer));
 
     auto& gpu = system.GPU();
 
@@ -225,12 +231,9 @@ u32 nvhost_nvdec::MapBuffer(const std::vector<u8>& input, std::vector<u8>& outpu
         if (!object->dma_map_addr) {
             LOG_ERROR(Service_NVDRV, "failed to map size={}", object->size);
         } else {
-            // TODO(ameerj): Forgo address pinning in favor of using the MapLow values directly
-            cmf_buff.map_address =
-                gpu.MemoryManager().PinAddress(object->dma_map_addr, object->size);
-
+            cmf_buff.map_address = object->dma_map_addr;
             AddBufferMap(object->dma_map_addr, object->size, object->addr,
-                         object->status == nvmap::Object::Status::Allocated, cmf_buff.map_address);
+                         object->status == nvmap::Object::Status::Allocated);
         }
     }
     std::memcpy(output.data(), &params, sizeof(IoctlMapBuffer));
@@ -244,7 +247,7 @@ u32 nvhost_nvdec::UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& out
     IoctlMapBuffer params{};
     std::memcpy(&params, input.data(), sizeof(IoctlMapBuffer));
     std::vector<MapBufferEntry> cmd_buffer_handles(params.num_entries);
-    splice_vectors(input, cmd_buffer_handles, params.num_entries, sizeof(IoctlMapBuffer));
+    SpliceVectors(input, cmd_buffer_handles, params.num_entries, sizeof(IoctlMapBuffer));
 
     auto& gpu = system.GPU();
 
@@ -257,7 +260,6 @@ u32 nvhost_nvdec::UnmapBuffer(const std::vector<u8>& input, std::vector<u8>& out
         }
 
         if (const auto size{RemoveBufferMap(object->dma_map_addr)}; size) {
-            gpu.MemoryManager().UnpinAddress(object->dma_map_addr);
             gpu.MemoryManager().Unmap(object->dma_map_addr, *size);
         } else {
             // This seems to be a common occurence, but does not have any obvious side effects
@@ -295,7 +297,6 @@ u32 nvhost_nvdec::SetSubmitTimeout(const std::vector<u8>& input, std::vector<u8>
     return NvErrCodes::Success;
 }
 
-// STUBBED fallback functions if user has nvdec disabled
 u32 nvhost_nvdec::SubmitStub(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlSubmitStub params{};
     std::memcpy(&params, input.data(), sizeof(IoctlSubmitStub));
@@ -316,20 +317,18 @@ u32 nvhost_nvdec::MapBufferStub(const std::vector<u8>& input, std::vector<u8>& o
 }
 
 std::optional<nvhost_nvdec::BufferMap> nvhost_nvdec::FindBufferMap(GPUVAddr gpu_addr) const {
-    auto it = std::find_if(buffer_mappings.begin(), buffer_mappings.upper_bound(gpu_addr),
-                           [&](const std::pair<GPUVAddr, BufferMap> map) {
-                               return (gpu_addr >= map.second.StartAddr() &&
-                                       gpu_addr < map.second.EndAddr());
-                           });
+    const auto it = std::find_if(
+        buffer_mappings.begin(), buffer_mappings.upper_bound(gpu_addr), [&](const auto& entry) {
+            return (gpu_addr >= entry.second.StartAddr() && gpu_addr < entry.second.EndAddr());
+        });
 
     ASSERT(it != buffer_mappings.end());
     return it->second;
 }
 
 void nvhost_nvdec::AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr,
-                                bool is_allocated, u32 pin_id) {
-    buffer_mappings.insert_or_assign(gpu_addr,
-                                     BufferMap{gpu_addr, size, cpu_addr, is_allocated, pin_id});
+                                bool is_allocated) {
+    buffer_mappings.insert_or_assign(gpu_addr, BufferMap{gpu_addr, size, cpu_addr, is_allocated});
 }
 
 std::optional<std::size_t> nvhost_nvdec::RemoveBufferMap(GPUVAddr gpu_addr) {
@@ -337,7 +336,7 @@ std::optional<std::size_t> nvhost_nvdec::RemoveBufferMap(GPUVAddr gpu_addr) {
     if (iter == buffer_mappings.end()) {
         return std::nullopt;
     }
-    std::size_t size{};
+    std::size_t size = 0;
     if (iter->second.IsAllocated()) {
         size = iter->second.Size();
     }

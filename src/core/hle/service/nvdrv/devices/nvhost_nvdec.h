@@ -31,9 +31,9 @@ private:
             : start_addr{start_addr}, end_addr{start_addr + size} {}
 
         constexpr BufferMap(GPUVAddr start_addr, std::size_t size, VAddr cpu_addr,
-                            bool is_allocated, u32 pin_address)
-            : pin_id{pin_address}, start_addr{start_addr}, end_addr{start_addr + size},
-              cpu_addr{cpu_addr}, is_allocated{is_allocated} {}
+                            bool is_allocated)
+            : start_addr{start_addr}, end_addr{start_addr + size}, cpu_addr{cpu_addr},
+              is_allocated{is_allocated} {}
 
         constexpr VAddr StartAddr() const {
             return start_addr;
@@ -54,7 +54,6 @@ private:
         constexpr bool IsAllocated() const {
             return is_allocated;
         }
-        u32 pin_id{};
 
     private:
         GPUVAddr start_addr{};
@@ -69,8 +68,13 @@ private:
         IocGetSyncpoint = 0xC0080002,
         IocGetWaitbase = 0xC0080003,
         IocMapBuffer = 0xC01C0009,
+        IocMapBuffer2 = 0xC16C0009,
+        IocMapBuffer3 = 0xC15C0009,
         IocMapBufferEx = 0xC0A40009,
-        IocUnmapBufferEx = 0xC0A4000A,
+        IocUnmapBuffer = 0xC0A4000A,
+        IocUnmapBuffer2 = 0xC16C000A,
+        IocUnmapBuffer3 = 0xC01C000A,
+        IocUnmapBuffer4 = 0xC15C000A,
         IocSetSubmitTimeout = 0x40040007,
     };
 
@@ -86,11 +90,6 @@ private:
         u32_le fence_count;
     };
     static_assert(sizeof(IoctlSubmit) == 0x10, "IoctlSubmit has incorrect size");
-
-    struct IoctlSubmitStub {
-        INSERT_PADDING_BYTES(0x40); // TODO(DarkLordZach): RE this structure
-    };
-    static_assert(sizeof(IoctlSubmitStub) == 0x40, "IoctlSubmit has incorrect size");
 
     struct CommandBuffer {
         s32 memory_id;
@@ -147,23 +146,31 @@ private:
     };
     static_assert(sizeof(IoctlMapBuffer) == 0x0C, "IoctlMapBuffer is incorrect size");
 
-    struct IoctlMapBufferEx {
-        u32 unknown;
-        u32 address_1;
-        u32 address_2;
-        INSERT_PADDING_BYTES(0x98); // TODO(DarkLordZach): RE this structure
-    };
-    static_assert(sizeof(IoctlMapBufferEx) == 0xA4, "IoctlMapBufferEx has incorrect size");
-
-    struct IoctlUnmapBufferEx {
-        INSERT_PADDING_BYTES(0xA4); // TODO(DarkLordZach): RE this structure
-    };
-    static_assert(sizeof(IoctlUnmapBufferEx) == 0xA4, "IoctlUnmapBufferEx has incorrect size");
-
     struct IoctlUnmapBuffer {
         s64_le offset;
     };
     static_assert(sizeof(IoctlUnmapBuffer) == 8, "IoctlUnmapBuffer is incorrect size");
+
+    // Used by stubs
+    struct IoctlMapBufferEx {
+        u32 unknown;
+        u32 address_1;
+        u32 address_2;
+        INSERT_PADDING_BYTES(0x98);
+    };
+    static_assert(sizeof(IoctlMapBufferEx) == 0xA4, "IoctlMapBufferEx has incorrect size");
+
+    // Used by stubs
+    struct IoctlUnmapBufferEx {
+        INSERT_PADDING_BYTES(0xA4);
+    };
+    static_assert(sizeof(IoctlUnmapBufferEx) == 0xA4, "IoctlUnmapBufferEx has incorrect size");
+
+    // Used by stubs
+    struct IoctlSubmitStub {
+        INSERT_PADDING_BYTES(0x40);
+    };
+    static_assert(sizeof(IoctlSubmitStub) == 0x40, "IoctlSubmit has incorrect size");
 
     u32_le nvmap_fd{};
     u32_le submit_timeout{};
@@ -177,12 +184,13 @@ private:
     u32 MapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
     u32 UnmapBufferEx(const std::vector<u8>& input, std::vector<u8>& output);
     u32 SetSubmitTimeout(const std::vector<u8>& input, std::vector<u8>& output);
+
+    // STUBBED fallback functions if user has nvdec disabled
     u32 SubmitStub(const std::vector<u8>& input, std::vector<u8>& output);
     u32 MapBufferStub(const std::vector<u8>& input, std::vector<u8>& output);
 
     std::optional<BufferMap> FindBufferMap(GPUVAddr gpu_addr) const;
-    void AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr, bool is_allocated,
-                      u32 pin_id);
+    void AddBufferMap(GPUVAddr gpu_addr, std::size_t size, VAddr cpu_addr, bool is_allocated);
     std::optional<std::size_t> RemoveBufferMap(GPUVAddr gpu_addr);
 
     std::shared_ptr<nvmap> nvmap_dev;

@@ -24,7 +24,7 @@ Codec::Codec(GPU& gpu)
 Codec::~Codec() {
     if (initialized) {
         // Free libav memory
-        avcodec_send_packet(av_codec_ctx, NULL);
+        avcodec_send_packet(av_codec_ctx, nullptr);
         avcodec_receive_frame(av_codec_ctx, av_frame);
         LOG_DEBUG(Service_NVDRV, "Flushed avcontext");
 
@@ -49,12 +49,12 @@ void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
     } else {
         LOG_INFO(Service_NVDRV, "Codec initialized to {}", static_cast<u32>(codec));
     }
-    current_codec = static_cast<NvdecCommon::VideoCodec>(state.set_codec_id);
+    current_codec = codec;
 }
 
-void Codec::StateWrite(u32 offset, u32 arguments) {
-    u8* state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u32);
-    std::memcpy(state_offset, &arguments, sizeof(u32));
+void Codec::StateWrite(u32 offset, u64 arguments) {
+    u8* state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u64);
+    std::memcpy(state_offset, &arguments, sizeof(u64));
 }
 
 void Codec::Decode() {
@@ -126,10 +126,6 @@ const AVFrame* Codec::GetCurrentFrame() const {
 
 NvdecCommon::VideoCodec Codec::GetCurrentCodec() const {
     return current_codec;
-}
-
-const NvdecCommon::NvdecRegisters& Codec::GetNvdecState() const {
-    return state;
 }
 
 } // namespace Tegra

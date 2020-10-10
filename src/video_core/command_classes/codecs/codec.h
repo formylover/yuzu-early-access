@@ -34,16 +34,21 @@ public:
     explicit Codec(GPU& gpu);
     ~Codec();
 
+    /// Sets NVDEC video stream codec
     void SetTargetCodec(NvdecCommon::VideoCodec codec);
 
-    void StateWrite(u32 offset, u32 arguments);
+    /// Populate NvdecRegisters state with argument value at the provided offset
+    void StateWrite(u32 offset, u64 arguments);
 
+    /// Call decoders to construct headers, decode AVFrame with ffmpeg
     void Decode();
 
+    /// Returns most recently decoded frame
     AVFrame* GetCurrentFrame();
     const AVFrame* GetCurrentFrame() const;
+
+    /// Returns the value of current_codec
     NvdecCommon::VideoCodec GetCurrentCodec() const;
-    const NvdecCommon::NvdecRegisters& GetNvdecState() const;
 
 private:
     bool codec_swap{};

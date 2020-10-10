@@ -20,9 +20,7 @@ void Nvdec::ProcessMethod(Nvdec::Method method, const std::vector<u32>& argument
     if (method == Method::SetVideoCodec) {
         codec->StateWrite(static_cast<u32>(method), arguments[0]);
     } else {
-        codec->StateWrite(static_cast<u32>(method),
-                          static_cast<u32>(gpu.MemoryManager().GpuAddressFromPinned(
-                              static_cast<u32>(arguments[0]))));
+        codec->StateWrite(static_cast<u32>(method), static_cast<u64>(arguments[0]) << 8);
     }
 
     switch (method) {

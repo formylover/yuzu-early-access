@@ -11,6 +11,7 @@
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
 #include "video_core/rasterizer_interface.h"
+#include "video_core/renderer_base.h"
 
 namespace Tegra {
 
@@ -59,34 +60,29 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
 
-GPUVAddr MemoryManager::GpuAddressFromPinned(u32 pinned_address) {
-    if (pinned_map.find(pinned_address) == pinned_map.end()) {
-        // TODO(ameerj): investigate ZLA bug that can't resolve the pinned address.
-        return 0x0;
-    }
-    // ASSERT(pinned_map.find(pinned_address) != pinned_map.end());
-    return pinned_map[pinned_address];
-}
-
-u32 MemoryManager::PinAddress(GPUVAddr addr, u64 size) {
-    pin_id++;
-    pinned_map[pin_id] = addr;
-    return pin_id << 8;
-}
-
-void MemoryManager::UnpinAddress(GPUVAddr addr) {
-    const auto it = pinned_map.find(static_cast<u32>(addr));
-
-    // Some addresses provided by nvdec never get mapped/pinned
-    if (it == pinned_map.end()) {
+void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
+    if (!size) {
         return;
     }
 
-    pinned_map.erase(it);
+    auto cpu_addr = *GpuToCpuAddress(gpu_addr);
+    system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(cpu_addr, size);
+    cache_invalidate_queue.push_back({cpu_addr, size});
+
+    // invalidate_previous = cpu_addr;
+    // invalidate_previous_size = size;
+    // system.GPU().Renderer().Rasterizer().InvalidateRegion(cpu_addr, size);
+    // system.GPU().FlushRegion(cpu_addr, size);
+    // system.GPU().InvalidateRegion(cpu_addr, size);
+
+    UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
 
-void MemoryManager::ClearPins() {
-    pinned_map.clear();
+void MemoryManager::InvalidateQueuedCaches() {
+    for (const auto& entry : cache_invalidate_queue) {
+        rasterizer->InvalidateTextureCache(entry.first, entry.second);
+    }
+    cache_invalidate_queue.clear();
 }
 
 std::optional<GPUVAddr> MemoryManager::AllocateFixed(GPUVAddr gpu_addr, std::size_t size) {

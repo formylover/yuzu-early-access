@@ -121,10 +121,13 @@ public:
     [[nodiscard]] GPUVAddr Allocate(std::size_t size, std::size_t align);
     void Unmap(GPUVAddr gpu_addr, std::size_t size);
 
-    [[nodiscard]] GPUVAddr GpuAddressFromPinned(u32 pinned_address);
-    u32 PinAddress(GPUVAddr addr, u64 size);
-    void UnpinAddress(GPUVAddr addr);
-    void ClearPins();
+    /**
+     * Some Decoded NVDEC frames require that texture cache does not get invalidated.
+     * UnmapVicFrame defers the texture cache invalidation until the stream ends
+     * by invoking InvalidateQueuedCaches to invalidate all frame texture caches.
+     */
+    void UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size);
+    void InvalidateQueuedCaches();
 
 private:
     [[nodiscard]] PageEntry GetPageEntry(GPUVAddr gpu_addr) const;
@@ -150,13 +153,12 @@ private:
     static constexpr u64 page_table_size{1 << page_table_bits};
     static constexpr u64 page_table_mask{page_table_size - 1};
 
-    u32 pin_id{};
-    std::unordered_map<u32, GPUVAddr> pinned_map{};
     Core::System& system;
 
     VideoCore::RasterizerInterface* rasterizer = nullptr;
 
     std::vector<PageEntry> page_table;
+    std::vector<std::pair<VAddr, std::size_t>> cache_invalidate_queue;
 };
 
 } // namespace Tegra

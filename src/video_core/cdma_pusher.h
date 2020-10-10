@@ -20,9 +20,6 @@ class Nvdec;
 class Vic;
 class Host1x;
 
-std::string HexDump(const std::vector<u8>& data);
-std::string DumpArgs(GPU& gpu, const std::vector<u32>& arguments);
-
 enum class ChSubmissionMode : u32 {
     SetClass = 0,
     Incrementing = 1,
@@ -75,26 +72,26 @@ using ChCommandHeaderList = std::vector<Tegra::ChCommandHeader>;
 using ChCommandList = std::vector<Tegra::ChCommand>;
 
 struct ThiRegisters {
-    u32_le IncrSyncpt;
-    u32_le Reserved4;
-    u32_le IncrSyncptErr;
-    u32_le CtxswIncrSyncpt;
+    u32_le increment_syncpt;
+    u32_le padding0;
+    u32_le increment_syncpt_error;
+    u32_le ctx_switch_incremement_syncpt;
     INSERT_PADDING_WORDS(4);
-    u32_le Ctxsw;
-    u32_le Reserved24;
-    u32_le ContSyncptEof;
+    u32_le ctx_switch;
+    u32_le padding1;
+    u32_le ctx_syncpt_eof;
     INSERT_PADDING_WORDS(5);
-    u32_le Method0;
-    u32_le Method1;
+    u32_le method_0;
+    u32_le method_1;
     INSERT_PADDING_WORDS(12);
-    u32_le IntStatus;
-    u32_le IntMask;
+    u32_le int_status;
+    u32_le int_mask;
 };
 
 enum class ThiMethod : u32 {
-    IncSyncpt = offsetof(ThiRegisters, IncrSyncpt) / 4,
-    SetMethod0 = offsetof(ThiRegisters, Method0) / 4,
-    SetMethod1 = offsetof(ThiRegisters, Method1) / 4,
+    IncSyncpt = offsetof(ThiRegisters, increment_syncpt) / 4,
+    SetMethod0 = offsetof(ThiRegisters, method_0) / 4,
+    SetMethod1 = offsetof(ThiRegisters, method_1) / 4,
 };
 
 class CDmaPusher {
@@ -102,10 +99,16 @@ public:
     explicit CDmaPusher(GPU& gpu);
     ~CDmaPusher();
 
+    /// Push NVDEC command buffer entries into queue
     void Push(ChCommandHeaderList&& entries);
 
+    /// Process queued command buffer entries
     void DispatchCalls();
+
+    /// Process one queue element
     void Step();
+
+    /// Invoke command class devices to execute the command based on the current state
     void ExecuteCommand(u32 offset, u32 data);
 
 private:
@@ -120,14 +123,8 @@ private:
     ThiRegisters vic_thi_state{};
     ThiRegisters nvdec_thi_state{};
 
-    // Write arguments value to the ThiRegisters member at the specified offset
+    /// Write arguments value to the ThiRegisters member at the specified offset
     void ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments);
-
-    // Format data as a hex string
-    std::string HexDump(std::vector<u8>& data);
-
-    // Format ChMethod arguments as string, used for debug logging
-    std::string DumpArgs(GPU& gpu, const std::vector<u32>& arguments);
 
     int count{};
     int offset{};

@@ -210,8 +210,14 @@ public:
     /// Returns a reference to the GPU DMA pusher.
     Tegra::DmaPusher& DmaPusher();
 
+    /// Returns a const reference to the GPU DMA pusher.
+    const Tegra::DmaPusher& DmaPusher() const;
+
     /// Returns a reference to the GPU CDMA pusher.
     Tegra::CDmaPusher& CDmaPusher();
+
+    /// Returns a const reference to the GPU CDMA pusher.
+    const Tegra::CDmaPusher& CDmaPusher() const;
 
     VideoCore::RendererBase& Renderer() {
         return *renderer;
@@ -256,12 +262,6 @@ public:
     bool UseNvdec() const {
         return use_nvdec;
     }
-
-    /// Returns a const reference to the GPU DMA pusher.
-    const Tegra::DmaPusher& DmaPusher() const;
-
-    /// Returns a const reference to the GPU CDMA pusher.
-    const Tegra::CDmaPusher& CDmaPusher() const;
 
     struct Regs {
         static constexpr size_t NUM_REGS = 0x40;

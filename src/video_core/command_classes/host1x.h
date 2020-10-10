@@ -49,6 +49,8 @@ public:
         u32 channel_xref_high;
         u32 channel_xref_low;
     };
+    static_assert(sizeof(Host1xClassRegisters) == 0x164, "Host1xClassRegisters is an invalid size");
+
     enum class Method : u32 {
         WaitSyncpt = offsetof(Host1xClassRegisters, wait_syncpt) / 4,
         LoadSyncptPayload32 = offsetof(Host1xClassRegisters, load_syncpoint_payload32) / 4,
@@ -58,10 +60,14 @@ public:
     explicit Host1x(GPU& gpu);
     ~Host1x();
 
+    /// Writes the method into the state, Invoke Execute() if encountered
     void ProcessMethod(Host1x::Method method, const std::vector<u32>& arguments);
 
 private:
+    /// For Host1x, execute is waiting on a syncpoint previously written into the state
     void Execute(u32 data);
+
+    /// write argument into the provided offset
     void StateWrite(u32 offset, u32 arguments);
     u32 syncpoint_value{};
     Host1xClassRegisters state{};

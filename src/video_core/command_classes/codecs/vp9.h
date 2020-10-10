@@ -25,9 +25,15 @@ public:
     Stream();
     ~Stream();
 
+    /// Reposition bitstream "cursor" to specified cursor offset from origin
     void Seek(s32 cursor, s32 origin);
+
+    /// Reads next byte in the stream buffer and increments position
     u32 ReadByte();
+
+    /// Writes byte at current position
     void WriteByte(u32 byte);
+
     std::size_t GetPosition() const {
         return position;
     }
@@ -52,10 +58,16 @@ public:
     VpxRangeEncoder();
     ~VpxRangeEncoder();
 
-    void WriteByte(u32 value);
+    /// Writes the rightmost value_size bits from value into the stream
     void Write(s32 value, s32 value_size);
+
+    /// Writes a single bit with half probability
     void Write(bool bit);
+
+    /// Writes a bit to the base_stream encoded with probability
     void Write(bool bit, s32 probability);
+
+    /// Signal the end of the bitstream
     void End();
 
     std::vector<u8>& GetBuffer() {
@@ -91,16 +103,29 @@ public:
     VpxBitStreamWriter();
     ~VpxBitStreamWriter();
 
+    /// Write an unsigned integer value
     void WriteU(s32 value, s32 value_size);
+
+    /// Write a signed integer value
     void WriteS(s32 value, s32 value_size);
+
+    /// Based on 6.2.10 of VP9 Spec, writes a delta coded value
     void WriteDeltaQ(s32 value);
+
+    /// Write a single bit.
     void WriteBit(bool state);
+
+    /// Pushes current buffer into buffer_array, resets buffer
     void Flush();
 
+    /// Returns byte_array
     std::vector<u8>& GetByteArray();
 
 private:
+    /// Write bit_count bits from value into buffer
     void WriteBits(s32 value, s32 bit_count);
+
+    /// Gets next available position in buffer, invokes Flush() if buffer is full
     s32 GetFreeBufferBits();
 
     s32 buffer_size{8};
@@ -115,42 +140,67 @@ public:
     explicit VP9(GPU& gpu);
     ~VP9();
 
+    /// Composes the VP9 frame from the GPU state information. Based on the official VP9 spec
+    /// documentation
     std::vector<u8>& ComposeFrameHeader(NvdecCommon::NvdecRegisters& state);
 
+    /// Returns true if the most recent frame was a hidden frame.
     bool WasFrameHidden() const {
         return hidden;
     }
 
 private:
-    void PopulateProbability(GPUVAddr addr, std::size_t sz, std::vector<u8>& output);
-
+    /// Generates compressed header probability updates in the bitstream writer
     template <typename T, std::size_t N>
     void WriteProbabilityUpdate(VpxRangeEncoder& writer, const std::array<T, N>& new_prob,
                                 const std::array<T, N>& old_prob);
 
-    void WriteProbabilityUpdate(VpxRangeEncoder& writer, u8 New, u8 old);
+    /// Generates compressed header probability updates in the bitstream writer
+    /// If probs are not equal, WriteProbabilityDelta is invoked
+    void WriteProbabilityUpdate(VpxRangeEncoder& writer, u8 new_prob, u8 old_prob);
 
+    /// Generates compressed header probability deltas in the bitstream writer
     void WriteProbabilityDelta(VpxRangeEncoder& writer, u8 new_prob, u8 old_prob);
-    s32 RemapProbability(s32 New, s32 old);
-    s32 RecenterNonNeg(s32 New, s32 old);
+
+    /// Adjusts old_prob depending on new_prob. Based on section 6.3.5 of VP9 Specification
+    s32 RemapProbability(s32 new_prob, s32 old_prob);
+
+    /// Recenters probability. Based on section 6.3.6 of VP9 Specification
+    s32 RecenterNonNeg(s32 new_prob, s32 old_prob);
+
+    /// Inverse of 6.3.4 Decode term subexp
     void EncodeTermSubExp(VpxRangeEncoder& writer, s32 value);
+
+    /// Writes if the value is less than the test value
     bool WriteLessThan(VpxRangeEncoder& writer, s32 value, s32 test);
 
+    /// Writes probability updates for the Coef probabilities
     void WriteCoefProbabilityUpdate(VpxRangeEncoder& writer, s32 tx_mode,
                                     const std::array<u8, 2304>& new_prob,
                                     const std::array<u8, 2304>& old_prob);
 
+    /// Write probabilities for 4-byte aligned structures
     template <typename T, std::size_t N>
     void WriteProbabilityUpdateAligned4(VpxRangeEncoder& writer, const std::array<T, N>& new_prob,
                                         const std::array<T, N>& old_prob);
+
+    /// Write motion vector probability updates. 6.3.17 in the spec
     void WriteMvProbabilityUpdate(VpxRangeEncoder& writer, u8 new_prob, u8 old_prob);
+
+    /// 6.2.14 Tile size calculation
     s32 CalcMinLog2TileCols(s32 frame_width);
     s32 CalcMaxLog2TileCols(s32 frame_width);
 
+    /// Returns VP9 information from NVDEC provided offset and size
     Vp9PictureInfo GetVp9PictureInfo(const NvdecCommon::NvdecRegisters& state);
-    void InsertEntropy(u32 offset, Vp9EntropyProbs& dst);
+
+    /// Read and convert NVDEC provided entropy probs to Vp9EntropyProbs struct
+    void InsertEntropy(u64 offset, Vp9EntropyProbs& dst);
+
+    /// Returns frame to be decoded after buffering
     Vp9FrameContainer GetCurrentFrame(const NvdecCommon::NvdecRegisters& state);
 
+    /// Use NVDEC providied information to compose the headers for the current frame
     std::vector<u8> ComposeCompressedHeader();
     VpxBitStreamWriter ComposeUncompressedHeader();
 

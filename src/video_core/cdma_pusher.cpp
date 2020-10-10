@@ -36,9 +36,7 @@ CDmaPusher::CDmaPusher(GPU& gpu)
       nvdec_sync(std::make_unique<SyncptIncrManager>(gpu)),
       vic_sync(std::make_unique<SyncptIncrManager>(gpu)) {}
 
-CDmaPusher::~CDmaPusher() {
-    gpu.MemoryManager().ClearPins();
-};
+CDmaPusher::~CDmaPusher() = default;
 
 void CDmaPusher::Push(ChCommandHeaderList&& entries) {
     cdma_queue.push(std::move(entries));
@@ -105,7 +103,6 @@ void CDmaPusher::Step() {
 
 void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
     switch (current_class) {
-
     case ChClassId::NvDec:
         ThiStateWrite(nvdec_thi_state, offset, {data});
         switch (static_cast<ThiMethod>(offset)) {
@@ -122,16 +119,15 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
             break;
         }
         case ThiMethod::SetMethod1:
-            LOG_DEBUG(Service_NVDRV, "NVDec method 0x{:X}, Args=({})",
-                      static_cast<u32>(nvdec_thi_state.Method0), DumpArgs(gpu, {data}));
+            LOG_DEBUG(Service_NVDRV, "NVDec method 0x{:X}",
+                      static_cast<u32>(nvdec_thi_state.method_0));
             nvdec_processor->ProcessMethod(
-                static_cast<Tegra::Nvdec::Method>(nvdec_thi_state.Method0), {data});
+                static_cast<Tegra::Nvdec::Method>(nvdec_thi_state.method_0), {data});
             break;
         default:
             break;
         }
         break;
-
     case ChClassId::GraphicsVic:
         ThiStateWrite(vic_thi_state, static_cast<u32>(offset), {data});
         switch (static_cast<ThiMethod>(offset)) {
@@ -149,8 +145,8 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
         }
         case ThiMethod::SetMethod1:
             LOG_DEBUG(Service_NVDRV, "VIC method 0x{:X}, Args=({})",
-                      static_cast<u32>(vic_thi_state.Method0), DumpArgs(gpu, {data}));
-            vic_processor->ProcessMethod(static_cast<Tegra::Vic::Method>(vic_thi_state.Method0),
+                      static_cast<u32>(vic_thi_state.method_0));
+            vic_processor->ProcessMethod(static_cast<Tegra::Vic::Method>(vic_thi_state.method_0),
                                          {data});
             break;
         default:
@@ -171,35 +167,6 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
 void CDmaPusher::ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments) {
     u8* state_offset = reinterpret_cast<u8*>(&state) + sizeof(u32) * offset;
     std::memcpy(state_offset, arguments.data(), sizeof(u32) * arguments.size());
-}
-
-///  For debugging purposes
-// TODO(ameerj): remove when more stable
-std::string CDmaPusher::HexDump(std::vector<u8>& data) {
-    if (data.empty()) {
-        return "NO DATA";
-    }
-    std::string dmp;
-    for (std::size_t i = 0; i < std::min(data.size(), static_cast<std::size_t>(16)); i++) {
-        dmp += fmt::format("{:02X} ", data[i]);
-    }
-    return dmp;
-}
-
-std::string CDmaPusher::DumpArgs(GPU& gpu, const std::vector<u32>& arguments) {
-    std::string output;
-    std::vector<u8> data(16);
-    for (const auto arg : arguments) {
-        const auto addr = gpu.MemoryManager().GpuAddressFromPinned(arguments[0]);
-        if (addr != 0) {
-            gpu.MemoryManager().ReadBlock(addr, data.data(), data.size());
-        } else {
-            data.clear();
-            data.resize(0);
-        }
-        output += fmt::format("[0x{:X}, 0x{:X}, {}] ", arg, addr, HexDump(data));
-    }
-    return output;
 }
 
 } // namespace Tegra
