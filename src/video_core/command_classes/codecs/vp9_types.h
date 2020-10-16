@@ -189,7 +189,6 @@ struct Vp9PictureInfo {
     std::array<s8, 4> ref_deltas;
     std::array<s8, 2> mode_deltas;
     Vp9EntropyProbs entropy{};
-    INSERT_PADDING_BYTES(0x3398);
     Vp9FrameDimensions frame_size{};
     u8 first_level{};
     u8 sharpness_level{};
@@ -285,15 +284,15 @@ struct EntropyProbs {
     INSERT_PADDING_BYTES(1024);
     std::array<std::array<u8, 4>, 7> inter_mode_prob;
     std::array<u8, 4> intra_inter_prob;
-    std::array<std::array<u8, 8>, 10> UvModeProbE0ToE7;
+    INSERT_PADDING_BYTES(80);
     std::array<std::array<u8, 1>, 2> tx_8x8_prob;
     std::array<std::array<u8, 2>, 2> tx_16x16_prob;
     std::array<std::array<u8, 3>, 2> tx_32x32_prob;
     std::array<u8, 4> y_mode_prob_e8;
     std::array<std::array<u8, 8>, 4> y_mode_prob_e0e7;
-    std::array<std::array<u8, 4>, 16> KfPartitionProb;
+    INSERT_PADDING_BYTES(64);
     std::array<std::array<u8, 4>, 16> partition_prob;
-    std::array<u8, 10> UvModeProbE8;
+    INSERT_PADDING_BYTES(10);
     std::array<std::array<u8, 2>, 4> switchable_interp_prob;
     std::array<u8, 5> comp_inter_prob;
     std::array<u8, 4> skip_probs;

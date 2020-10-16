@@ -65,15 +65,9 @@ void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
         return;
     }
 
-    auto cpu_addr = *GpuToCpuAddress(gpu_addr);
+    const VAddr cpu_addr = *GpuToCpuAddress(gpu_addr);
     system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(cpu_addr, size);
     cache_invalidate_queue.push_back({cpu_addr, size});
-
-    // invalidate_previous = cpu_addr;
-    // invalidate_previous_size = size;
-    // system.GPU().Renderer().Rasterizer().InvalidateRegion(cpu_addr, size);
-    // system.GPU().FlushRegion(cpu_addr, size);
-    // system.GPU().InvalidateRegion(cpu_addr, size);
 
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }

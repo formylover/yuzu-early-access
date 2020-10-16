@@ -56,9 +56,9 @@ static int SDLEventWatcher(void* user_data, SDL_Event* event) {
 class SDLJoystick {
 public:
     SDLJoystick(std::string guid_, int port_, SDL_Joystick* joystick,
-                SDL_GameController* gamecontroller)
+                SDL_GameController* game_controller)
         : guid{std::move(guid_)}, port{port_}, sdl_joystick{joystick, &SDL_JoystickClose},
-          sdl_controller{gamecontroller, &SDL_GameControllerClose} {}
+          sdl_controller{game_controller, &SDL_GameControllerClose} {}
 
     void SetButton(int button, bool value) {
         std::lock_guard lock{mutex};
@@ -77,10 +77,10 @@ public:
 
     float GetAxis(int axis, float range) const {
         std::lock_guard lock{mutex};
-        return state.axes.at(axis) / (32767.0f * range);
+        return static_cast<float>(state.axes.at(axis)) / (32767.0f * range);
     }
 
-    bool RumblePlay(f32 amp_low, f32 amp_high, int time) {
+    bool RumblePlay(f32 amp_low, f32 amp_high, u32 time) {
         const u16 raw_amp_low = static_cast<u16>(amp_low * 0xFFFF);
         const u16 raw_amp_high = static_cast<u16>(amp_high * 0xFFFF);
         // Lower drastically the number of state changes
@@ -124,7 +124,7 @@ public:
         return std::make_tuple(x, y);
     }
 
-    const InputCommon::MotionInput& GetMotion() const {
+    const MotionInput& GetMotion() const {
         return motion;
     }
 
@@ -172,15 +172,15 @@ private:
     } state;
     std::string guid;
     int port;
-    u16 last_state_rumble_high;
-    u16 last_state_rumble_low;
+    u16 last_state_rumble_high = 0;
+    u16 last_state_rumble_low = 0;
     std::chrono::time_point<std::chrono::system_clock> last_vibration;
     std::unique_ptr<SDL_Joystick, decltype(&SDL_JoystickClose)> sdl_joystick;
     std::unique_ptr<SDL_GameController, decltype(&SDL_GameControllerClose)> sdl_controller;
     mutable std::mutex mutex;
 
-    // motion is initalized without PID values as motion input is not aviable for SDL2
-    InputCommon::MotionInput motion{0.0f, 0.0f, 0.0f};
+    // Motion is initialized without PID values as motion input is not aviable for SDL2
+    MotionInput motion{0.0f, 0.0f, 0.0f};
 };
 
 std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickByGUID(const std::string& guid, int port) {
@@ -192,7 +192,7 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickByGUID(const std::string& g
                                                           nullptr, nullptr);
             it->second.emplace_back(std::move(joystick));
         }
-        return it->second[port];
+        return it->second[static_cast<std::size_t>(port)];
     }
     auto joystick = std::make_shared<SDLJoystick>(guid, 0, nullptr, nullptr);
     return joystick_map[guid].emplace_back(std::move(joystick));
@@ -212,7 +212,7 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickBySDLID(SDL_JoystickID sdl_
                              return sdl_joystick == joystick->GetSDLJoystick();
                          });
         if (vec_it != map_it->second.end()) {
-            // This is the common case: There is already an existing SDL_Joystick maped to a
+            // This is the common case: There is already an existing SDL_Joystick mapped to a
             // SDLJoystick. return the SDLJoystick
             return *vec_it;
         }
@@ -220,7 +220,7 @@ std::shared_ptr<SDLJoystick> SDLState::GetSDLJoystickBySDLID(SDL_JoystickID sdl_
         // Search for a SDLJoystick without a mapped SDL_Joystick...
         const auto nullptr_it = std::find_if(map_it->second.begin(), map_it->second.end(),
                                              [](const std::shared_ptr<SDLJoystick>& joystick) {
-                                                 return !joystick->GetSDLJoystick();
+                                                 return joystick->GetSDLJoystick() == nullptr;
                                              });
         if (nullptr_it != map_it->second.end()) {
             // ... and map it
@@ -389,8 +389,8 @@ private:
 
 class SDLAnalog final : public Input::AnalogDevice {
 public:
-    SDLAnalog(std::shared_ptr<SDLJoystick> joystick_, int axis_x_, int axis_y_, float deadzone_,
-              float range_)
+    explicit SDLAnalog(std::shared_ptr<SDLJoystick> joystick_, int axis_x_, int axis_y_,
+                       float deadzone_, float range_)
         : joystick(std::move(joystick_)), axis_x(axis_x_), axis_y(axis_y_), deadzone(deadzone_),
           range(range_) {}
 
@@ -669,13 +669,13 @@ SDLState::SDLState() {
     RegisterFactory<ButtonDevice>("sdl", button_factory);
     RegisterFactory<MotionDevice>("sdl", motion_factory);
 
-    // If the frontend is going to manage the event loop, then we dont start one here
-    start_thread = !SDL_WasInit(SDL_INIT_JOYSTICK);
+    // If the frontend is going to manage the event loop, then we don't start one here
+    start_thread = SDL_WasInit(SDL_INIT_JOYSTICK) == 0;
     if (start_thread && SDL_Init(SDL_INIT_JOYSTICK) < 0) {
         LOG_CRITICAL(Input, "SDL_Init(SDL_INIT_JOYSTICK) failed with: {}", SDL_GetError());
         return;
     }
-    has_gamecontroller = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
+    has_gamecontroller = SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER) != 0;
     if (SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1") == SDL_FALSE) {
         LOG_ERROR(Input, "Failed to set hint for background events with: {}", SDL_GetError());
     }
@@ -720,7 +720,8 @@ std::vector<Common::ParamPackage> SDLState::GetInputDevices() {
     std::vector<Common::ParamPackage> devices;
     for (const auto& [key, value] : joystick_map) {
         for (const auto& joystick : value) {
-            if (auto controller = joystick->GetSDLGameController()) {
+            auto* joy = joystick->GetSDLJoystick();
+            if (auto* controller = joystick->GetSDLGameController()) {
                 std::string name =
                     fmt::format("{} {}", SDL_GameControllerName(controller), joystick->GetPort());
                 devices.emplace_back(Common::ParamPackage{
@@ -729,7 +730,7 @@ std::vector<Common::ParamPackage> SDLState::GetInputDevices() {
                     {"guid", joystick->GetGUID()},
                     {"port", std::to_string(joystick->GetPort())},
                 });
-            } else if (auto joy = joystick->GetSDLJoystick()) {
+            } else if (joy) {
                 std::string name = fmt::format("{} {}", SDL_JoystickName(joy), joystick->GetPort());
                 devices.emplace_back(Common::ParamPackage{
                     {"class", "sdl"},
@@ -744,7 +745,7 @@ std::vector<Common::ParamPackage> SDLState::GetInputDevices() {
 }
 
 namespace {
-Common::ParamPackage BuildAnalogParamPackageForButton(int port, std::string guid, u8 axis,
+Common::ParamPackage BuildAnalogParamPackageForButton(int port, std::string guid, s32 axis,
                                                       float value = 0.1f) {
     Common::ParamPackage params({{"engine", "sdl"}});
     params.Set("port", port);
@@ -760,7 +761,7 @@ Common::ParamPackage BuildAnalogParamPackageForButton(int port, std::string guid
     return params;
 }
 
-Common::ParamPackage BuildButtonParamPackageForButton(int port, std::string guid, u8 button) {
+Common::ParamPackage BuildButtonParamPackageForButton(int port, std::string guid, s32 button) {
     Common::ParamPackage params({{"engine", "sdl"}});
     params.Set("port", port);
     params.Set("guid", std::move(guid));
@@ -768,7 +769,7 @@ Common::ParamPackage BuildButtonParamPackageForButton(int port, std::string guid
     return params;
 }
 
-Common::ParamPackage BuildHatParamPackageForButton(int port, std::string guid, u8 hat, u8 value) {
+Common::ParamPackage BuildHatParamPackageForButton(int port, std::string guid, s32 hat, s32 value) {
     Common::ParamPackage params({{"engine", "sdl"}});
 
     params.Set("port", port);
@@ -798,17 +799,19 @@ Common::ParamPackage SDLEventToButtonParamPackage(SDLState& state, const SDL_Eve
     case SDL_JOYAXISMOTION: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jaxis.which);
         return BuildAnalogParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                                event.jaxis.axis, event.jaxis.value);
+                                                static_cast<s32>(event.jaxis.axis),
+                                                event.jaxis.value);
     }
     case SDL_JOYBUTTONUP: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jbutton.which);
         return BuildButtonParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                                event.jbutton.button);
+                                                static_cast<s32>(event.jbutton.button));
     }
     case SDL_JOYHATMOTION: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jhat.which);
         return BuildHatParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                             event.jhat.hat, event.jhat.value);
+                                             static_cast<s32>(event.jhat.hat),
+                                             static_cast<s32>(event.jhat.value));
     }
     }
     return {};
@@ -819,17 +822,19 @@ Common::ParamPackage SDLEventToMotionParamPackage(SDLState& state, const SDL_Eve
     case SDL_JOYAXISMOTION: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jaxis.which);
         return BuildAnalogParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                                event.jaxis.axis, event.jaxis.value);
+                                                static_cast<s32>(event.jaxis.axis),
+                                                event.jaxis.value);
     }
     case SDL_JOYBUTTONUP: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jbutton.which);
         return BuildButtonParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                                event.jbutton.button);
+                                                static_cast<s32>(event.jbutton.button));
     }
     case SDL_JOYHATMOTION: {
         const auto joystick = state.GetSDLJoystickBySDLID(event.jhat.which);
         return BuildHatParamPackageForButton(joystick->GetPort(), joystick->GetGUID(),
-                                             event.jhat.hat, event.jhat.value);
+                                             static_cast<s32>(event.jhat.hat),
+                                             static_cast<s32>(event.jhat.value));
     }
     }
     return {};
@@ -1058,7 +1063,7 @@ public:
             if (event.type == SDL_JOYAXISMOTION) {
                 const auto axis = event.jaxis.axis;
                 const auto joystick = state.GetSDLJoystickBySDLID(event.jaxis.which);
-                const auto controller = joystick->GetSDLGameController();
+                auto* const controller = joystick->GetSDLGameController();
                 if (controller) {
                     const auto axis_left_x =
                         SDL_GameControllerGetBindForAxis(controller, SDL_CONTROLLER_AXIS_LEFTX)

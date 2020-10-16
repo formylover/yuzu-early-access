@@ -7,13 +7,11 @@
 
 #include "common/assert.h"
 #include "common/logging/log.h"
-#include "common/scope_exit.h"
 #include "core/core.h"
 #include "core/hle/service/nvdrv/devices/nvhost_nvdec.h"
 #include "core/hle/service/nvdrv/devices/nvmap.h"
 #include "core/memory.h"
 #include "video_core/memory_manager.h"
-#include "video_core/rasterizer_interface.h"
 #include "video_core/renderer_base.h"
 
 namespace Service::Nvidia::Devices {
@@ -141,7 +139,7 @@ u32 nvhost_nvdec::Submit(const std::vector<u8>& input, std::vector<u8>& output) 
 
     auto& gpu = system.GPU();
 
-    for (int i = 0; i < syncpt_increments.size(); i++) {
+    for (std::size_t i = 0; i < syncpt_increments.size(); i++) {
         fences[i].id = syncpt_increments[i].id;
         ASSERT(fences[i].id != 0xffffffff);
         for (u32 j = 0; j < syncpt_increments[i].increments; ++j) {

@@ -1,4 +1,4 @@
-// Copyright 2019 yuzu Emulator Project
+// Copyright 2020 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
@@ -9,8 +9,6 @@
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
-#include "video_core/rasterizer_interface.h"
-#include "video_core/renderer_base.h"
 #include "video_core/texture_cache/surface_params.h"
 
 extern "C" {
@@ -19,7 +17,6 @@ extern "C" {
 
 namespace Tegra {
 
-// #pragma optimize("", off)
 Vic::Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor)
     : gpu(gpu), nvdec_processor(std::move(nvdec_processor)) {}
 Vic::~Vic() = default;
@@ -114,12 +111,9 @@ void Vic::Execute() {
                                              swizzled_data.data(), converted_frame_buffer.get(),
                                              false, block_height, 0, 1);
 
-            // std::fill(swizzled_data.begin(), swizzled_data.end(), 125);
             gpu.Maxwell3D().OnMemoryWrite();
 
             gpu.MemoryManager().WriteBlock(output_surface_luma_address, swizzled_data.data(), size);
-
-            gpu.Renderer().Rasterizer().TickFrame();
 
         } else {
             // send pitch linear frame
@@ -150,13 +144,6 @@ void Vic::Execute() {
         const auto* chroma_r_ptr = frame->data[2];
         const auto stride = frame->linesize[0];
         const auto half_stride = frame->linesize[1];
-
-        LOG_DEBUG(Service_NVDRV,
-                  "Writing YUV420 Frame {}x{} to locations: 0x{:X} 0x{:X} from ptrs: 0x{:X} "
-                  "0x{:X} 0x{:X}",
-                  frame->width, frame->height, output_surface_luma_address,
-                  output_surface_chroma_u_address, u64(luma_ptr), u64(chroma_b_ptr),
-                  u64(chroma_r_ptr));
 
         gpu.Maxwell3D().OnMemoryWrite();
 

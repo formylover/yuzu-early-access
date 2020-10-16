@@ -773,7 +773,6 @@ void RasterizerOpenGL::InvalidateExceptTextureCache(VAddr addr, u64 size) {
     if (addr == 0 || size == 0) {
         return;
     }
-    // texture_cache.FlushRegion(addr, size);
     shader_cache.InvalidateRegion(addr, size);
     buffer_cache.InvalidateRegion(addr, size);
     query_cache.InvalidateRegion(addr, size);
