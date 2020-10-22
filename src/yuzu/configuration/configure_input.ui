@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>自定义输入设置</string>
+   <string>ConfigureInput</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_5">
    <property name="spacing">
@@ -36,74 +36,74 @@
      </property>
      <widget class="QWidget" name="tabPlayer1">
       <property name="accessibleName">
-       <string>玩家 1</string>
+       <string>Player 1</string>
       </property>
       <attribute name="title">
-       <string>玩家 1</string>
+       <string>Player 1</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer2">
       <property name="accessibleName">
-       <string>玩家 2</string>
+       <string>Player 2</string>
       </property>
       <attribute name="title">
-       <string>玩家 2</string>
+       <string>Player 2</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer3">
       <property name="accessibleName">
-       <string>玩家 3</string>
+       <string>Player 3</string>
       </property>
       <attribute name="title">
-       <string>玩家 3</string>
+       <string>Player 3</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer4">
       <property name="accessibleName">
-       <string>玩家 4</string>
+       <string>Player 4</string>
       </property>
       <attribute name="title">
-       <string>玩家 4</string>
+       <string>Player 4</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer5">
       <property name="accessibleName">
-       <string>玩家 5</string>
+       <string>Player 5</string>
       </property>
       <attribute name="title">
-       <string>玩家 5</string>
+       <string>Player 5</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer6">
       <property name="accessibleName">
-       <string>玩家 6</string>
+       <string>Player 6</string>
       </property>
       <attribute name="title">
-       <string>玩家 6</string>
+       <string>Player 6</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer7">
       <property name="accessibleName">
-       <string>玩家 7</string>
+       <string>Player 7</string>
       </property>
       <attribute name="title">
-       <string>玩家 7</string>
+       <string>Player 7</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabPlayer8">
       <property name="accessibleName">
-       <string>玩家 8</string>
+       <string>Player 8</string>
       </property>
       <attribute name="title">
-       <string>玩家 8</string>
+       <string>Player 8</string>
       </attribute>
      </widget>
      <widget class="QWidget" name="tabAdvanced">
       <property name="accessibleName">
-       <string>高级</string>
+       <string>Advanced</string>
       </property>
       <attribute name="title">
-       <string>高级</string>
+       <string>Advanced</string>
       </attribute>
      </widget>
     </widget>
@@ -135,7 +135,7 @@
          </size>
         </property>
         <property name="title">
-         <string>控制器 模式</string>
+         <string>Console Mode</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <property name="spacing">
@@ -156,7 +156,7 @@
          <item>
           <widget class="QRadioButton" name="radioDocked">
            <property name="text">
-            <string>主机模式</string>
+            <string>Docked</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -166,7 +166,7 @@
          <item>
           <widget class="QRadioButton" name="radioUndocked">
            <property name="text">
-            <string>手持模式</string>
+            <string>Undocked</string>
            </property>
           </widget>
          </item>
@@ -176,7 +176,7 @@
       <item>
        <widget class="QGroupBox" name="vibrationGroup">
         <property name="title">
-         <string>振动</string>
+         <string>Vibration</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -228,7 +228,7 @@
       <item>
        <widget class="QGroupBox" name="motionGroup">
         <property name="title">
-         <string>体感</string>
+         <string>Motion</string>
         </property>
         <property name="checkable">
          <bool>true</bool>
@@ -264,7 +264,7 @@
             <string notr="true">min-width: 55px;</string>
            </property>
            <property name="text">
-            <string>设置</string>
+            <string>Configure</string>
            </property>
           </widget>
          </item>
@@ -299,7 +299,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>控制器</string>
+            <string>Controllers</string>
            </property>
           </widget>
          </item>
@@ -438,7 +438,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="label_10">
            <property name="text">
-            <string>连接</string>
+            <string>Connected</string>
            </property>
           </widget>
          </item>
@@ -497,7 +497,7 @@
          <string notr="true">min-width: 55px;</string>
         </property>
         <property name="text">
-         <string>默认</string>
+         <string>Defaults</string>
         </property>
        </widget>
       </item>
@@ -540,7 +540,7 @@
          <string notr="true">min-width: 55px;</string>
         </property>
         <property name="text">
-         <string>清除</string>
+         <string>Clear</string>
         </property>
        </widget>
       </item>

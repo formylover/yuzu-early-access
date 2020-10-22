@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="groupBox_1">
        <property name="title">
-        <string>高级图形设置</string>
+        <string>Advanced Graphics Settings</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -40,7 +40,7 @@
            <item>
             <widget class="QLabel" name="label_gpu_accuracy">
              <property name="text">
-              <string>精度等级:</string>
+              <string>Accuracy Level:</string>
              </property>
             </widget>
            </item>
@@ -48,17 +48,17 @@
             <widget class="QComboBox" name="gpu_accuracy">
              <item>
               <property name="text">
-               <string notr="true">正常</string>
+               <string notr="true">Normal</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string notr="true">高</string>
+               <string notr="true">High</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string notr="true">极限(非常慢)</string>
+               <string notr="true">Extreme(very slow)</string>
               </property>
              </item>
             </widget>
@@ -69,37 +69,37 @@
         <item>
          <widget class="QCheckBox" name="use_vsync">
           <property name="toolTip">
-           <string>垂直同步可以防止屏幕撕裂，但是启用了VSync的某些显卡性能较低。 如果您没有发现性能差异，请保持启用状态。</string>
+           <string>VSync prevents the screen from tearing, but some graphics cards have lower performance with VSync enabled. Keep it enabled if you don't notice a performance difference.</string>
           </property>
           <property name="text">
-           <string>使用垂直同步 (仅限OpenGL)</string>
+           <string>Use VSync (OpenGL only)</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_assembly_shaders">
           <property name="toolTip">
-           <string>启用此功能可减少着色器的卡顿现象。 在支持的Nvidia设备上启用OpenGL组件着色器 (NV_gpu_program5 is required). 此功能是实验性的。</string>
+           <string>Enabling this reduces shader stutter. Enables OpenGL assembly shaders on supported Nvidia devices (NV_gpu_program5 is required). This feature is experimental.</string>
           </property>
           <property name="text">
-           <string>使用程序集着色器 (实验性的，仅限Nvidia OpenGL)</string>
+           <string>Use assembly shaders (experimental, Nvidia OpenGL only)</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_asynchronous_shaders">
           <property name="toolTip">
-           <string>启用异步着色器编译，这可以减少着色器卡顿，此功能是实验性的。</string>
+           <string>Enables asynchronous shader compilation, which may reduce shader stutter. This feature is experimental.</string>
           </property>
           <property name="text">
-           <string>使用异步着色器构建（实验性）</string>
+           <string>Use asynchronous shader building (experimental)</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_fast_gpu_time">
           <property name="text">
-           <string>使用GPU加速渲染</string>
+           <string>Use Fast GPU Time</string>
           </property>
          </widget>
         </item>
@@ -121,7 +121,7 @@
            <item>
             <widget class="QLabel" name="af_label">
              <property name="text">
-              <string>各项异性过滤:</string>
+              <string>Anisotropic Filtering:</string>
              </property>
             </widget>
            </item>
@@ -129,7 +129,7 @@
             <widget class="QComboBox" name="anisotropic_filtering_combobox">
              <item>
               <property name="text">
-               <string>默认</string>
+               <string>Default</string>
               </property>
              </item>
              <item>

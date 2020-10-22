@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2020 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -32,14 +28,14 @@ InstallDialog::InstallDialog(QWidget* parent, const QStringList& files) : QDialo
 
     hbox_layout = new QHBoxLayout;
 
-    description = new QLabel(tr("请确认这些是您要安装的文件。"));
+    description = new QLabel(tr("Please confirm these are the files you wish to install."));
 
     update_description =
-        new QLabel(tr("安装更新或DLC将覆盖以前安装的更新或DLC"));
+        new QLabel(tr("Installing an Update or DLC will overwrite the previously installed one."));
 
     buttons = new QDialogButtonBox;
     buttons->addButton(QDialogButtonBox::Cancel);
-    buttons->addButton(tr("安装"), QDialogButtonBox::AcceptRole);
+    buttons->addButton(tr("Install"), QDialogButtonBox::AcceptRole);
 
     connect(buttons, &QDialogButtonBox::accepted, this, &InstallDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, this, &InstallDialog::reject);
@@ -53,7 +49,7 @@ InstallDialog::InstallDialog(QWidget* parent, const QStringList& files) : QDialo
 
     setLayout(vbox_layout);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-    setWindowTitle(tr("将文件安装到 NAND"));
+    setWindowTitle(tr("Install Files to NAND"));
 }
 
 InstallDialog::~InstallDialog() = default;

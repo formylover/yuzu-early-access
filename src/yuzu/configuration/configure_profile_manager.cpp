@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -73,7 +69,7 @@ QPixmap GetIcon(Common::UUID uuid) {
 }
 
 QString GetProfileUsernameFromUser(QWidget* parent, const QString& description_text) {
-    return LimitableInputDialog::GetText(parent, ConfigureProfileManager::tr("输入用户名"),
+    return LimitableInputDialog::GetText(parent, ConfigureProfileManager::tr("Enter Username"),
                                          description_text, 1,
                                          static_cast<int>(Service::Account::profile_username_size));
 }
@@ -136,7 +132,7 @@ void ConfigureProfileManager::changeEvent(QEvent* event) {
 
 void ConfigureProfileManager::RetranslateUI() {
     ui->retranslateUi(this);
-    item_model->setHeaderData(0, Qt::Horizontal, tr("用户"));
+    item_model->setHeaderData(0, Qt::Horizontal, tr("Users"));
 }
 
 void ConfigureProfileManager::SetConfiguration() {
@@ -200,7 +196,7 @@ void ConfigureProfileManager::SelectUser(const QModelIndex& index) {
 
 void ConfigureProfileManager::AddUser() {
     const auto username =
-        GetProfileUsernameFromUser(this, tr("输入用户名新用户:"));
+        GetProfileUsernameFromUser(this, tr("Enter a username for the new user:"));
     if (username.isEmpty()) {
         return;
     }
@@ -220,7 +216,7 @@ void ConfigureProfileManager::RenameUser() {
     if (!profile_manager->GetProfileBase(*uuid, profile))
         return;
 
-    const auto new_username = GetProfileUsernameFromUser(this, tr("输入一个新的用户名:"));
+    const auto new_username = GetProfileUsernameFromUser(this, tr("Enter a new username:"));
     if (new_username.isEmpty()) {
         return;
     }
@@ -245,8 +241,8 @@ void ConfigureProfileManager::DeleteUser() {
     const auto username = GetAccountUsername(*profile_manager, *uuid);
 
     const auto confirm = QMessageBox::question(
-        this, tr("确认删除"),
-        tr("您将与名称删除用户 \"%1\". 你确定吗?").arg(username));
+        this, tr("Confirm Delete"),
+        tr("You are about to delete user with name \"%1\". Are you sure?").arg(username));
 
     if (confirm == QMessageBox::No)
         return;
@@ -270,8 +266,8 @@ void ConfigureProfileManager::SetUserImage() {
     const auto uuid = profile_manager->GetUser(index);
     ASSERT(uuid);
 
-    const auto file = QFileDialog::getOpenFileName(this, tr("选择用户图片"), QString(),
-                                                   tr("JPEG 图片 (*.jpg *.jpeg)"));
+    const auto file = QFileDialog::getOpenFileName(this, tr("Select User Image"), QString(),
+                                                   tr("JPEG Images (*.jpg *.jpeg)"));
 
     if (file.isEmpty()) {
         return;
@@ -280,8 +276,8 @@ void ConfigureProfileManager::SetUserImage() {
     const auto image_path = GetImagePath(*uuid);
     if (QFile::exists(image_path) && !QFile::remove(image_path)) {
         QMessageBox::warning(
-            this, tr("错误删除图像"),
-            tr("尝试覆盖之前的图像时发生错误: %1.").arg(image_path));
+            this, tr("Error deleting image"),
+            tr("Error occurred attempting to overwrite previous image at: %1.").arg(image_path));
         return;
     }
 
@@ -289,22 +285,22 @@ void ConfigureProfileManager::SetUserImage() {
         Common::FS::GetUserPath(Common::FS::UserPath::NANDDir) + "/system/save/8000000000000010");
     const QFileInfo raw_info{raw_path};
     if (raw_info.exists() && !raw_info.isDir() && !QFile::remove(raw_path)) {
-        QMessageBox::warning(this, tr("错误删除文件"),
-                             tr("无法删除现有文件: %1.").arg(raw_path));
+        QMessageBox::warning(this, tr("Error deleting file"),
+                             tr("Unable to delete existing file: %1.").arg(raw_path));
         return;
     }
 
     const QString absolute_dst_path = QFileInfo{image_path}.absolutePath();
     if (!QDir{raw_path}.mkpath(absolute_dst_path)) {
         QMessageBox::warning(
-            this, tr("错误创建用户图像目录"),
-            tr("无法创建目录 %1 用于存储用户的图像.").arg(absolute_dst_path));
+            this, tr("Error creating user image directory"),
+            tr("Unable to create directory %1 for storing user images.").arg(absolute_dst_path));
         return;
     }
 
     if (!QFile::copy(file, image_path)) {
-        QMessageBox::warning(this, tr("错误复制用户图像"),
-                             tr("无法从复制图像 %1 to %2").arg(file, image_path));
+        QMessageBox::warning(this, tr("Error copying user image"),
+                             tr("Unable to copy image from %1 to %2").arg(file, image_path));
         return;
     }
 

@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -20,16 +16,16 @@
 
 namespace {
 constexpr std::array default_icon_sizes{
-    std::make_pair(0, QT_TR_NOOP("无")),
-    std::make_pair(32, QT_TR_NOOP("小 (32x32)")),
-    std::make_pair(64, QT_TR_NOOP("标准 (64x64)")),
-    std::make_pair(128, QT_TR_NOOP("大 (128x128)")),
-    std::make_pair(256, QT_TR_NOOP("最大 (256x256)")),
+    std::make_pair(0, QT_TR_NOOP("None")),
+    std::make_pair(32, QT_TR_NOOP("Small (32x32)")),
+    std::make_pair(64, QT_TR_NOOP("Standard (64x64)")),
+    std::make_pair(128, QT_TR_NOOP("Large (128x128)")),
+    std::make_pair(256, QT_TR_NOOP("Full Size (256x256)")),
 };
 
 constexpr std::array row_text_names{
-    QT_TR_NOOP("文件名称"),   QT_TR_NOOP("文件类型"), QT_TR_NOOP("游戏 ID"),
-    QT_TR_NOOP("游戏名字"), QT_TR_NOOP("无"),
+    QT_TR_NOOP("Filename"),   QT_TR_NOOP("Filetype"), QT_TR_NOOP("Title ID"),
+    QT_TR_NOOP("Title Name"), QT_TR_NOOP("None"),
 };
 } // Anonymous namespace
 
@@ -65,7 +61,7 @@ ConfigureUi::ConfigureUi(QWidget* parent) : QWidget(parent), ui(new Ui::Configur
     // Set screenshot path to user specification.
     connect(ui->screenshot_path_button, &QToolButton::pressed, this, [this] {
         const QString& filename =
-            QFileDialog::getExistingDirectory(this, tr("选择屏幕截图路径..."),
+            QFileDialog::getExistingDirectory(this, tr("Select Screenshots Path..."),
                                               QString::fromStdString(Common::FS::GetUserPath(
                                                   Common::FS::UserPath::ScreenshotsDir))) +
             QDir::separator();
@@ -132,8 +128,8 @@ void ConfigureUi::RetranslateUI() {
 }
 
 void ConfigureUi::InitializeLanguageComboBox() {
-    ui->language_combobox->addItem(tr("<系统>"), QString{});
-    ui->language_combobox->addItem(tr("汉化语言"), QStringLiteral("en"));
+    ui->language_combobox->addItem(tr("<System>"), QString{});
+    ui->language_combobox->addItem(tr("English"), QStringLiteral("en"));
     QDirIterator it(QStringLiteral(":/languages"), QDirIterator::NoIteratorFlags);
     while (it.hasNext()) {
         QString locale = it.next();

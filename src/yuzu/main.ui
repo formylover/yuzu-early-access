@@ -50,11 +50,11 @@
    </property>
    <widget class="QMenu" name="menu_File">
     <property name="title">
-     <string>文件</string>
+     <string>&amp;File</string>
     </property>
     <widget class="QMenu" name="menu_recent_files">
      <property name="title">
-      <string>最近打开</string>
+      <string>Recent Files</string>
      </property>
     </widget>
     <addaction name="action_Install_File_NAND"/>
@@ -73,7 +73,7 @@
    </widget>
    <widget class="QMenu" name="menu_Emulation">
     <property name="title">
-     <string>模拟</string>
+     <string>&amp;Emulation</string>
     </property>
     <addaction name="action_Start"/>
     <addaction name="action_Pause"/>
@@ -85,11 +85,11 @@
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
-     <string>视图</string>
+     <string>&amp;View</string>
     </property>
     <widget class="QMenu" name="menu_View_Debugging">
      <property name="title">
-      <string>调试</string>
+      <string>Debugging</string>
      </property>
     </widget>
     <addaction name="action_Fullscreen"/>
@@ -103,7 +103,7 @@
    </widget>
    <widget class="QMenu" name="menu_Tools">
     <property name="title">
-     <string>工具</string>
+     <string>Tools</string>
     </property>
     <addaction name="action_Rederive"/>
     <addaction name="separator"/>
@@ -111,7 +111,7 @@
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
-     <string>帮助</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="action_Report_Compatibility"/>
     <addaction name="action_Open_Mods_Page"/>
@@ -131,22 +131,22 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>将文件安装到 NAND...</string>
+    <string>Install Files to NAND...</string>
    </property>
   </action>
   <action name="action_Load_File">
    <property name="text">
-    <string>加载文件...</string>
+    <string>Load File...</string>
    </property>
   </action>
   <action name="action_Load_Folder">
    <property name="text">
-    <string>加载文件夹...</string>
+    <string>Load Folder...</string>
    </property>
   </action>
   <action name="action_Exit">
    <property name="text">
-    <string>退出</string>
+    <string>E&amp;xit</string>
    </property>
   </action>
   <action name="action_Start">
@@ -154,7 +154,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>开始</string>
+    <string>&amp;Start</string>
    </property>
   </action>
   <action name="action_Pause">
@@ -162,7 +162,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>暂停</string>
+    <string>&amp;Pause</string>
    </property>
   </action>
   <action name="action_Stop">
@@ -170,17 +170,17 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>停止</string>
+    <string>&amp;Stop</string>
    </property>
   </action>
   <action name="action_Rederive">
    <property name="text">
-    <string>重新初始化 keys...</string>
+    <string>Reinitialize keys...</string>
    </property>
   </action>
   <action name="action_About">
    <property name="text">
-    <string>关于 yuzu</string>
+    <string>About yuzu</string>
    </property>
   </action>
   <action name="action_Single_Window_Mode">
@@ -188,12 +188,12 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>单窗口模式</string>
+    <string>Single Window Mode</string>
    </property>
   </action>
   <action name="action_Configure">
    <property name="text">
-    <string>设置...</string>
+    <string>Configure...</string>
    </property>
   </action>
   <action name="action_Display_Dock_Widget_Headers">
@@ -201,7 +201,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>显示停靠小部件的标题</string>
+    <string>Display Dock Widget Headers</string>
    </property>
   </action>
   <action name="action_Show_Filter_Bar">
@@ -209,7 +209,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>显示搜索栏</string>
+    <string>Show Filter Bar</string>
    </property>
   </action>
   <action name="action_Show_Status_Bar">
@@ -217,12 +217,12 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>显示状态栏</string>
+    <string>Show Status Bar</string>
    </property>
   </action>
   <action name="action_Reset_Window_Size">
    <property name="text">
-    <string>重置窗口大小</string>
+    <string>Reset Window Size</string>
    </property>
   </action>
   <action name="action_Fullscreen">
@@ -230,7 +230,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>全屏</string>
+    <string>Fullscreen</string>
    </property>
   </action>
   <action name="action_Restart">
@@ -238,7 +238,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>重新启动</string>
+    <string>Restart</string>
    </property>
   </action>
   <action name="action_Load_Amiibo">
@@ -246,7 +246,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>载入 Amiibo...</string>
+    <string>Load Amiibo...</string>
    </property>
   </action>
   <action name="action_Report_Compatibility">
@@ -254,7 +254,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>报告兼容性</string>
+    <string>Report Compatibility</string>
    </property>
    <property name="visible">
     <bool>false</bool>
@@ -262,22 +262,22 @@
   </action>
   <action name="action_Open_Mods_Page">
    <property name="text">
-    <string>打开MOD下载地址</string>
+    <string>Open Mods Page</string>
    </property>
   </action>
   <action name="action_Open_Quickstart_Guide">
    <property name="text">
-    <string>快速入门指南</string>
+    <string>Open Quickstart Guide</string>
    </property>
   </action>
   <action name="action_Open_FAQ">
    <property name="text">
-    <string>常见问题</string>
+    <string>FAQ</string>
    </property>
   </action>
   <action name="action_Open_yuzu_Folder">
    <property name="text">
-    <string>打开 yuzu 文件夹</string>
+    <string>Open yuzu Folder</string>
    </property>
   </action>
   <action name="action_Capture_Screenshot">
@@ -285,7 +285,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>捕获截图</string>
+    <string>Capture Screenshot</string>
    </property>
   </action>
   <action name="action_Configure_Current_Game">
@@ -293,7 +293,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>设置当前游戏...</string>
+    <string>Configure Current Game...</string>
    </property>
   </action>
  </widget>

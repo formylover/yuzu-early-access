@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>设置鼠标</string>
+   <string>Configure Mouse</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QPushButton {
@@ -22,7 +22,7 @@
    <item>
     <widget class="QGroupBox" name="gridGroupBox">
      <property name="title">
-      <string>鼠标按键</string>
+      <string>Mouse Buttons</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="3" column="5">
@@ -32,7 +32,7 @@
           <item>
            <widget class="QLabel" name="label_5">
             <property name="text">
-             <string>前:</string>
+             <string>Forward:</string>
             </property>
            </widget>
           </item>
@@ -72,7 +72,7 @@
              </size>
             </property>
             <property name="text">
-             <string>后:</string>
+             <string>Back:</string>
             </property>
            </widget>
           </item>
@@ -100,7 +100,7 @@
           <item>
            <widget class="QLabel" name="label">
             <property name="text">
-             <string>左:</string>
+             <string>Left:</string>
             </property>
            </widget>
           </item>
@@ -128,7 +128,7 @@
           <item>
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>中:</string>
+             <string>Middle:</string>
             </property>
            </widget>
           </item>
@@ -194,7 +194,7 @@
           <item>
            <widget class="QLabel" name="label_3">
             <property name="text">
-             <string>右:</string>
+             <string>Right:</string>
             </property>
            </widget>
           </item>
@@ -267,7 +267,7 @@
         </size>
        </property>
        <property name="text">
-        <string>清除</string>
+        <string>Clear</string>
        </property>
       </widget>
      </item>
@@ -286,7 +286,7 @@
         </size>
        </property>
        <property name="text">
-        <string>默认值</string>
+        <string>Defaults</string>
        </property>
       </widget>
      </item>

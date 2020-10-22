@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -133,7 +129,7 @@ void SetAnalogParam(const Common::ParamPackage& input_param, Common::ParamPackag
 
 QString ButtonToText(const Common::ParamPackage& param) {
     if (!param.Has("engine")) {
-        return QObject::tr("[没有设置]");
+        return QObject::tr("[not set]");
     }
 
     if (param.Get("engine", "") == "keyboard") {
@@ -157,7 +153,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
     if (param.Get("engine", "") == "cemuhookudp") {
         if (param.Has("pad_index")) {
             const QString motion_str = QString::fromStdString(param.Get("pad_index", ""));
-            return QObject::tr("体感 %1").arg(motion_str);
+            return QObject::tr("Motion %1").arg(motion_str);
         }
         return GetKeyName(param.Get("code", 0));
     }
@@ -191,7 +187,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
 
 QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) {
     if (!param.Has("engine")) {
-        return QObject::tr("[没有设置]");
+        return QObject::tr("[not set]");
     }
 
     if (param.Get("engine", "") == "analog_from_button") {
@@ -332,7 +328,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     QMenu context_menu;
                     context_menu.addAction(tr("Clear"), [&] {
                         buttons_param[button_id].Clear();
-                        button_map[button_id]->setText(tr("[没有设置]"));
+                        button_map[button_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(button_map[button_id]->mapToGlobal(menu_location));
                 });
@@ -355,7 +351,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     QMenu context_menu;
                     context_menu.addAction(tr("Clear"), [&] {
                         motions_param[motion_id].Clear();
-                        motion_map[motion_id]->setText(tr("[没有设置]"));
+                        motion_map[motion_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(motion_map[motion_id]->mapToGlobal(menu_location));
                 });
@@ -386,7 +382,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         QMenu context_menu;
                         context_menu.addAction(tr("Clear"), [&] {
                             analogs_param[analog_id].Clear();
-                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[没有设置]"));
+                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
                         });
                         context_menu.exec(analog_map_buttons[analog_id][sub_button_id]->mapToGlobal(
                             menu_location));
@@ -410,7 +406,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                     QMenu context_menu;
                     context_menu.addAction(tr("Clear"), [&] {
                         analogs_param[analog_id].Set("modifier", "");
-                        analog_map_modifier_button[analog_id]->setText(tr("[没有设置]"));
+                        analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(
                         analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
@@ -424,14 +420,14 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
         connect(analog_map_deadzone_slider[analog_id], &QSlider::valueChanged, [=, this] {
             const auto slider_value = analog_map_deadzone_slider[analog_id]->value();
-            analog_map_deadzone_label[analog_id]->setText(tr("摇杆死区: %1%").arg(slider_value));
+            analog_map_deadzone_label[analog_id]->setText(tr("Deadzone: %1%").arg(slider_value));
             analogs_param[analog_id].Set("deadzone", slider_value / 100.0f);
         });
 
         connect(analog_map_modifier_slider[analog_id], &QSlider::valueChanged, [=, this] {
             const auto slider_value = analog_map_modifier_slider[analog_id]->value();
             analog_map_modifier_label[analog_id]->setText(
-                tr("修改范围: %1%").arg(slider_value));
+                tr("Modifier Range: %1%").arg(slider_value));
             analogs_param[analog_id].Set("modifier_scale", slider_value / 100.0f);
         });
     }
@@ -732,7 +728,7 @@ void ConfigureInputPlayer::UpdateUI() {
                 param.Set("deadzone", 0.1f);
             }
             slider_value = static_cast<int>(param.Get("deadzone", 0.1f) * 100);
-            deadzone_label->setText(tr("摇杆死区: %1%").arg(slider_value));
+            deadzone_label->setText(tr("Deadzone: %1%").arg(slider_value));
             deadzone_slider->setValue(slider_value);
             if (!param.Has("range")) {
                 param.Set("range", 1.0f);
@@ -743,7 +739,7 @@ void ConfigureInputPlayer::UpdateUI() {
                 param.Set("modifier_scale", 0.5f);
             }
             slider_value = static_cast<int>(param.Get("modifier_scale", 0.5f) * 100);
-            modifier_label->setText(tr("修改范围: %1%").arg(slider_value));
+            modifier_label->setText(tr("Modifier Range: %1%").arg(slider_value));
             modifier_slider->setValue(slider_value);
         }
 
@@ -777,9 +773,9 @@ void ConfigureInputPlayer::HandleClick(
     QPushButton* button, std::function<void(const Common::ParamPackage&)> new_input_setter,
     InputCommon::Polling::DeviceType type) {
     if (button == ui->buttonMotionLeft || button == ui->buttonMotionRight) {
-        button->setText(tr("震动!"));
+        button->setText(tr("Shake!"));
     } else {
-        button->setText(tr("[等待]"));
+        button->setText(tr("[waiting]"));
     }
     button->setFocus();
 
