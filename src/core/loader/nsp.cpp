@@ -21,8 +21,8 @@
 
 namespace Loader {
 
-AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file)
-    : AppLoader(file), nsp(std::make_unique<FileSys::NSP>(file)),
+AppLoader_NSP::AppLoader_NSP(FileSys::VirtualFile file, std::size_t program_index)
+    : AppLoader(file), nsp(std::make_unique<FileSys::NSP>(file, program_index)),
       title_id(nsp->GetProgramTitleID()) {
 
     if (nsp->GetStatus() != ResultStatus::Success)

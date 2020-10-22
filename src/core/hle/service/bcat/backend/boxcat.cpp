@@ -455,7 +455,7 @@ Boxcat::StatusResult Boxcat::GetStatus(std::optional<std::string>& global,
     };
 
     if (!client.is_valid()) {
-        LOG_CRITICAL(Service_BCAT, "Client is invalid, going offline!");
+        LOG_ERROR(Service_BCAT, "Client is invalid, going offline!");
         return StatusResult::Offline;
     }
 

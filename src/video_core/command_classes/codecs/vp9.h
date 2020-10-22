@@ -104,13 +104,13 @@ public:
     ~VpxBitStreamWriter();
 
     /// Write an unsigned integer value
-    void WriteU(s32 value, s32 value_size);
+    void WriteU(u32 value, u32 value_size);
 
     /// Write a signed integer value
-    void WriteS(s32 value, s32 value_size);
+    void WriteS(s32 value, u32 value_size);
 
     /// Based on 6.2.10 of VP9 Spec, writes a delta coded value
-    void WriteDeltaQ(s32 value);
+    void WriteDeltaQ(u32 value);
 
     /// Write a single bit.
     void WriteBit(bool state);
@@ -123,7 +123,7 @@ public:
 
 private:
     /// Write bit_count bits from value into buffer
-    void WriteBits(s32 value, s32 bit_count);
+    void WriteBits(u32 value, u32 bit_count);
 
     /// Gets next available position in buffer, invokes Flush() if buffer is full
     s32 GetFreeBufferBits();

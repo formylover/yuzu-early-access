@@ -193,7 +193,7 @@ struct Vp9PictureInfo {
     u8 first_level{};
     u8 sharpness_level{};
     u32 bitstream_size{};
-    std::array<u32, 4> frame_offsets{};
+    std::array<u64, 4> frame_offsets{};
     std::array<bool, 4> refresh_frame{};
 };
 
@@ -229,8 +229,7 @@ struct PictureInfo {
     u8 log2_tile_rows;
     Segmentation segmentation;
     LoopFilter loop_filter;
-    u8 padding_0;
-    u32 padding_1;
+    INSERT_PADDING_BYTES(5);
     u32 surface_params;
     INSERT_PADDING_WORDS(3);
 

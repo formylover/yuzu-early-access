@@ -25,7 +25,7 @@ class AppLoader_NCA;
 /// Loads an XCI file
 class AppLoader_XCI final : public AppLoader {
 public:
-    explicit AppLoader_XCI(FileSys::VirtualFile file);
+    explicit AppLoader_XCI(FileSys::VirtualFile file, std::size_t program_index);
     ~AppLoader_XCI() override;
 
     /**

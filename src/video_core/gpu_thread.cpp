@@ -80,13 +80,8 @@ ThreadManager::~ThreadManager() {
 void ThreadManager::StartThread(VideoCore::RendererBase& renderer,
                                 Core::Frontend::GraphicsContext& context,
                                 Tegra::DmaPusher& dma_pusher, Tegra::CDmaPusher& cdma_pusher) {
-    thread = std::thread{RunThread,
-                         std::ref(system),
-                         std::ref(renderer),
-                         std::ref(context),
-                         std::ref(dma_pusher),
-                         std::ref(state),
-                         std::ref(cdma_pusher)};
+    thread = std::thread(RunThread, std::ref(system), std::ref(renderer), std::ref(context),
+                         std::ref(dma_pusher), std::ref(state), std::ref(cdma_pusher));
 }
 
 void ThreadManager::SubmitList(Tegra::CommandList&& entries) {

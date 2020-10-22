@@ -17,12 +17,12 @@ extern "C" {
 
 namespace Tegra {
 
-Vic::Vic(GPU& gpu, std::shared_ptr<Nvdec> nvdec_processor)
-    : gpu(gpu), nvdec_processor(std::move(nvdec_processor)) {}
+Vic::Vic(GPU& gpu_, std::shared_ptr<Nvdec> nvdec_processor_)
+    : gpu(gpu_), nvdec_processor(std::move(nvdec_processor_)) {}
 Vic::~Vic() = default;
 
 void Vic::VicStateWrite(u32 offset, u32 arguments) {
-    u8* state_offset = reinterpret_cast<u8*>(&vic_state) + offset * sizeof(u32);
+    u8* const state_offset = reinterpret_cast<u8*>(&vic_state) + offset * sizeof(u32);
     std::memcpy(state_offset, &arguments, sizeof(u32));
 }
 
@@ -57,7 +57,6 @@ void Vic::Execute() {
                   vic_state.output_surface.luma_offset);
         return;
     }
-
     const VicConfig config{gpu.MemoryManager().Read<u64>(config_struct_address + 0x20)};
     const VideoPixelFormat pixel_format =
         static_cast<VideoPixelFormat>(config.pixel_format.Value());
@@ -70,7 +69,6 @@ void Vic::Execute() {
         if (!frame || frame->width == 0 || frame->height == 0) {
             return;
         }
-
         if (scaler_ctx == nullptr || frame->width != scaler_width ||
             frame->height != scaler_height) {
             const AVPixelFormat target_format =
@@ -87,18 +85,17 @@ void Vic::Execute() {
             scaler_width = frame->width;
             scaler_height = frame->height;
         }
-
         // Get Converted frame
         const std::size_t linear_size = frame->width * frame->height * 4;
 
         using AVMallocPtr = std::unique_ptr<u8, decltype(&av_free)>;
         AVMallocPtr converted_frame_buffer{static_cast<u8*>(av_malloc(linear_size)), av_free};
 
-        const std::array<int, 1> converted_stride{frame->width * 4};
-        const std::array<u8*, 1> converted_frame_buf_addr{converted_frame_buffer.get()};
+        const int converted_stride{frame->width * 4};
+        u8* const converted_frame_buf_addr{converted_frame_buffer.get()};
 
         sws_scale(scaler_ctx, frame->data, frame->linesize, 0, frame->height,
-                  converted_frame_buf_addr.data(), converted_stride.data());
+                  &converted_frame_buf_addr, &converted_stride);
 
         const u32 blk_kind = static_cast<u32>(config.block_linear_kind);
         if (blk_kind != 0) {
@@ -111,17 +108,14 @@ void Vic::Execute() {
                                              swizzled_data.data(), converted_frame_buffer.get(),
                                              false, block_height, 0, 1);
 
-            gpu.Maxwell3D().OnMemoryWrite();
-
             gpu.MemoryManager().WriteBlock(output_surface_luma_address, swizzled_data.data(), size);
-
+            gpu.Maxwell3D().OnMemoryWrite();
         } else {
             // send pitch linear frame
+            gpu.MemoryManager().WriteBlock(output_surface_luma_address, converted_frame_buf_addr,
+                                           linear_size);
             gpu.Maxwell3D().OnMemoryWrite();
-            gpu.MemoryManager().WriteBlock(output_surface_luma_address,
-                                           converted_frame_buf_addr.data(), linear_size);
         }
-
         break;
     }
     case VideoPixelFormat::Yuv420: {
@@ -145,41 +139,41 @@ void Vic::Execute() {
         const auto stride = frame->linesize[0];
         const auto half_stride = frame->linesize[1];
 
-        gpu.Maxwell3D().OnMemoryWrite();
-
         std::vector<u8> luma_buffer(aligned_width * surface_height);
         std::vector<u8> chroma_buffer(aligned_width * half_height);
 
         // Populate luma buffer
-        for (std::size_t y = 0; y < surface_height - 1; y++) {
+        for (std::size_t y = 0; y < surface_height - 1; ++y) {
             std::size_t src = y * stride;
             std::size_t dst = y * aligned_width;
 
             std::size_t size = surface_width;
 
-            for (std::size_t offset = 0; offset < size; offset++) {
-                luma_buffer[dst + offset] = *(luma_ptr + src + offset);
+            for (std::size_t offset = 0; offset < size; ++offset) {
+                luma_buffer[dst + offset] = luma_ptr[src + offset];
             }
         }
         gpu.MemoryManager().WriteBlock(output_surface_luma_address, luma_buffer.data(),
                                        luma_buffer.size());
 
         // Populate chroma buffer from both channels with interleaving.
-        for (std::size_t y = 0; y < half_height; y++) {
+        for (std::size_t y = 0; y < half_height; ++y) {
             std::size_t src = y * half_stride;
             std::size_t dst = y * aligned_width;
 
-            for (std::size_t x = 0; x < half_width; x++) {
-                chroma_buffer[dst + x * 2] = *(chroma_b_ptr + src + x);
-                chroma_buffer[dst + x * 2 + 1] = *(chroma_r_ptr + src + x);
+            for (std::size_t x = 0; x < half_width; ++x) {
+                chroma_buffer[dst + x * 2] = chroma_b_ptr[src + x];
+                chroma_buffer[dst + x * 2 + 1] = chroma_r_ptr[src + x];
             }
         }
         gpu.MemoryManager().WriteBlock(output_surface_chroma_u_address, chroma_buffer.data(),
                                        chroma_buffer.size());
+        gpu.Maxwell3D().OnMemoryWrite();
         break;
     }
     default:
         UNIMPLEMENTED_MSG("Unknown video pixel format {}", config.pixel_format.Value());
+        break;
     }
 }
 

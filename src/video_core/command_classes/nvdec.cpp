@@ -12,7 +12,7 @@
 
 namespace Tegra {
 
-Nvdec::Nvdec(GPU& gpu) : gpu(gpu), codec(std::make_unique<Codec>(gpu)) {}
+Nvdec::Nvdec(GPU& gpu_) : gpu(gpu_), codec(std::make_unique<Codec>(gpu)) {}
 
 Nvdec::~Nvdec() = default;
 
@@ -29,8 +29,6 @@ void Nvdec::ProcessMethod(Nvdec::Method method, const std::vector<u32>& argument
         break;
     case Method::Execute:
         Execute();
-        break;
-    default:
         break;
     }
 }
@@ -51,6 +49,7 @@ void Nvdec::Execute() {
         break;
     default:
         UNIMPLEMENTED_MSG("Unknown codec {}", static_cast<u32>(codec->GetCurrentCodec()));
+        break;
     }
 }
 

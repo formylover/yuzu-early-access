@@ -6,12 +6,12 @@
 #include "video_core/command_classes/host1x.h"
 #include "video_core/gpu.h"
 
-Tegra::Host1x::Host1x(GPU& gpu) : gpu(gpu) {}
+Tegra::Host1x::Host1x(GPU& gpu_) : gpu(gpu_) {}
 
 Tegra::Host1x::~Host1x() = default;
 
 void Tegra::Host1x::StateWrite(u32 offset, u32 arguments) {
-    u8* state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u32);
+    u8* const state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u32);
     std::memcpy(state_offset, &arguments, sizeof(u32));
 }
 
@@ -29,15 +29,11 @@ void Tegra::Host1x::ProcessMethod(Host1x::Method method, const std::vector<u32>&
         break;
     default:
         UNIMPLEMENTED_MSG("Host1x method 0x{:X}", static_cast<u32>(method));
+        break;
     }
 }
 
 void Tegra::Host1x::Execute(u32 data) {
     // This method waits on a valid syncpoint.
     // TODO: Implement when proper Async is in place
-
-    // u32 syncpoint_id = (data & 0xFF);
-    // if (syncpoint_id > 0) {
-    //     gpu.WaitFence(syncpoint_id, syncpoint_value);
-    // }
 }

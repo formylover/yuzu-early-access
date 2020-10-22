@@ -37,7 +37,6 @@ void GPUAsynch::PushCommandBuffer(Tegra::ChCommandHeaderList& entries) {
     if (!use_nvdec) {
         return;
     }
-
     // This condition fires when a video stream ends, clear all intermediary data
     if (entries[0].raw == 0xDEADB33F) {
         cdma_pusher.reset();

@@ -5,6 +5,8 @@ add_library(video_core STATIC
     buffer_cache/buffer_cache.h
     buffer_cache/map_interval.cpp
     buffer_cache/map_interval.h
+    cdma_pusher.cpp
+    cdma_pusher.h
     command_classes/codecs/codec.cpp
     command_classes/codecs/codec.h
     command_classes/codecs/h264.cpp
@@ -21,8 +23,6 @@ add_library(video_core STATIC
     command_classes/sync_manager.h
     command_classes/vic.cpp
     command_classes/vic.h
-    cdma_pusher.cpp
-    cdma_pusher.h
     compatible_formats.cpp
     compatible_formats.h
     dirty_flags.cpp
@@ -304,7 +304,9 @@ else()
         -Wno-error=sign-conversion
         -Werror=switch
         -Werror=unused-variable
-        -Werror=unused-but-set-variable
-        -Werror=class-memaccess
+
+        $<$<CXX_COMPILER_ID:GNU>:-Werror=class-memaccess>
+        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-parameter>
+        $<$<CXX_COMPILER_ID:GNU>:-Werror=unused-but-set-variable>
     )
 endif()

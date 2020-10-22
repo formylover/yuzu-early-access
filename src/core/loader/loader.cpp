@@ -202,9 +202,11 @@ AppLoader::~AppLoader() = default;
  * @param type The type of the file
  * @param file the file to retrieve the loader for
  * @param type the file type
+ * @param program_index Specifies the index within the container of the program to launch.
  * @return std::unique_ptr<AppLoader> a pointer to a loader object;  nullptr for unsupported type
  */
-static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileType type) {
+static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileType type,
+                                                std::size_t program_index) {
     switch (type) {
 
     // Standard ELF file format.
@@ -225,7 +227,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileT
 
     // NX XCI (nX Card Image) file format.
     case FileType::XCI:
-        return std::make_unique<AppLoader_XCI>(std::move(file));
+        return std::make_unique<AppLoader_XCI>(std::move(file), program_index);
 
     // NX NAX (NintendoAesXts) file format.
     case FileType::NAX:
@@ -233,7 +235,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileT
 
     // NX NSP (Nintendo Submission Package) file format
     case FileType::NSP:
-        return std::make_unique<AppLoader_NSP>(std::move(file));
+        return std::make_unique<AppLoader_NSP>(std::move(file), program_index);
 
     // NX KIP (Kernel Internal Process) file format
     case FileType::KIP:
@@ -248,7 +250,7 @@ static std::unique_ptr<AppLoader> GetFileLoader(FileSys::VirtualFile file, FileT
     }
 }
 
-std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file) {
+std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file, std::size_t program_index) {
     FileType type = IdentifyFile(file);
     FileType filename_type = GuessFromFilename(file->GetName());
 
@@ -261,7 +263,7 @@ std::unique_ptr<AppLoader> GetLoader(FileSys::VirtualFile file) {
 
     LOG_DEBUG(Loader, "Loading file {} as {}...", file->GetName(), GetFileTypeString(type));
 
-    return GetFileLoader(std::move(file), type);
+    return GetFileLoader(std::move(file), type, program_index);
 }
 
 } // namespace Loader

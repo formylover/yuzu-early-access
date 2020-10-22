@@ -102,7 +102,7 @@ private:
     GPUVAddr output_surface_chroma_u_address{};
     GPUVAddr output_surface_chroma_v_address{};
 
-    SwsContext* scaler_ctx = nullptr;
+    SwsContext* scaler_ctx{};
     s32 scaler_width{};
     s32 scaler_height{};
 };

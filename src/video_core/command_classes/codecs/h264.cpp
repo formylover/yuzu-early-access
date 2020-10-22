@@ -24,7 +24,7 @@
 #include "video_core/memory_manager.h"
 
 namespace Tegra::Decoder {
-H264::H264(GPU& gpu) : gpu(gpu) {}
+H264::H264(GPU& gpu_) : gpu(gpu_) {}
 
 H264::~H264() = default;
 

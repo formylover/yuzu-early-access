@@ -25,7 +25,7 @@ class AppLoader_NCA;
 /// Loads an XCI file
 class AppLoader_NSP final : public AppLoader {
 public:
-    explicit AppLoader_NSP(FileSys::VirtualFile file);
+    explicit AppLoader_NSP(FileSys::VirtualFile file, std::size_t program_index);
     ~AppLoader_NSP() override;
 
     /**

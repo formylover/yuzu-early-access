@@ -55,18 +55,17 @@ void CDmaPusher::Step() {
     std::vector<int> values(entries.size());
     std::memcpy(values.data(), entries.data(), entries.size() * sizeof(u32));
 
-    for (std::size_t entry_index = 0; entry_index < entries.size(); entry_index++) {
-        u32 value = values[entry_index];
+    for (const u32 value : values) {
         if (mask != 0) {
-            u32 lbs = Common::CountTrailingZeroes32(mask);
-            mask &= ~(1 << lbs);
+            const u32 lbs = Common::CountTrailingZeroes32(mask);
+            mask &= ~(1U << lbs);
             ExecuteCommand(static_cast<u32>(offset + lbs), value);
             continue;
         } else if (count != 0) {
-            count--;
+            --count;
             ExecuteCommand(static_cast<u32>(offset), value);
             if (incrementing) {
-                offset++;
+                ++offset;
             }
             continue;
         }
@@ -82,7 +81,7 @@ void CDmaPusher::Step() {
         case ChSubmissionMode::NonIncrementing:
             count = value & 0xffff;
             offset = (value >> 16) & 0xfff;
-            incrementing = (mode == ChSubmissionMode::Incrementing);
+            incrementing = mode == ChSubmissionMode::Incrementing;
             break;
         case ChSubmissionMode::Mask:
             mask = value & 0xffff;
@@ -94,9 +93,9 @@ void CDmaPusher::Step() {
             ExecuteCommand(static_cast<u32>(offset), data);
             break;
         }
-        default: {
+        default:
             UNIMPLEMENTED_MSG("ChSubmission mode {} is not implemented!", static_cast<u32>(mode));
-        }
+            break;
         }
     }
 }
@@ -107,7 +106,7 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
         ThiStateWrite(nvdec_thi_state, offset, {data});
         switch (static_cast<ThiMethod>(offset)) {
         case ThiMethod::IncSyncpt: {
-            LOG_DEBUG(Service_NVDRV, "NvDec Class IncSyncpt Method");
+            LOG_DEBUG(Service_NVDRV, "NVDEC Class IncSyncpt Method");
             const auto syncpoint_id = static_cast<u32>(data & 0xFF);
             const auto cond = static_cast<u32>((data >> 8) & 0xFF);
             if (cond == 0) {
@@ -119,7 +118,7 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
             break;
         }
         case ThiMethod::SetMethod1:
-            LOG_DEBUG(Service_NVDRV, "NVDec method 0x{:X}",
+            LOG_DEBUG(Service_NVDRV, "NVDEC method 0x{:X}",
                       static_cast<u32>(nvdec_thi_state.method_0));
             nvdec_processor->ProcessMethod(
                 static_cast<Tegra::Nvdec::Method>(nvdec_thi_state.method_0), {data});
@@ -165,7 +164,7 @@ void CDmaPusher::ExecuteCommand(u32 offset, u32 data) {
 }
 
 void CDmaPusher::ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments) {
-    u8* state_offset = reinterpret_cast<u8*>(&state) + sizeof(u32) * offset;
+    u8* const state_offset = reinterpret_cast<u8*>(&state) + sizeof(u32) * offset;
     std::memcpy(state_offset, arguments.data(), sizeof(u32) * arguments.size());
 }
 

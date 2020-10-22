@@ -363,7 +363,12 @@ Vp9PictureInfo VP9::GetVp9PictureInfo(const NvdecCommon::NvdecRegisters& state) 
     Vp9PictureInfo vp9_info = picture_info.Convert();
 
     InsertEntropy(state.vp9_entropy_probs_offset, vp9_info.entropy);
-    std::memcpy(vp9_info.frame_offsets.data(), state.surface_luma_offset.data(), 4 * sizeof(u32));
+
+    // surface_luma_offset[0:3] contains the address of the reference frame offsets in the following
+    // order: last, golden, altref, current. It may be worthwhile to track the updates done here
+    // to avoid buffering frame data needed for reference frame updating in the header composition.
+    std::memcpy(vp9_info.frame_offsets.data(), state.surface_luma_offset.data(), 4 * sizeof(u64));
+
     return std::move(vp9_info);
 }
 
@@ -652,7 +657,9 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
 
         if (!current_frame_info.show_frame) {
             uncomp_writer.WriteBit(current_frame_info.intra_only);
-            swap_next_golden = !swap_next_golden;
+            if (!current_frame_info.last_frame_was_key) {
+                swap_next_golden = !swap_next_golden;
+            }
         } else {
             current_frame_info.intra_only = false;
         }
@@ -674,7 +681,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
 
         // golden frame may refresh, determined if the next golden frame offset is changed
         bool golden_refresh = false;
-        if (grace_period < 0) {
+        if (grace_period <= 0) {
             for (int index = 1; index < 3; ++index) {
                 if (current_frame_info.frame_offsets[index] !=
                     next_frame.info.frame_offsets[index]) {
@@ -687,7 +694,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
 
         if (current_frame_info.show_frame &&
             (!next_frame.info.show_frame || next_frame.info.is_key_frame)) {
-            // Update golden (not x86)
+            // Update golden frame
             refresh_frame_flags = swap_next_golden ? 2 : 4;
         }
 
@@ -704,7 +711,6 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
             uncomp_writer.WriteU(current_frame_info.frame_size.width - 1, 16);
             uncomp_writer.WriteU(current_frame_info.frame_size.height - 1, 16);
             uncomp_writer.WriteBit(false); // Render and frame size different.
-
         } else {
             uncomp_writer.WriteU(static_cast<s32>(refresh_frame_flags), 8);
 
@@ -968,20 +974,20 @@ VpxBitStreamWriter::VpxBitStreamWriter() = default;
 
 VpxBitStreamWriter::~VpxBitStreamWriter() = default;
 
-void VpxBitStreamWriter::WriteU(s32 value, s32 value_size) {
+void VpxBitStreamWriter::WriteU(u32 value, u32 value_size) {
     WriteBits(value, value_size);
 }
 
-void VpxBitStreamWriter::WriteS(s32 value, s32 value_size) {
+void VpxBitStreamWriter::WriteS(s32 value, u32 value_size) {
     const bool sign = value < 0;
     if (sign) {
         value = -value;
     }
 
-    WriteBits((value << 1) | (sign ? 1 : 0), value_size + 1);
+    WriteBits(static_cast<u32>(value << 1) | (sign ? 1 : 0), value_size + 1);
 }
 
-void VpxBitStreamWriter::WriteDeltaQ(s32 value) {
+void VpxBitStreamWriter::WriteDeltaQ(u32 value) {
     const bool delta_coded = value != 0;
     WriteBit(delta_coded);
 
@@ -990,7 +996,7 @@ void VpxBitStreamWriter::WriteDeltaQ(s32 value) {
     }
 }
 
-void VpxBitStreamWriter::WriteBits(s32 value, s32 bit_count) {
+void VpxBitStreamWriter::WriteBits(u32 value, u32 bit_count) {
     int value_pos = 0;
     int remaining = bit_count;
 

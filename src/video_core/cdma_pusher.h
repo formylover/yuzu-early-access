@@ -112,6 +112,9 @@ public:
     void ExecuteCommand(u32 offset, u32 data);
 
 private:
+    /// Write arguments value to the ThiRegisters member at the specified offset
+    void ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments);
+
     GPU& gpu;
 
     std::shared_ptr<Tegra::Nvdec> nvdec_processor;
@@ -122,9 +125,6 @@ private:
     ChClassId current_class{};
     ThiRegisters vic_thi_state{};
     ThiRegisters nvdec_thi_state{};
-
-    /// Write arguments value to the ThiRegisters member at the specified offset
-    void ThiStateWrite(ThiRegisters& state, u32 offset, const std::vector<u32>& arguments);
 
     int count{};
     int offset{};

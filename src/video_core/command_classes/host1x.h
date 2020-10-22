@@ -67,8 +67,9 @@ private:
     /// For Host1x, execute is waiting on a syncpoint previously written into the state
     void Execute(u32 data);
 
-    /// write argument into the provided offset
+    /// Write argument into the provided offset
     void StateWrite(u32 offset, u32 arguments);
+
     u32 syncpoint_value{};
     Host1xClassRegisters state{};
     GPU& gpu;

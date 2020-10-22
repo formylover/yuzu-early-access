@@ -100,7 +100,7 @@
         <item>
          <widget class="QCheckBox" name="use_nvdec_emulation">
           <property name="text">
-           <string>使用 NVDEC 模拟（实验性）</string>
+           <string>使用 NVDEC 模拟</string>
           </property>
          </widget>
         </item>

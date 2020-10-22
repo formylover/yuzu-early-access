@@ -23,14 +23,14 @@ public:
     explicit EmuWindow_SDL2(InputCommon::InputSubsystem* input_subsystem);
     ~EmuWindow_SDL2();
 
-    /// Polls window events
     void PollEvents() override;
 
     /// Whether the window is still open, and a close request hasn't yet been sent
     bool IsOpen() const;
 
-    /// Returns if window is shown (not minimized)
     bool IsShown() const override;
+
+    void ExecuteProgram(std::size_t /*program_index*/) override{};
 
 protected:
     /// Called by PollEvents when a key is pressed or released.

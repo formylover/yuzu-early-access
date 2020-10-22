@@ -12,6 +12,7 @@
 #include "core/file_sys/patch_manager.h"
 #include "core/file_sys/registered_cache.h"
 #include "core/file_sys/savedata_factory.h"
+#include "core/frontend/emu_window.h"
 #include "core/hle/ipc_helpers.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/process.h"
@@ -41,6 +42,10 @@
 #include "core/hle/service/sm/sm.h"
 #include "core/hle/service/vi/vi.h"
 #include "core/settings.h"
+
+// Used for ExecuteProgram(..) to get the EmuWindow instance, this should be refactored out
+#include "video_core/gpu.h"
+#include "video_core/renderer_base.h"
 
 namespace Service::AM {
 
@@ -1189,9 +1194,9 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {102, &IApplicationFunctions::SetApplicationCopyrightVisibility, "SetApplicationCopyrightVisibility"},
         {110, &IApplicationFunctions::QueryApplicationPlayStatistics, "QueryApplicationPlayStatistics"},
         {111, &IApplicationFunctions::QueryApplicationPlayStatisticsByUid, "QueryApplicationPlayStatisticsByUid"},
-        {120, nullptr, "ExecuteProgram"},
-        {121, nullptr, "ClearUserChannel"},
-        {122, nullptr, "UnpopToUserChannel"},
+        {120, &IApplicationFunctions::ExecuteProgram, "ExecuteProgram"},
+        {121, &IApplicationFunctions::ClearUserChannel, "ClearUserChannel"},
+        {122, &IApplicationFunctions::UnpopToUserChannel, "UnpopToUserChannel"},
         {123, &IApplicationFunctions::GetPreviousProgramIndex, "GetPreviousProgramIndex"},
         {124, nullptr, "EnableApplicationAllThreadDumpOnCrash"},
         {130, &IApplicationFunctions::GetGpuErrorDetectedSystemEvent, "GetGpuErrorDetectedSystemEvent"},
@@ -1552,6 +1557,36 @@ void IApplicationFunctions::QueryApplicationPlayStatisticsByUid(Kernel::HLEReque
     IPC::ResponseBuilder rb{ctx, 3};
     rb.Push(RESULT_SUCCESS);
     rb.Push<u32>(0);
+}
+
+void IApplicationFunctions::ExecuteProgram(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::RequestParser rp{ctx};
+    [[maybe_unused]] const auto unk_1 = rp.Pop<u32>();
+    [[maybe_unused]] const auto unk_2 = rp.Pop<u32>();
+    const auto program_index = rp.Pop<u64>();
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+
+    // TODO(bunnei): It's kind of janky to go through the renderer to reload the program, but this
+    // requires broad refactoring to fix.
+    system.GPU().Renderer().GetRenderWindow().ExecuteProgram(program_index);
+}
+
+void IApplicationFunctions::ClearUserChannel(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void IApplicationFunctions::UnpopToUserChannel(Kernel::HLERequestContext& ctx) {
+    LOG_WARNING(Service_AM, "(STUBBED) called");
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
 }
 
 void IApplicationFunctions::GetPreviousProgramIndex(Kernel::HLERequestContext& ctx) {

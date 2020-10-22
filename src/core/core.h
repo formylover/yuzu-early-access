@@ -173,9 +173,11 @@ public:
      * @param emu_window Reference to the host-system window used for video output and keyboard
      *                   input.
      * @param filepath String path to the executable application to load on the host file system.
+     * @param program_index Specifies the index within the container of the program to launch.
      * @returns ResultStatus code, indicating if the operation succeeded.
      */
-    ResultStatus Load(Frontend::EmuWindow& emu_window, const std::string& filepath);
+    ResultStatus Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
+                      std::size_t program_index = 0);
 
     /**
      * Indicates if the emulated system is powered on (all subsystems initialized and able to run an

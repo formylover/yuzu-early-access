@@ -17,43 +17,40 @@ extern "C" {
 
 namespace Tegra {
 
-Codec::Codec(GPU& gpu)
-    : gpu(gpu), h264_decoder(std::make_unique<Decoder::H264>(gpu)),
+Codec::Codec(GPU& gpu_)
+    : gpu(gpu_), h264_decoder(std::make_unique<Decoder::H264>(gpu)),
       vp9_decoder(std::make_unique<Decoder::VP9>(gpu)) {}
 
 Codec::~Codec() {
-    if (initialized) {
-        // Free libav memory
-        avcodec_send_packet(av_codec_ctx, nullptr);
-        avcodec_receive_frame(av_codec_ctx, av_frame);
-        LOG_DEBUG(Service_NVDRV, "Flushed avcontext");
-
-        avcodec_flush_buffers(av_codec_ctx);
-        av_frame_unref(av_frame);
-        av_free(av_frame);
-        avcodec_close(av_codec_ctx);
+    if (!initialized) {
+        return;
     }
+    // Free libav memory
+    avcodec_send_packet(av_codec_ctx, nullptr);
+    avcodec_receive_frame(av_codec_ctx, av_frame);
+    avcodec_flush_buffers(av_codec_ctx);
+    LOG_DEBUG(Service_NVDRV, "Flushed avcontext");
 
-    // destroy intermediary data.
-    h264_decoder.reset();
-    vp9_decoder.reset();
+    av_frame_unref(av_frame);
+    av_free(av_frame);
+    avcodec_close(av_codec_ctx);
 }
 
 void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
     if (initialized) {
         if (current_codec != codec) {
             codec_swap = true;
-            LOG_INFO(Service_NVDRV, "Codec swap from {} to {}", static_cast<u32>(current_codec),
-                     static_cast<u32>(codec));
+            LOG_INFO(Service_NVDRV, "NVDEC video codec swap from {} to {}",
+                     static_cast<u32>(current_codec), static_cast<u32>(codec));
         }
     } else {
-        LOG_INFO(Service_NVDRV, "Codec initialized to {}", static_cast<u32>(codec));
+        LOG_INFO(Service_NVDRV, "NVDEC video codec initialized to {}", static_cast<u32>(codec));
     }
     current_codec = codec;
 }
 
 void Codec::StateWrite(u32 offset, u64 arguments) {
-    u8* state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u64);
+    u8* const state_offset = reinterpret_cast<u8*>(&state) + offset * sizeof(u64);
     std::memcpy(state_offset, &arguments, sizeof(u64));
 }
 
@@ -93,8 +90,7 @@ void Codec::Decode() {
 
     AVPacket packet{};
     av_init_packet(&packet);
-    auto frame_data = std::vector<u8>();
-    auto test_frame_data = std::vector<u8>();
+    std::vector<u8> frame_data;
 
     if (current_codec == NvdecCommon::VideoCodec::H264) {
         frame_data = h264_decoder->ComposeFrameHeader(state, is_first_frame);

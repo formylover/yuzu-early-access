@@ -481,16 +481,9 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
 #else
 
 void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view additional_args) {
-    QMessageBox::warning(
-        this, tr("Web小型应用程序"),
-        tr("这yuzu的版本不支持 QtWebEngine 这意味着柚子不能 "
-           "正常显示要求的游戏手册或网页."),
-        QMessageBox::Ok, QMessageBox::Ok);
-
-    LOG_INFO(Frontend,
-             "(STUBBED) called - Missing QtWebEngine dependency needed to open website page at "
-             "'{}' with arguments '{}'!",
-             filename, additional_args);
+    LOG_WARNING(Frontend,
+                "(STUBBED) called - Trying to open website page at '{}' with arguments '{}'!",
+                filename, additional_args);
 
     emit WebBrowserFinishedBrowsing();
 }
@@ -980,7 +973,7 @@ void GMainWindow::AllowOSSleep() {
 #endif
 }
 
-bool GMainWindow::LoadROM(const QString& filename) {
+bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
     // Shutdown previous session if the emu thread is still active...
     if (emu_thread != nullptr)
         ShutdownGame();
@@ -1005,7 +998,8 @@ bool GMainWindow::LoadROM(const QString& filename) {
 
     system.RegisterHostThread();
 
-    const Core::System::ResultStatus result{system.Load(*render_window, filename.toStdString())};
+    const Core::System::ResultStatus result{
+        system.Load(*render_window, filename.toStdString(), program_index)};
 
     const auto drd_callout =
         (UISettings::values.callout_flags & static_cast<u32>(CalloutFlag::DRDDeprecation)) == 0;
@@ -1087,14 +1081,16 @@ void GMainWindow::SelectAndSetCurrentUser() {
     Settings::values.current_user = dialog.GetIndex();
 }
 
-void GMainWindow::BootGame(const QString& filename) {
+void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
     LOG_INFO(Frontend, "yuzu starting...");
     StoreRecentFile(filename); // Put the filename on top of the list
 
     u64 title_id{0};
 
+    last_filename_booted = filename;
+
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
-    const auto loader = Loader::GetLoader(v_file);
+    const auto loader = Loader::GetLoader(v_file, program_index);
     if (!(loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success)) {
         // Load per game settings
         Config per_game_config(fmt::format("{:016X}.ini", title_id), false);
@@ -1106,7 +1102,7 @@ void GMainWindow::BootGame(const QString& filename) {
         SelectAndSetCurrentUser();
     }
 
-    if (!LoadROM(filename))
+    if (!LoadROM(filename, program_index))
         return;
 
     // Create and start the emulation thread
@@ -2415,13 +2411,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1036" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1057" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 1036 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1057 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

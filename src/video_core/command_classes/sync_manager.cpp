@@ -23,7 +23,7 @@
 #include "video_core/gpu.h"
 
 namespace Tegra {
-SyncptIncrManager::SyncptIncrManager(GPU& gpu) : gpu(gpu) {}
+SyncptIncrManager::SyncptIncrManager(GPU& gpu_) : gpu(gpu_) {}
 SyncptIncrManager::~SyncptIncrManager() = default;
 
 void SyncptIncrManager::Increment(u32 id) {
@@ -40,18 +40,17 @@ u32 SyncptIncrManager::IncrementWhenDone(u32 class_id, u32 id) {
 
 void SyncptIncrManager::SignalDone(u32 handle) {
     auto done_incr = std::find_if(increments.begin(), increments.end(),
-                                  [&](SyncptIncr incr) { return incr.id == handle; });
+                                  [handle](SyncptIncr incr) { return incr.id == handle; });
     if (done_incr != increments.end()) {
-        SyncptIncr incr = *done_incr;
+        const SyncptIncr incr = *done_incr;
         *done_incr = SyncptIncr{incr.id, incr.class_id, incr.syncpt_id, true};
     }
-
     IncrementAllDone();
 }
 
 void SyncptIncrManager::IncrementAllDone() {
     std::size_t done_count = 0;
-    for (; done_count < increments.size(); done_count++) {
+    for (; done_count < increments.size(); ++done_count) {
         if (!increments[done_count].complete) {
             break;
         }

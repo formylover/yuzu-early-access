@@ -20,8 +20,8 @@
 
 namespace Loader {
 
-AppLoader_XCI::AppLoader_XCI(FileSys::VirtualFile file)
-    : AppLoader(file), xci(std::make_unique<FileSys::XCI>(file)),
+AppLoader_XCI::AppLoader_XCI(FileSys::VirtualFile file, std::size_t program_index)
+    : AppLoader(file), xci(std::make_unique<FileSys::XCI>(file, program_index)),
       nca_loader(std::make_unique<AppLoader_NCA>(xci->GetProgramNCAFile())) {
     if (xci->GetStatus() != ResultStatus::Success)
         return;

@@ -206,9 +206,10 @@ struct System::Impl {
         return ResultStatus::Success;
     }
 
-    ResultStatus Load(System& system, Frontend::EmuWindow& emu_window,
-                      const std::string& filepath) {
-        app_loader = Loader::GetLoader(GetGameFileFromPath(virtual_filesystem, filepath));
+    ResultStatus Load(System& system, Frontend::EmuWindow& emu_window, const std::string& filepath,
+                      std::size_t program_index) {
+        app_loader =
+            Loader::GetLoader(GetGameFileFromPath(virtual_filesystem, filepath), program_index);
         if (!app_loader) {
             LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
             return ResultStatus::ErrorGetLoader;
@@ -442,8 +443,9 @@ void System::InvalidateCpuInstructionCaches() {
     impl->kernel.InvalidateAllInstructionCaches();
 }
 
-System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath) {
-    return impl->Load(*this, emu_window, filepath);
+System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
+                                  std::size_t program_index) {
+    return impl->Load(*this, emu_window, filepath, program_index);
 }
 
 bool System::IsPoweredOn() const {

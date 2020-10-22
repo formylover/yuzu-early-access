@@ -45,8 +45,10 @@ GPUVAddr MemoryManager::MapAllocate(VAddr cpu_addr, std::size_t size, std::size_
     return Map(cpu_addr, *FindFreeRange(size, align), size);
 }
 
-GPUVAddr MemoryManager::MapLow(VAddr cpu_addr, std::size_t size) {
-    return Map(cpu_addr, *FindFreeRange(size, 1, true), size);
+GPUVAddr MemoryManager::MapAllocate32(VAddr cpu_addr, std::size_t size) {
+    const std::optional<GPUVAddr> gpu_addr = FindFreeRange(size, 1, true);
+    ASSERT(gpu_addr);
+    return Map(cpu_addr, *gpu_addr, size);
 }
 
 void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
@@ -65,9 +67,10 @@ void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
         return;
     }
 
-    const VAddr cpu_addr = *GpuToCpuAddress(gpu_addr);
-    system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(cpu_addr, size);
-    cache_invalidate_queue.push_back({cpu_addr, size});
+    const std::optional<VAddr> cpu_addr = GpuToCpuAddress(gpu_addr);
+    ASSERT(cpu_addr);
+    system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(*cpu_addr, size);
+    cache_invalidate_queue.push_back({*cpu_addr, size});
 
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
