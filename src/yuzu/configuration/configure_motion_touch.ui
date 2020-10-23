@@ -3,7 +3,7 @@
  <class>ConfigureMotionTouch</class>
  <widget class="QDialog" name="ConfigureMotionTouch">
   <property name="windowTitle">
-   <string>Configure Motion / Touch</string>
+   <string>设置 体感 / 触摸</string>
   </property>
   <property name="geometry">
    <rect>
@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="motion_group_box">
      <property name="title">
-      <string>Motion</string>
+      <string>体感</string>Motion
      </property>
      <layout class="QVBoxLayout">
       <item>
@@ -25,7 +25,7 @@
         <item>
          <widget class="QLabel" name="motion_provider_label">
           <property name="text">
-           <string>Motion Provider:</string>
+           <string>体感提供程序：</string>
           </property>
          </widget>
         </item>
@@ -39,7 +39,7 @@
         <item>
          <widget class="QLabel" name="motion_sensitivity_label">
           <property name="text">
-           <string>Sensitivity:</string>
+           <string>灵敏度：</string>
           </property>
          </widget>
         </item>
@@ -73,7 +73,7 @@
    <item>
     <widget class="QGroupBox" name="touch_group_box">
      <property name="title">
-      <string>Touch</string>
+      <string>触摸</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
@@ -81,7 +81,7 @@
         <item>
          <widget class="QLabel" name="touch_provider_label">
           <property name="text">
-           <string>Touch Provider:</string>
+           <string>触摸提供程序：</string>
           </property>
          </widget>
         </item>
@@ -95,7 +95,7 @@
         <item>
          <widget class="QLabel" name="touch_calibration_label">
           <property name="text">
-           <string>Calibration:</string>
+           <string>校准：</string>
           </property>
          </widget>
         </item>
@@ -118,7 +118,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Configure</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
@@ -135,7 +135,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Use button mapping:</string>
+           <string>使用按钮映射：</string>
           </property>
          </widget>
         </item>
@@ -151,7 +151,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Configure</string>
+           <string>设置</string>
           </property>
          </widget>
         </item>
@@ -163,13 +163,13 @@
    <item>
     <widget class="QGroupBox" name="udp_config_group_box">
      <property name="title">
-      <string>CemuhookUDP Config</string>
+      <string>CemuhookUDP 设置</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
        <widget class="QLabel" name="udp_help">
         <property name="text">
-         <string>You may use any Cemuhook compatible UDP input source to provide motion and touch input.</string>
+         <string>您可以使用任何与Cemuhook兼容的UDP输入源来提供体感和触摸输入。</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -184,7 +184,7 @@
         <item>
          <widget class="QLabel" name="udp_server_label">
           <property name="text">
-           <string>Server:</string>
+           <string>服务器：</string>
           </property>
          </widget>
         </item>
@@ -205,7 +205,7 @@
         <item>
          <widget class="QLabel" name="udp_port_label">
           <property name="text">
-           <string>Port:</string>
+           <string>端口:</string>
           </property>
          </widget>
         </item>
@@ -261,7 +261,7 @@
         <item>
          <widget class="QLabel" name="udp_learn_more">
           <property name="text">
-           <string>Learn More</string>
+           <string>学习更多</string>
           </property>
          </widget>
         </item>
@@ -274,7 +274,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Test</string>
+           <string>测试</string>
           </property>
          </widget>
         </item>

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Configure Debug Controller</string>
+   <string>设置调试控制器</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -37,14 +37,14 @@
      <item>
       <widget class="QPushButton" name="clear_all_button">
        <property name="text">
-        <string>Clear</string>
+        <string>清除</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="restore_defaults_button">
        <property name="text">
-        <string>Defaults</string>
+        <string>默认</string>
        </property>
       </widget>
      </item>

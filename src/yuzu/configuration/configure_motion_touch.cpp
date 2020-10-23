@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2018 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -22,8 +26,8 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
                                                                u8 pad_index, u16 client_id)
     : QDialog(parent) {
     layout = new QVBoxLayout;
-    status_label = new QLabel(tr("Communicating with the server..."));
-    cancel_button = new QPushButton(tr("Cancel"));
+    status_label = new QLabel(tr("与服务器通讯..."));
+    cancel_button = new QPushButton(tr("取消"));
     connect(cancel_button, &QPushButton::clicked, this, [this] {
         if (!completed) {
             job->Stop();
@@ -41,13 +45,13 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
             QString text;
             switch (status) {
             case CalibrationConfigurationJob::Status::Ready:
-                text = tr("Touch the top left corner <br>of your touchpad.");
+                text = tr("触摸左上角 <br>您的触摸板。");
                 break;
             case CalibrationConfigurationJob::Status::Stage1Completed:
-                text = tr("Now touch the bottom right corner <br>of your touchpad.");
+                text = tr("现在触摸右下角 <br>您的触摸板。");
                 break;
             case CalibrationConfigurationJob::Status::Completed:
-                text = tr("Configuration completed!");
+                text = tr("配置完成！");
                 break;
             }
             QMetaObject::invokeMethod(this, "UpdateLabelText", Q_ARG(QString, text));
@@ -189,7 +193,7 @@ void ConfigureMotionTouch::ConnectEvents() {
 
 void ConfigureMotionTouch::OnCemuhookUDPTest() {
     ui->udp_test->setEnabled(false);
-    ui->udp_test->setText(tr("Testing"));
+    ui->udp_test->setText(tr("测试中"));
     udp_test_in_progress = true;
     InputCommon::CemuhookUDP::TestCommunication(
         ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toInt()),
@@ -206,7 +210,7 @@ void ConfigureMotionTouch::OnCemuhookUDPTest() {
 
 void ConfigureMotionTouch::OnConfigureTouchCalibration() {
     ui->touch_calibration_config->setEnabled(false);
-    ui->touch_calibration_config->setText(tr("Configuring"));
+    ui->touch_calibration_config->setText(tr("设置中"));
     CalibrationConfigurationDialog dialog(
         this, ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toUInt()),
         static_cast<u8>(ui->udp_pad_index->currentIndex()), 24872);
@@ -224,7 +228,7 @@ void ConfigureMotionTouch::OnConfigureTouchCalibration() {
         LOG_ERROR(Frontend, "UDP touchpad calibration config failed");
     }
     ui->touch_calibration_config->setEnabled(true);
-    ui->touch_calibration_config->setText(tr("Configure"));
+    ui->touch_calibration_config->setText(tr("设置"));
 }
 
 void ConfigureMotionTouch::closeEvent(QCloseEvent* event) {
@@ -238,16 +242,16 @@ void ConfigureMotionTouch::closeEvent(QCloseEvent* event) {
 void ConfigureMotionTouch::ShowUDPTestResult(bool result) {
     udp_test_in_progress = false;
     if (result) {
-        QMessageBox::information(this, tr("Test Successful"),
-                                 tr("Successfully received data from the server."));
+        QMessageBox::information(this, tr("测试成功"),
+                                 tr("已成功从服务器接收数据。"));
     } else {
-        QMessageBox::warning(this, tr("Test Failed"),
-                             tr("Could not receive valid data from the server.<br>Please verify "
-                                "that the server is set up correctly and "
-                                "the address and port are correct."));
+        QMessageBox::warning(this, tr("测试失败"),
+                             tr("无法从服务器接收有效数据。<br>请确认 "
+                                "服务器设置正确，并且 "
+                                "地址和端口正确。"));
     }
     ui->udp_test->setEnabled(true);
-    ui->udp_test->setText(tr("Test"));
+    ui->udp_test->setText(tr("测试"));
 }
 
 void ConfigureMotionTouch::OnConfigureTouchFromButton() {
@@ -270,8 +274,8 @@ void ConfigureMotionTouch::OnConfigureTouchFromButton() {
 bool ConfigureMotionTouch::CanCloseDialog() {
     if (udp_test_in_progress) {
         QMessageBox::warning(this, tr("Citra"),
-                             tr("UDP Test or calibration configuration is in progress.<br>Please "
-                                "wait for them to finish."));
+                             tr("正在进行UDP测试或校准配置。<br>请 "
+                                "等待他们完成。"));
         return false;
     }
     return true;

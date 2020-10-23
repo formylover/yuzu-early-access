@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>格式</string>
   </property>
   <layout class="QVBoxLayout">
    <item>
@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox">
        <property name="title">
-        <string>General</string>
+        <string>通用</string>
        </property>
        <layout class="QVBoxLayout">
         <item>
@@ -27,7 +27,7 @@
           <item>
            <widget class="QLabel">
             <property name="text">
-             <string>Accuracy:</string>
+             <string>精确度:</string>
             </property>
            </widget>
           </item>
@@ -35,17 +35,17 @@
            <widget class="QComboBox" name="accuracy">
             <item>
              <property name="text">
-              <string>Accurate</string>
+              <string>准确</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Unsafe</string>
+              <string>不安全</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Enable Debug Mode</string>
+              <string>启动调试模式</string>
              </property>
             </item>
            </widget>
@@ -58,7 +58,7 @@
             <bool>1</bool>
           </property>
           <property name="text">
-           <string>We recommend setting accuracy to "Accurate".</string>
+           <string>我们建议将精确度设置为"准确"。</string>
           </property>
          </widget>
         </item>
@@ -72,7 +72,7 @@
      <item>
       <widget class="QGroupBox" name="unsafe_group">
        <property name="title">
-        <string>Unsafe CPU Optimization Settings</string>
+        <string>不安全的CPU优化设置</string>
        </property>
        <layout class="QVBoxLayout">
         <item>
@@ -81,18 +81,18 @@
             <bool>1</bool>
           </property>
           <property name="text">
-           <string>These settings reduce accuracy for speed.</string>
+           <string>这些设置降低了速度的准确性。</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="cpuopt_unsafe_unfuse_fma">
           <property name="text">
-           <string>Unfuse FMA (improve performance on CPUs without FMA)</string>
+           <string>Unfuse FMA (在没有FMA的情况下提高CPU的性能)</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;This option improves speed by reducing accuracy of fused-multiply-add instructions on CPUs without native FMA support.&lt;/div&gt;
+            &lt;div&gt;此选项通过降低不具有本机FMA支持的CPU上的乘加指令的准确性来提高速度。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -100,11 +100,11 @@
         <item>
          <widget class="QCheckBox" name="cpuopt_unsafe_reduce_fp_error">
           <property name="text">
-           <string>Faster FRSQRTE and FRECPE</string>
+           <string>更快的 FRSQRTE 和 FRECPE</string>
           </property>
           <property name="toolTip">
            <string>
-            &lt;div&gt;This option improves the speed of some approximate floating-point functions by using less accurate native approximations.&lt;/div&gt;
+            &lt;div&gt;通过使用不太准确的本机近似，此选项可提高某些近似浮点函数的速度。&lt;/div&gt;
            </string>
           </property>
          </widget>
@@ -130,7 +130,7 @@
    <item>
     <widget class="QLabel" name="label_disable_info">
      <property name="text">
-      <string>CPU settings are available only when game is not running.</string>
+      <string>仅当游戏未运行时，CPU设置才可用。</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2014 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -164,10 +168,10 @@ void GMainWindow::ShowTelemetryCallout() {
 
     UISettings::values.callout_flags |= static_cast<uint32_t>(CalloutFlag::Telemetry);
     const QString telemetry_message =
-        tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'>Anonymous "
-           "data is collected</a> to help improve yuzu. "
-           "<br/><br/>Would you like to share your usage data with us?");
-    if (QMessageBox::question(this, tr("Telemetry"), telemetry_message) != QMessageBox::Yes) {
+        tr("<a href='https://yuzu-emu.org/help/feature/telemetry/'>匿名 "
+           "收集数据</a> 以帮助改善. "
+           "<br/><br/>你想与我们分享您的使用情况的数据？");
+    if (QMessageBox::question(this, tr("数据"), telemetry_message) != QMessageBox::Yes) {
         Settings::values.enable_telemetry = false;
         Settings::Apply();
     }
@@ -220,7 +224,7 @@ GMainWindow::GMainWindow()
     const auto build_id = std::string(Common::g_build_id);
     const auto fmt = std::string(Common::g_title_bar_format_idle);
     const auto yuzu_build_version =
-        fmt::format(fmt.empty() ? "yuzu Development Build" : fmt, std::string{}, std::string{},
+        fmt::format(fmt.empty() ? "yuzu Early Access" : fmt, std::string{}, std::string{},
                     std::string{}, std::string{}, std::string{}, build_id);
 
     LOG_INFO(Frontend, "yuzu Version: {} | {}-{}", yuzu_build_version, Common::g_scm_branch,
@@ -346,7 +350,7 @@ void GMainWindow::SoftwareKeyboardGetText(
 }
 
 void GMainWindow::SoftwareKeyboardInvokeCheckDialog(std::u16string error_message) {
-    QMessageBox::warning(this, tr("Text Check Failed"), QString::fromStdU16String(error_message));
+    QMessageBox::warning(this, tr("文本检查失败"), QString::fromStdU16String(error_message));
     emit SoftwareKeyboardFinishedCheckDialog();
 }
 
@@ -359,7 +363,7 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
     {
         QProgressDialog progress(this);
         progress.setMinimumDuration(200);
-        progress.setLabelText(tr("Loading Web Applet..."));
+        progress.setLabelText(tr("加载Web小型应用程序..."));
         progress.setRange(0, 4);
         progress.setValue(0);
         progress.show();
@@ -407,7 +411,7 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
     }
 
     bool finished = false;
-    QAction* exit_action = new QAction(tr("Exit Web Applet"), this);
+    QAction* exit_action = new QAction(tr("退出Web小型应用程序"), this);
     connect(exit_action, &QAction::triggered, this, [&finished] { finished = true; });
     ui.menubar->addAction(exit_action);
 
@@ -425,9 +429,9 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
     };
 
     QMessageBox::information(
-        this, tr("Exit"),
-        tr("To exit the web application, use the game provided controls to select exit, select the "
-           "'Exit Web Applet' option in the menu bar, or press the 'Enter' key."));
+        this, tr("关闭"),
+        tr("退出Web应用程序，使用游戏提供的控件来选择退出，选择 "
+           "'退出Web小型应用程序”菜单栏中的选项, 或按 'Enter' 键."));
 
     bool running_exit_check = false;
     while (!finished) {
@@ -520,18 +524,18 @@ void GMainWindow::InitializeWidgets() {
     statusBar()->addPermanentWidget(message_label, 1);
 
     shader_building_label = new QLabel();
-    shader_building_label->setToolTip(tr("The amount of shaders currently being built"));
+    shader_building_label->setToolTip(tr("当前正在构建的着色器数量"));
     emu_speed_label = new QLabel();
     emu_speed_label->setToolTip(
-        tr("Current emulation speed. Values higher or lower than 100% "
-           "indicate emulation is running faster or slower than a Switch."));
+        tr("目前模拟速度。值高或低于 100% "
+           "表明模拟的运行速度低于交换机更快或更慢."));
     game_fps_label = new QLabel();
-    game_fps_label->setToolTip(tr("How many frames per second the game is currently displaying. "
-                                  "This will vary from game to game and scene to scene."));
+    game_fps_label->setToolTip(tr("多少帧每秒游戏目前显示. "
+                                  "这将改变从游戏到游戏和现场场景."));
     emu_frametime_label = new QLabel();
     emu_frametime_label->setToolTip(
-        tr("Time taken to emulate a Switch frame, not counting framelimiting or v-sync. For "
-           "full-speed emulation this should be at most 16.67 ms."));
+        tr("时间采取模拟开关框架，不计算框架限制或垂直刷新同步 "
+           "对于全速仿真，这应该是最多 16.67 ms."));
 
     for (auto& label :
          {shader_building_label, emu_speed_label, game_fps_label, emu_frametime_label}) {
@@ -550,7 +554,7 @@ void GMainWindow::InitializeWidgets() {
         dock_status_button->setChecked(Settings::values.use_docked_mode);
         OnDockedModeChanged(!Settings::values.use_docked_mode, Settings::values.use_docked_mode);
     });
-    dock_status_button->setText(tr("DOCK"));
+    dock_status_button->setText(tr("主机模式"));
     dock_status_button->setCheckable(true);
     dock_status_button->setChecked(Settings::values.use_docked_mode);
     statusBar()->insertPermanentWidget(0, dock_status_button);
@@ -569,7 +573,7 @@ void GMainWindow::InitializeWidgets() {
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
         Settings::Apply();
     });
-    async_status_button->setText(tr("ASYNC"));
+    async_status_button->setText(tr("异步模式"));
     async_status_button->setCheckable(true);
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
 
@@ -589,7 +593,7 @@ void GMainWindow::InitializeWidgets() {
         multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
         Settings::Apply();
     });
-    multicore_status_button->setText(tr("MULTICORE"));
+    multicore_status_button->setText(tr("多核运行"));
     multicore_status_button->setCheckable(true);
     multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
     statusBar()->insertPermanentWidget(0, multicore_status_button);
@@ -660,7 +664,7 @@ void GMainWindow::InitializeRecentFileMenuActions() {
     }
     ui.menu_recent_files->addSeparator();
     QAction* action_clear_recent_files = new QAction(this);
-    action_clear_recent_files->setText(tr("Clear Recent Files"));
+    action_clear_recent_files->setText(tr("清除最近打开的文件记录"));
     connect(action_clear_recent_files, &QAction::triggered, this, [this] {
         UISettings::values.recent_files.clear();
         UpdateRecentFiles();
@@ -1005,32 +1009,32 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
         drd_callout) {
         UISettings::values.callout_flags |= static_cast<u32>(CalloutFlag::DRDDeprecation);
         QMessageBox::warning(
-            this, tr("Warning Outdated Game Format"),
-            tr("You are using the deconstructed ROM directory format for this game, which is an "
-               "outdated format that has been superseded by others such as NCA, NAX, XCI, or "
-               "NSP. Deconstructed ROM directories lack icons, metadata, and update "
-               "support.<br><br>For an explanation of the various Switch formats yuzu supports, <a "
-               "href='https://yuzu-emu.org/wiki/overview-of-switch-game-formats'>check out our "
-               "wiki</a>. This message will not be shown again."));
+            this, tr("警告过时的游戏格式"),
+            tr("您正在为此游戏使用解构的ROM目录格式，这是已被 "
+               "取代由其他如NCA，NAX，XCI，或NSP过时的格式 "
+               "解构ROM目录缺少图标，元数据和更新和 "
+               "支持.<br><br>搜索结果有关各种转换格式yuzu支持的说明, <a "
+               "href='https://yuzu-emu.org/wiki/overview-of-switch-game-formats'>请参阅我们的 "
+               "wiki</a>. 此消息将不再显示."));
     }
 
     if (result != Core::System::ResultStatus::Success) {
         switch (result) {
         case Core::System::ResultStatus::ErrorGetLoader:
             LOG_CRITICAL(Frontend, "Failed to obtain loader for {}!", filename.toStdString());
-            QMessageBox::critical(this, tr("Error while loading ROM!"),
-                                  tr("The ROM format is not supported."));
+            QMessageBox::critical(this, tr("加载时出错 ROM!"),
+                                  tr("该ROM格式不支持."));
             break;
         case Core::System::ResultStatus::ErrorVideoCore:
             QMessageBox::critical(
-                this, tr("An error occurred initializing the video core."),
-                tr("yuzu has encountered an error while running the video core, please see the "
-                   "log for more details."
-                   "For more information on accessing the log, please see the following page: "
+                this, tr("发生错误初始化视频核心."),
+                tr("yuzu 遇到了错误运行视频核心，同时，请查看 "
+                   "日志以详细了解更多信息."
+                   "访问日志，请参阅下面的页面如何上传: "
                    "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
-                   "to "
-                   "Upload the Log File</a>."
-                   "Ensure that you have the latest graphics drivers for your GPU."));
+                   "文件 "
+                   "确保您有最新的</a>."
+                   "图形驱动程序，为您的GPU."));
 
             break;
 
@@ -1043,16 +1047,16 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
                 LOG_CRITICAL(Frontend, "Failed to load ROM! {}", error_code);
                 QMessageBox::critical(
                     this,
-                    tr("Error while loading ROM! ").append(QString::fromStdString(error_code)),
+                    tr("加载时出错 ROM! ").append(QString::fromStdString(error_code)),
                     QString::fromStdString(fmt::format(
-                        "{}<br>Please follow <a href='https://yuzu-emu.org/help/quickstart/'>the "
-                        "yuzu quickstart guide</a> to redump your files.<br>You can refer "
-                        "to the yuzu wiki</a> or the yuzu Discord</a> for help.",
+                        "{}<br>请关注 <a href='https://yuzu-emu.org/help/quickstart/'>这 "
+                        "yuzu 快速入门指南</a> 还原文件.<br>你可以参考 "
+                        " yuzu 维基</a> 或者 yuzu Discord</a> 求助.",
                         static_cast<Loader::ResultStatus>(error_id))));
             } else {
                 QMessageBox::critical(
-                    this, tr("Error while loading ROM!"),
-                    tr("An unknown error occurred. Please see the log for more details."));
+                    this, tr("加载时出错 ROM!"),
+                    tr("出现未知错误，请参阅日志以了解更多详细信息."));
             }
             break;
         }
@@ -1186,7 +1190,7 @@ void GMainWindow::ShutdownGame() {
 
     // Update the GUI
     ui.action_Start->setEnabled(false);
-    ui.action_Start->setText(tr("Start"));
+    ui.action_Start->setText(tr("开始"));
     ui.action_Pause->setEnabled(false);
     ui.action_Stop->setEnabled(false);
     ui.action_Restart->setEnabled(false);
@@ -1292,7 +1296,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
 
     switch (target) {
     case GameListOpenTarget::SaveData: {
-        open_target = tr("Save Data");
+        open_target = tr("保存数据");
         const std::string nand_dir = Common::FS::GetUserPath(Common::FS::UserPath::NANDDir);
 
         if (has_user_save) {
@@ -1336,7 +1340,7 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
         break;
     }
     case GameListOpenTarget::ModData: {
-        open_target = tr("Mod Data");
+        open_target = tr("Mod 数据");
         const auto load_dir = Common::FS::GetUserPath(Common::FS::UserPath::LoadDir);
         path = fmt::format("{}{:016X}", load_dir, program_id);
         break;
@@ -1348,8 +1352,8 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     const QString qpath = QString::fromStdString(path);
     const QDir dir(qpath);
     if (!dir.exists()) {
-        QMessageBox::warning(this, tr("Error Opening %1 Folder").arg(open_target),
-                             tr("Folder does not exist!"));
+        QMessageBox::warning(this, tr("错误打开 %1 文件夹").arg(open_target),
+                             tr("文件夹不存在!"));
         return;
     }
     LOG_INFO(Frontend, "Opening {} path for program_id={:016x}", open_target.toStdString(),
@@ -1367,8 +1371,8 @@ void GMainWindow::OnTransferableShaderCacheOpenFile(u64 program_id) {
         QString::fromStdString(fmt::format("{:016X}.bin", program_id));
 
     if (!QFile::exists(transferable_shader_cache_file_path)) {
-        QMessageBox::warning(this, tr("Error Opening Transferable Shader Cache"),
-                             tr("A shader cache for this title does not exist."));
+        QMessageBox::warning(this, tr("错误打开转换着色器缓存"),
+                             tr("对于这个游戏着色器缓存中不存在."));
         return;
     }
 
@@ -1432,7 +1436,7 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
     const QString entry_type = [this, type] {
         switch (type) {
         case InstalledEntryType::Game:
-            return tr("Contents");
+            return tr("目录");
         case InstalledEntryType::Update:
             return tr("Update");
         case InstalledEntryType::AddOnContent:
@@ -1443,7 +1447,7 @@ void GMainWindow::OnGameListRemoveInstalledEntry(u64 program_id, InstalledEntryT
     }();
 
     if (QMessageBox::question(
-            this, tr("Remove Entry"), tr("Remove Installed Game %1?").arg(entry_type),
+            this, tr("删除条目"), tr("删除已安装的游戏 %1?").arg(entry_type),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
@@ -1473,12 +1477,12 @@ void GMainWindow::RemoveBaseContent(u64 program_id, const QString& entry_type) {
                      fs_controller.GetSDMCContents()->RemoveExistingEntry(program_id);
 
     if (res) {
-        QMessageBox::information(this, tr("Successfully Removed"),
-                                 tr("Successfully removed the installed base game."));
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了已安装的基本游戏。"));
     } else {
         QMessageBox::warning(
-            this, tr("Error Removing %1").arg(entry_type),
-            tr("The base game is not installed in the NAND and cannot be removed."));
+            this, tr("错误删除 %1").arg(entry_type),
+            tr("基本游戏未安装在NAND中，因此无法删除。"));
     }
 }
 
@@ -1489,11 +1493,11 @@ void GMainWindow::RemoveUpdateContent(u64 program_id, const QString& entry_type)
                      fs_controller.GetSDMCContents()->RemoveExistingEntry(update_id);
 
     if (res) {
-        QMessageBox::information(this, tr("Successfully Removed"),
-                                 tr("Successfully removed the installed update."));
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了已安装的更新。"));
     } else {
-        QMessageBox::warning(this, tr("Error Removing %1").arg(entry_type),
-                             tr("There is no update installed for this title."));
+        QMessageBox::warning(this, tr("错误删除 %1").arg(entry_type),
+                             tr("没有为此标题安装更新。"));
     }
 }
 
@@ -1515,28 +1519,28 @@ void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) 
     }
 
     if (count == 0) {
-        QMessageBox::warning(this, tr("Error Removing %1").arg(entry_type),
-                             tr("There are no DLC installed for this title."));
+        QMessageBox::warning(this, tr("错误删除 %1").arg(entry_type),
+                             tr("没有为此标题安装DLC。"));
         return;
     }
 
-    QMessageBox::information(this, tr("Successfully Removed"),
-                             tr("Successfully removed %1 installed DLC.").arg(count));
+    QMessageBox::information(this, tr("成功删除"),
+                             tr("成功删除 %1 安装的 DLC.").arg(count));
 }
 
 void GMainWindow::OnGameListRemoveFile(u64 program_id, GameListRemoveTarget target) {
     const QString question = [this, target] {
         switch (target) {
         case GameListRemoveTarget::ShaderCache:
-            return tr("Delete Transferable Shader Cache?");
+            return tr("删除可传输着色器缓存？");
         case GameListRemoveTarget::CustomConfiguration:
-            return tr("Remove Custom Game Configuration?");
+            return tr("删除自定义游戏设置？");
         default:
             return QString{};
         }
     }();
 
-    if (QMessageBox::question(this, tr("Remove File"), question, QMessageBox::Yes | QMessageBox::No,
+    if (QMessageBox::question(this, tr("删除文件"), question, QMessageBox::Yes | QMessageBox::No,
                               QMessageBox::No) != QMessageBox::Yes) {
         return;
     }
@@ -1561,17 +1565,17 @@ void GMainWindow::RemoveTransferableShaderCache(u64 program_id) {
         QString::fromStdString(fmt::format("{:016X}.bin", program_id));
 
     if (!QFile::exists(transferable_shader_cache_file_path)) {
-        QMessageBox::warning(this, tr("Error Removing Transferable Shader Cache"),
-                             tr("A shader cache for this title does not exist."));
+        QMessageBox::warning(this, tr("删除可传输着色器缓存时出错"),
+                             tr("此游戏的着色器缓存不存在。"));
         return;
     }
 
     if (QFile::remove(transferable_shader_cache_file_path)) {
-        QMessageBox::information(this, tr("Successfully Removed"),
-                                 tr("Successfully removed the transferable shader cache."));
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了可转移的着色器缓存。"));
     } else {
-        QMessageBox::warning(this, tr("Error Removing Transferable Shader Cache"),
-                             tr("Failed to remove the transferable shader cache."));
+        QMessageBox::warning(this, tr("删除可传输着色器缓存时出错"),
+                             tr("无法删除可转移的着色器缓存。"));
     }
 }
 
@@ -1582,25 +1586,25 @@ void GMainWindow::RemoveCustomConfiguration(u64 program_id) {
         config_dir + QString::fromStdString(fmt::format("{:016X}.ini", program_id));
 
     if (!QFile::exists(custom_config_file_path)) {
-        QMessageBox::warning(this, tr("Error Removing Custom Configuration"),
-                             tr("A custom configuration for this title does not exist."));
+        QMessageBox::warning(this, tr("删除自定义设置时出错"),
+                             tr("此游戏的自定义设置不存在。"));
         return;
     }
 
     if (QFile::remove(custom_config_file_path)) {
-        QMessageBox::information(this, tr("Successfully Removed"),
-                                 tr("Successfully removed the custom game configuration."));
+        QMessageBox::information(this, tr("成功删除"),
+                                 tr("成功删除了自定义游戏设置。"));
     } else {
-        QMessageBox::warning(this, tr("Error Removing Custom Configuration"),
-                             tr("Failed to remove the custom game configuration."));
+        QMessageBox::warning(this, tr("删除自定义设置时出错"),
+                             tr("无法删除自定义游戏设置。"));
     }
 }
 
 void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_path) {
     const auto failed = [this] {
-        QMessageBox::warning(this, tr("RomFS Extraction Failed!"),
-                             tr("There was an error copying the RomFS files or the user "
-                                "cancelled the operation."));
+        QMessageBox::warning(this, tr("RomFS 提取失败!"),
+                             tr("有一个错误复制RomFS文件 "
+                                "或用户取消了操作."));
     };
 
     const auto loader = Loader::GetLoader(vfs->OpenFile(game_path, FileSys::Mode::Read));
@@ -1651,12 +1655,12 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     }
 
     bool ok = false;
-    const QStringList selections{tr("Full"), tr("Skeleton")};
+    const QStringList selections{tr("全部"), tr("空文件夹")};
     const auto res = QInputDialog::getItem(
-        this, tr("Select RomFS Dump Mode"),
-        tr("Please select the how you would like the RomFS dumped.<br>Full will copy all of the "
-           "files into the new directory while <br>skeleton will only create the directory "
-           "structure."),
+        this, tr("选择RomFS转储模式"),
+        tr("请选择您希望的RomFS的 全部 完全将所有的文件复 "
+           "制到新\n目录中，而结果 空文件夹 只会创建 "
+           "目录结构."),
         selections, 0, false, &ok);
     if (!ok) {
         failed();
@@ -1667,15 +1671,15 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
     const auto full = res == selections.constFirst();
     const auto entry_size = CalculateRomFSEntrySize(extracted, full);
 
-    QProgressDialog progress(tr("Extracting RomFS..."), tr("Cancel"), 0,
+    QProgressDialog progress(tr("提取 RomFS..."), tr("取消"), 0,
                              static_cast<s32>(entry_size), this);
     progress.setWindowModality(Qt::WindowModal);
     progress.setMinimumDuration(100);
 
     if (RomFSRawCopy(progress, extracted, out, 0x400000, full)) {
         progress.close();
-        QMessageBox::information(this, tr("RomFS Extraction Succeeded!"),
-                                 tr("The operation completed successfully."));
+        QMessageBox::information(this, tr("RomFS 提取成功了!"),
+                                 tr("操作已成功完成."));
         QDesktopServices::openUrl(QUrl::fromLocalFile(QString::fromStdString(path)));
     } else {
         progress.close();
@@ -1716,14 +1720,14 @@ void GMainWindow::OnGameListOpenDirectory(const QString& directory) {
         path = directory;
     }
     if (!QFileInfo::exists(path)) {
-        QMessageBox::critical(this, tr("Error Opening %1").arg(path), tr("Folder does not exist!"));
+        QMessageBox::critical(this, tr("错误打开 %1").arg(path), tr("文件夹不存在!"));
         return;
     }
     QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
 
 void GMainWindow::OnGameListAddDirectory() {
-    const QString dir_path = QFileDialog::getExistingDirectory(this, tr("Select Directory"));
+    const QString dir_path = QFileDialog::getExistingDirectory(this, tr("选择目录"));
     if (dir_path.isEmpty()) {
         return;
     }
@@ -1749,8 +1753,8 @@ void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
     const auto v_file = Core::GetGameFileFromPath(vfs, file);
     const auto loader = Loader::GetLoader(v_file);
     if (loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
-        QMessageBox::information(this, tr("Properties"),
-                                 tr("The game properties could not be loaded."));
+        QMessageBox::information(this, tr("属性"),
+                                 tr("游戏性能无法加载."));
         return;
     }
 
@@ -1762,11 +1766,11 @@ void GMainWindow::OnMenuLoadFile() {
         QStringLiteral("*.")
             .append(GameList::supported_file_extensions.join(QStringLiteral(" *.")))
             .append(QStringLiteral(" main"));
-    const QString file_filter = tr("Switch Executable (%1);;All Files (*.*)",
+    const QString file_filter = tr("Switch 可执行文件 (%1);;所有的文件 (*.*)",
                                    "%1 is an identifier for the Switch executable file extensions.")
                                     .arg(extensions);
     const QString filename = QFileDialog::getOpenFileName(
-        this, tr("Load File"), UISettings::values.roms_path, file_filter);
+        this, tr("加载文件"), UISettings::values.roms_path, file_filter);
 
     if (filename.isEmpty()) {
         return;
@@ -1778,7 +1782,7 @@ void GMainWindow::OnMenuLoadFile() {
 
 void GMainWindow::OnMenuLoadFolder() {
     const QString dir_path =
-        QFileDialog::getExistingDirectory(this, tr("Open Extracted ROM Directory"));
+        QFileDialog::getExistingDirectory(this, tr("打开提取 ROM 目录"));
 
     if (dir_path.isNull()) {
         return;
@@ -1789,8 +1793,8 @@ void GMainWindow::OnMenuLoadFolder() {
     if (matching_main.size() == 1) {
         BootGame(dir.path() + QDir::separator() + matching_main[0]);
     } else {
-        QMessageBox::warning(this, tr("Invalid Directory Selected"),
-                             tr("The directory you have selected does not contain a 'main' file."));
+        QMessageBox::warning(this, tr("无效的目录选择"),
+                             tr("您选择的目录不包含一个 'main' 文件."));
     }
 }
 
@@ -1800,12 +1804,12 @@ void GMainWindow::IncrementInstallProgress() {
 
 void GMainWindow::OnMenuInstallToNAND() {
     const QString file_filter =
-        tr("Installable Switch File (*.nca *.nsp *.xci);;Nintendo Content Archive "
-           "(*.nca);;Nintendo Submission Package (*.nsp);;NX Cartridge "
-           "Image (*.xci)");
+        tr("安装 Switch 文件 (*.nca *.nsp *.xci);;任天堂内容存档 "
+           "(*.nca);;任天堂提交包 (*.nsp);;NX 盒式 "
+           "图像 (*.xci)");
 
     QStringList filenames = QFileDialog::getOpenFileNames(
-        this, tr("Install Files"), UISettings::values.roms_path, file_filter);
+        this, tr("安装文件"), UISettings::values.roms_path, file_filter);
 
     if (filenames.isEmpty()) {
         return;
@@ -1840,7 +1844,7 @@ void GMainWindow::OnMenuInstallToNAND() {
 
     ui.action_Install_File_NAND->setEnabled(false);
 
-    install_progress = new QProgressDialog(QString{}, tr("Cancel"), 0, total_size, this);
+    install_progress = new QProgressDialog(QString{}, tr("取消"), 0, total_size, this);
     install_progress->setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint &
                                      ~Qt::WindowMaximizeButtonHint);
     install_progress->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -1848,9 +1852,9 @@ void GMainWindow::OnMenuInstallToNAND() {
     install_progress->show();
 
     for (const QString& file : files) {
-        install_progress->setWindowTitle(tr("%n file(s) remaining", "", remaining));
+        install_progress->setWindowTitle(tr("%n 文件(s) 剩余的", "", remaining));
         install_progress->setLabelText(
-            tr("Installing file \"%1\"...").arg(QFileInfo(file).fileName()));
+            tr("正在安装 文件 \"%1\"...").arg(QFileInfo(file).fileName()));
 
         QFuture<InstallResult> future;
         InstallResult result;
@@ -1891,14 +1895,14 @@ void GMainWindow::OnMenuInstallToNAND() {
 
     const QString install_results =
         (new_files.isEmpty() ? QString{}
-                             : tr("%n file(s) were newly installed\n", "", new_files.size())) +
+                             : tr("%n 文件(s) 是新安装的\n", "", new_files.size())) +
         (overwritten_files.isEmpty()
              ? QString{}
-             : tr("%n file(s) were overwritten\n", "", overwritten_files.size())) +
+             : tr("%n 文件(s) 被覆盖\n", "", overwritten_files.size())) +
         (failed_files.isEmpty() ? QString{}
-                                : tr("%n file(s) failed to install\n", "", failed_files.size()));
+                                : tr("%n 文件(s) 安装失败\n", "", failed_files.size()));
 
-    QMessageBox::information(this, tr("Install Results"), install_results);
+    QMessageBox::information(this, tr("安装结果"), install_results);
     Common::FS::DeleteDirRecursively(Common::FS::GetUserPath(Common::FS::UserPath::CacheDir) +
                                      DIR_SEP + "game_list");
     game_list->PopulateAsync(UISettings::values.game_dirs);
@@ -1995,26 +1999,26 @@ InstallResult GMainWindow::InstallNCA(const QString& filename) {
         return InstallResult::Failure;
     }
 
-    const QStringList tt_options{tr("System Application"),
-                                 tr("System Archive"),
-                                 tr("System Application Update"),
-                                 tr("Firmware Package (Type A)"),
-                                 tr("Firmware Package (Type B)"),
-                                 tr("Game"),
-                                 tr("Game Update"),
-                                 tr("Game DLC"),
-                                 tr("Delta Title")};
+    const QStringList tt_options{tr("系统中的应用"),
+                                 tr("系统存档"),
+                                 tr("系统应用程序更新"),
+                                 tr("固件包（A型）"),
+                                 tr("固件包（B型）"),
+                                 tr("游戏"),
+                                 tr("游戏更新"),
+                                 tr("游戏  DLC"),
+                                 tr("Delta 游戏")};
     bool ok;
     const auto item = QInputDialog::getItem(
-        this, tr("Select NCA Install Type..."),
-        tr("Please select the type of title you would like to install this NCA as:\n(In "
-           "most instances, the default 'Game' is fine.)"),
+        this, tr("选择 NCA 安装类型..."),
+        tr("请选择题目的类型，你想安装此NCA，因为在大多数情况:\n(In "
+           "默认的 '游戏' 是很好的。)"),
         tt_options, 5, false, &ok);
 
     auto index = tt_options.indexOf(item);
     if (!ok || index == -1) {
-        QMessageBox::warning(this, tr("Failed to Install"),
-                             tr("The title type you selected for the NCA is invalid."));
+        QMessageBox::warning(this, tr("安装失败"),
+                             tr("您选择的NCA游戏类型无效。"));
         return InstallResult::Failure;
     }
 
@@ -2055,8 +2059,8 @@ void GMainWindow::OnMenuRecentFile() {
         BootGame(filename);
     } else {
         // Display an error message and remove the file from the list.
-        QMessageBox::information(this, tr("File not found"),
-                                 tr("File \"%1\" not found").arg(filename));
+        QMessageBox::information(this, tr("文件未找到"),
+                                 tr("文件 \"%1\" 未找到").arg(filename));
 
         UISettings::values.recent_files.removeOne(filename);
         UpdateRecentFiles();
@@ -2079,7 +2083,7 @@ void GMainWindow::OnStartGame() {
     connect(emu_thread.get(), &EmuThread::ErrorThrown, this, &GMainWindow::OnCoreError);
 
     ui.action_Start->setEnabled(false);
-    ui.action_Start->setText(tr("Continue"));
+    ui.action_Start->setText(tr("继续"));
 
     ui.action_Pause->setEnabled(true);
     ui.action_Stop->setEnabled(true);
@@ -2125,7 +2129,7 @@ void GMainWindow::OnExecuteProgram(std::size_t program_index) {
 }
 
 void GMainWindow::ErrorDisplayDisplayError(QString body) {
-    QMessageBox::critical(this, tr("Error Display"), body);
+    QMessageBox::critical(this, tr("错误显示"), body);
     emit ErrorDisplayFinished();
 }
 
@@ -2135,9 +2139,9 @@ void GMainWindow::OnMenuReportCompatibility() {
         compatdb.exec();
     } else {
         QMessageBox::critical(
-            this, tr("Missing yuzu Account"),
-            tr("In order to submit a game compatibility test case, you must link your yuzu "
-               "account.<br><br/>To link your yuzu account, go to Emulation &gt; Configuration "
+            this, tr("缺少 yuzu 账户"),
+            tr("为了提交一个游戏兼容性测试用 "
+               "您必须.<br><br/>连接您的yuzu帐户以链接您的yuzu帐户，然后转到模拟器 "
                "&gt; "
                "Web."));
     }
@@ -2146,8 +2150,8 @@ void GMainWindow::OnMenuReportCompatibility() {
 void GMainWindow::OpenURL(const QUrl& url) {
     const bool open = QDesktopServices::openUrl(url);
     if (!open) {
-        QMessageBox::warning(this, tr("Error opening URL"),
-                             tr("Unable to open the URL \"%1\".").arg(url.toString()));
+        QMessageBox::warning(this, tr("打开网址时出错"),
+                             tr("无法打开网址 \"%1\".").arg(url.toString()));
     }
 }
 
@@ -2311,8 +2315,8 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
 
 void GMainWindow::OnLoadAmiibo() {
     const QString extensions{QStringLiteral("*.bin")};
-    const QString file_filter = tr("Amiibo File (%1);; All Files (*.*)").arg(extensions);
-    const QString filename = QFileDialog::getOpenFileName(this, tr("Load Amiibo"), {}, file_filter);
+    const QString file_filter = tr("Amiibo 文件 (%1);; 所有的文件 (*.*)").arg(extensions);
+    const QString filename = QFileDialog::getOpenFileName(this, tr("加载 Amiibo"), {}, file_filter);
 
     if (filename.isEmpty()) {
         return;
@@ -2331,8 +2335,8 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
 
     QFile nfc_file{filename};
     if (!nfc_file.open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, tr("Error opening Amiibo data file"),
-                             tr("Unable to open Amiibo file \"%1\" for reading.").arg(filename));
+        QMessageBox::warning(this, tr("错误打开 Amiibo 数据文件"),
+                             tr("无法打开 Amiibo 文件 \"%1\" 阅读.").arg(filename));
         return;
     }
 
@@ -2340,17 +2344,17 @@ void GMainWindow::LoadAmiibo(const QString& filename) {
     std::vector<u8> buffer(nfc_file_size);
     const u64 read_size = nfc_file.read(reinterpret_cast<char*>(buffer.data()), nfc_file_size);
     if (nfc_file_size != read_size) {
-        QMessageBox::warning(this, tr("Error reading Amiibo data file"),
-                             tr("Unable to fully read Amiibo data. Expected to read %1 bytes, but "
-                                "was only able to read %2 bytes.")
+        QMessageBox::warning(this, tr("读取错误 Amiibo 数据文件"),
+                             tr("无法完全读 Amiibo 数据. 预计读取 %1 个字节 "
+                                "但只能读取 %2 个字节.")
                                  .arg(nfc_file_size)
                                  .arg(read_size));
         return;
     }
 
     if (!nfc->LoadAmiibo(buffer)) {
-        QMessageBox::warning(this, tr("Error loading Amiibo data"),
-                             tr("Unable to load Amiibo data."));
+        QMessageBox::warning(this, tr("错误加载 Amiibo 数据"),
+                             tr("无法加载 Amiibo 数据."));
     }
 }
 
@@ -2388,8 +2392,8 @@ void GMainWindow::OnCaptureScreenshot() {
 
 #ifdef _WIN32
     if (UISettings::values.enable_screenshot_save_as) {
-        filename = QFileDialog::getSaveFileName(this, tr("Capture Screenshot"), filename,
-                                                tr("PNG Image (*.png)"));
+        filename = QFileDialog::getSaveFileName(this, tr("捕捉截图"), filename,
+                                                tr("PNG 图片 (*.png)"));
         if (filename.isEmpty()) {
             OnStartGame();
             return;
@@ -2412,13 +2416,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu {0}| {1}-{2}" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1057" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu {0}| {3} | {6} | {1}-{2}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1057 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2435,21 +2439,21 @@ void GMainWindow::UpdateStatusBar() {
 
     if (shaders_building != 0) {
         shader_building_label->setText(
-            tr("Building: %n shader(s)", "", static_cast<int>(shaders_building)));
+            tr("构建: %n 着色器(s)", "", static_cast<int>(shaders_building)));
         shader_building_label->setVisible(true);
     } else {
         shader_building_label->setVisible(false);
     }
 
     if (Settings::values.use_frame_limit.GetValue()) {
-        emu_speed_label->setText(tr("Speed: %1% / %2%")
+        emu_speed_label->setText(tr("速度: %1% / %2%")
                                      .arg(results.emulation_speed * 100.0, 0, 'f', 0)
                                      .arg(Settings::values.frame_limit.GetValue()));
     } else {
-        emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
+        emu_speed_label->setText(tr("速度: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
     }
-    game_fps_label->setText(tr("Game: %1 FPS").arg(results.game_fps, 0, 'f', 0));
-    emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
+    game_fps_label->setText(tr("帧率: %1 FPS").arg(results.game_fps, 0, 'f', 0));
+    emu_frametime_label->setText(tr("帧间: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
     emu_speed_label->setVisible(!Settings::values.use_multi_core.GetValue());
     game_fps_label->setVisible(true);
@@ -2497,55 +2501,55 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
     QMessageBox::StandardButton answer;
     QString status_message;
     const QString common_message =
-        tr("The game you are trying to load requires additional files from your Switch to be "
-           "dumped "
-           "before playing.<br/><br/>For more information on dumping these files, please see the "
-           "following wiki page: <a "
+        tr("您试图加载的游戏需要卸载来自您的 Switch 的 "
+           "其他文件 "
+           "开始前.<br/><br/>有关卸载这些文件的详细信息 "
+           "请参见下面的wiki页面: <a "
            "href='https://yuzu-emu.org/wiki/"
-           "dumping-system-archives-and-the-shared-fonts-from-a-switch-console/'>Dumping System "
-           "Archives and the Shared Fonts from a Switch Console</a>.<br/><br/>Would you like to "
-           "quit "
-           "back to the game list? Continuing emulation may result in crashes, corrupted save "
-           "data, or other bugs.");
+           "卸载-系统-存档-和-这-共享-字体-from-a-switch-控制台/'>从 "
+           "Switch 控制台卸载系统存档和共享字体</a>.<br/><br/>你想退出 "
+           "吗 "
+           "回到游戏列表上? 持续模拟可能会导致崩溃、损坏保存数据 "
+           "或其他bug.");
     switch (result) {
     case Core::System::ResultStatus::ErrorSystemFiles: {
         QString message;
         if (details.empty()) {
             message =
-                tr("yuzu was unable to locate a Switch system archive. %1").arg(common_message);
+                tr("yuzu 无法找到每一种Switch系统存档. %1").arg(common_message);
         } else {
-            message = tr("yuzu was unable to locate a Switch system archive: %1. %2")
+            message = tr("无法找到一种Switch系统存档: %1. %2")
                           .arg(QString::fromStdString(details), common_message);
         }
 
-        answer = QMessageBox::question(this, tr("System Archive Not Found"), message,
+        answer = QMessageBox::question(this, tr("系统存档文件未找到"), message,
                                        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("System Archive Missing");
+        status_message = tr("系统存档文件丢失");
         break;
     }
 
     case Core::System::ResultStatus::ErrorSharedFont: {
         const QString message =
-            tr("yuzu was unable to locate the Switch shared fonts. %1").arg(common_message);
-        answer = QMessageBox::question(this, tr("Shared Fonts Not Found"), message,
+            tr("yuzu无法找到Switch共享字体. %1").arg(common_message);
+        answer = QMessageBox::question(this, tr("共享字体未找到"), message,
                                        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("Shared Font Missing");
+        status_message = tr("共享字体缺失");
         break;
     }
 
     default:
         answer = QMessageBox::question(
-            this, tr("Fatal Error"),
-            tr("yuzu has encountered a fatal error, please see the log for more details. "
-               "For more information on accessing the log, please see the following page: "
+            this, tr("致命错误"),
+            tr("yuzu 遇到一个致命错误，请查看日志了解更多详情. "
+               "有关访问日志的详细信息，请参阅下面的页面: "
                "<a href='https://community.citra-emu.org/t/how-to-upload-the-log-file/296'>How "
                "to "
-               "Upload the Log File</a>.<br/><br/>Would you like to quit back to the game "
-               "list? "
-               "Continuing emulation may result in crashes, corrupted save data, or other "
-               "bugs."),
+               "上传日志文件</a>.<br/><br/>你想退出返回到游戏 "
+               "列表? "
+               "持续模拟可能会导致崩溃、损坏保存数据 "
+               "或其他bug."),
             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        status_message = tr("Fatal Error encountered");
+        status_message = tr("遇到致命错误");
         break;
     }
 
@@ -2568,14 +2572,14 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
 void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
     if (behavior == ReinitializeKeyBehavior::Warning) {
         const auto res = QMessageBox::information(
-            this, tr("Confirm Key Rederivation"),
-            tr("You are about to force rederive all of your keys. \nIf you do not know what "
-               "this "
-               "means or what you are doing, \nthis is a potentially destructive action. "
-               "\nPlease "
-               "make sure this is what you want \nand optionally make backups.\n\nThis will "
-               "delete "
-               "your autogenerated key files and re-run the key derivation module."),
+            this, tr("确认密钥重新确认"),
+            tr("您将要强制重新分发所有密钥。 \n如果你不知道什么 "
+               "这个 "
+               "手段或你在做什么, \n这是潜在的破坏性行动。 "
+               "\n请 "
+               "确保这是你想要的 \n并选择进行备份。\n\n这将 "
+               "删除 "
+               "您自动生成的密钥文件，然后重新运行密钥恢复模块。"),
             QMessageBox::StandardButtons{QMessageBox::Ok, QMessageBox::Cancel});
 
         if (res == QMessageBox::Cancel)
@@ -2604,32 +2608,32 @@ void GMainWindow::OnReinitializeKeys(ReinitializeKeyBehavior behavior) {
 
         QString errors;
         if (!pdm.HasFuses()) {
-            errors += tr("Missing fuses");
+            errors += tr("缺少保险丝");
         }
         if (!pdm.HasBoot0()) {
-            errors += tr(" - Missing BOOT0");
+            errors += tr(" - 缺少 BOOT0");
         }
         if (!pdm.HasPackage2()) {
-            errors += tr(" - Missing BCPKG2-1-Normal-Main");
+            errors += tr(" - 缺少 BCPKG2-1-Normal-Main");
         }
         if (!pdm.HasProdInfo()) {
-            errors += tr(" - Missing PRODINFO");
+            errors += tr(" - 缺少 PRODINFO");
         }
         if (!errors.isEmpty()) {
             QMessageBox::warning(
-                this, tr("Derivation Components Missing"),
-                tr("Components are missing that may hinder key derivation from completing. "
-                   "<br>Please follow <a href='https://yuzu-emu.org/help/quickstart/'>the yuzu "
-                   "quickstart guide</a> to get all your keys and "
-                   "games.<br><br><small>(%1)</small>")
+                this, tr("警告缺少推导组件"),
+                tr("缺少可能妨碍完成密钥获取的组件. "
+                   "<br>请关注 <a href='https://yuzu-emu.org/help/quickstart/'>yuzu "
+                   "快速入门指南</a> 得到你所有的钥匙和 "
+                   "游戏.<br><br><small>(%1)</small>")
                     .arg(errors));
         }
 
         QProgressDialog prog;
         prog.setRange(0, 0);
-        prog.setLabelText(tr("Deriving keys...\nThis may take up to a minute depending \non your "
-                             "system's performance."));
-        prog.setWindowTitle(tr("Deriving Keys"));
+        prog.setLabelText(tr("再生密钥...\n这可能需要长达一分钟 \n取决于 "
+                             "系统'的表现."));
+        prog.setWindowTitle(tr("获取 Keys"));
 
         prog.show();
 
@@ -2674,8 +2678,8 @@ std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProv
 
         bool ok;
         const auto res = QInputDialog::getItem(
-            this, tr("Select RomFS Dump Target"),
-            tr("Please select which RomFS you would like to dump."), list, 0, false, &ok);
+            this, tr("选择RomFS转储目标"),
+            tr("请选择您想转储的只读文件系统."), list, 0, false, &ok);
         if (!ok) {
             return {};
         }
@@ -2691,7 +2695,7 @@ bool GMainWindow::ConfirmClose() {
         return true;
 
     QMessageBox::StandardButton answer =
-        QMessageBox::question(this, tr("yuzu"), tr("Are you sure you want to close yuzu?"),
+        QMessageBox::question(this, tr("yuzu"), tr("你确定要关闭 yuzu?"),
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     return answer != QMessageBox::No;
 }
@@ -2783,7 +2787,7 @@ bool GMainWindow::ConfirmChangeGame() {
 
     const auto answer = QMessageBox::question(
         this, tr("yuzu"),
-        tr("Are you sure you want to stop the emulation? Any unsaved progress will be lost."),
+        tr("你确定你要停止模拟？任何未保存的进度将会丢失."),
         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     return answer != QMessageBox::No;
 }
@@ -2794,8 +2798,8 @@ bool GMainWindow::ConfirmForceLockedExit() {
 
     const auto answer =
         QMessageBox::question(this, tr("yuzu"),
-                              tr("The currently running application has requested yuzu to not "
-                                 "exit.\n\nWould you like to bypass this and exit anyway?"),
+                              tr("当前运行的应用程序已请求yuzu"
+                                 "不退出.\n\n你想绕过这一点，并退出呢?"),
                               QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
     return answer != QMessageBox::No;
 }
@@ -2893,7 +2897,7 @@ void GMainWindow::OnLanguageChanged(const QString& locale) {
     UpdateWindowTitle();
 
     if (emulation_running)
-        ui.action_Start->setText(tr("Continue"));
+        ui.action_Start->setText(tr("继续"));
 }
 
 void GMainWindow::SetDiscordEnabled([[maybe_unused]] bool state) {

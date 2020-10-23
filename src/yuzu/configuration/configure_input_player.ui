@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Configure Input</string>
+   <string>设置输入</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <property name="spacing">
@@ -60,7 +60,7 @@
           <enum>Qt::LeftToRight</enum>
          </property>
          <property name="title">
-          <string>Connect Controller</string>
+          <string>连接控制器</string>
          </property>
          <property name="flat">
           <bool>false</bool>
@@ -85,27 +85,27 @@
            <widget class="QComboBox" name="comboControllerType">
             <item>
              <property name="text">
-              <string>Pro Controller</string>
+              <string>Pro手柄 控制器</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Dual Joycons</string>
+              <string>双 Joycons</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Left Joycon</string>
+              <string>左 Joycon</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Right Joycon</string>
+              <string>右 Joycon</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Handheld</string>
+              <string>手持式掌机</string>
              </property>
             </item>
            </widget>
@@ -116,7 +116,7 @@
        <item>
         <widget class="QGroupBox" name="devicesGroup">
          <property name="title">
-          <string>Input Device</string>
+          <string>输入设备</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <property name="spacing">
@@ -138,12 +138,12 @@
            <widget class="QComboBox" name="comboDevices">
             <item>
              <property name="text">
-              <string>Any</string>
+              <string>任意</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Keyboard/Mouse</string>
+              <string>键盘/鼠标</string>
              </property>
             </item>
            </widget>
@@ -179,7 +179,7 @@
           </size>
          </property>
          <property name="title">
-          <string>Profile</string>
+          <string>个人资料</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="2,0,0,0">
           <property name="spacing">
@@ -212,7 +212,7 @@
              <string notr="true">min-width: 55px;</string>
             </property>
             <property name="text">
-             <string>Save</string>
+             <string>保存</string>
             </property>
            </widget>
           </item>
@@ -228,7 +228,7 @@
              <string notr="true">min-width: 55px;</string>
             </property>
             <property name="text">
-             <string>New</string>
+             <string>新</string>
             </property>
            </widget>
           </item>
@@ -244,7 +244,7 @@
              <string notr="true">min-width: 55px;</string>
             </property>
             <property name="text">
-             <string>Delete</string>
+             <string>删除</string>
             </property>
            </widget>
           </item>
@@ -307,7 +307,7 @@
               </sizepolicy>
              </property>
              <property name="title">
-              <string>Left Stick</string>
+              <string>左摇杆</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -365,7 +365,7 @@
                  <item alignment="Qt::AlignHCenter">
                   <widget class="QGroupBox" name="buttonLStickUpGroup">
                    <property name="title">
-                    <string>Up</string>
+                    <string>上</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -407,7 +407,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Up</string>
+                       <string>上</string>
                       </property>
                      </widget>
                     </item>
@@ -438,7 +438,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonLStickLeftGroup">
                   <property name="title">
-                   <string>Left</string>
+                   <string>左</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -477,7 +477,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Left</string>
+                      <string>左</string>
                      </property>
                     </widget>
                    </item>
@@ -487,7 +487,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonLStickRightGroup">
                   <property name="title">
-                   <string>Right</string>
+                   <string>右</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -526,7 +526,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Right</string>
+                      <string>右</string>
                      </property>
                     </widget>
                    </item>
@@ -569,7 +569,7 @@
                  <item alignment="Qt::AlignHCenter">
                   <widget class="QGroupBox" name="buttonLStickDownGroup">
                    <property name="title">
-                    <string>Down</string>
+                    <string>下</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -608,7 +608,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Down</string>
+                       <string>下</string>
                       </property>
                      </widget>
                     </item>
@@ -639,7 +639,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonLStickPressedGroup">
                   <property name="title">
-                   <string>Pressed</string>
+                   <string>按下</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -678,7 +678,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Pressed</string>
+                      <string>按下</string>
                      </property>
                     </widget>
                    </item>
@@ -688,7 +688,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonLStickModGroup">
                   <property name="title">
-                   <string>Modifier</string>
+                   <string>按住模拟轻摇</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -727,7 +727,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Modifier</string>
+                      <string>按住模拟轻摇</string>
                      </property>
                     </widget>
                    </item>
@@ -737,7 +737,7 @@
                 <item>
                  <widget class="QGroupBox" name="buttonLStickRangeGroup">
                   <property name="title">
-                   <string>Range</string>
+                   <string>范围</string>
                   </property>
                   <layout class="QHBoxLayout" name="buttonLStickRangeGroupHorizontalLayout">
                    <property name="spacing">
@@ -813,7 +813,7 @@
                   <item>
                    <widget class="QLabel" name="labelLStickDeadzone">
                     <property name="text">
-                     <string>Deadzone: 0%</string>
+                     <string>摇杆死区: 0%</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignHCenter</set>
@@ -837,7 +837,7 @@
                   <item>
                    <widget class="QLabel" name="labelLStickModifierRange">
                     <property name="text">
-                     <string>Modifier Range: 0%</string>
+                     <string>修改范围: 0%</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignHCenter</set>
@@ -883,7 +883,7 @@
               </sizepolicy>
              </property>
              <property name="title">
-              <string>D-Pad</string>
+              <string>十字键</string>
              </property>
              <property name="flat">
               <bool>false</bool>
@@ -941,7 +941,7 @@
                  <item alignment="Qt::AlignHCenter">
                   <widget class="QGroupBox" name="buttonDpadUpGroup">
                    <property name="title">
-                    <string>Up</string>
+                    <string>上</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -980,7 +980,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Up</string>
+                       <string>上</string>
                       </property>
                      </widget>
                     </item>
@@ -1011,7 +1011,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonDpadLeftGroup">
                   <property name="title">
-                   <string>Left</string>
+                   <string>左</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1050,7 +1050,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Left</string>
+                      <string>左</string>
                      </property>
                     </widget>
                    </item>
@@ -1060,7 +1060,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonDpadRightGroup">
                   <property name="title">
-                   <string>Right</string>
+                   <string>右</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1099,7 +1099,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Right</string>
+                      <string>右</string>
                      </property>
                     </widget>
                    </item>
@@ -1142,7 +1142,7 @@
                  <item alignment="Qt::AlignHCenter">
                   <widget class="QGroupBox" name="buttonDpadDownGroup">
                    <property name="title">
-                    <string>Down</string>
+                    <string>下</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -1181,7 +1181,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Down</string>
+                       <string>下</string>
                       </property>
                      </widget>
                     </item>
@@ -1420,7 +1420,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonMiscButtonsMinusGroup">
                   <property name="title">
-                   <string>Minus</string>
+                   <string>-</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1459,7 +1459,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Minus</string>
+                      <string>-</string>
                      </property>
                     </widget>
                    </item>
@@ -1469,7 +1469,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonMiscButtonsScreenshotGroup">
                   <property name="title">
-                   <string>Capture</string>
+                   <string>屏幕捕获</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1508,7 +1508,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Capture</string>
+                      <string>屏幕捕获</string>
                      </property>
                     </widget>
                    </item>
@@ -1539,7 +1539,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonMiscButtonsPlusGroup">
                   <property name="title">
-                   <string>Plus</string>
+                   <string>+</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1578,7 +1578,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Plus</string>
+                      <string>+</string>
                      </property>
                     </widget>
                    </item>
@@ -1588,7 +1588,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonMiscButtonsHomeGroup">
                   <property name="title">
-                   <string>Home</string>
+                   <string>主页</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -1627,7 +1627,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Home</string>
+                      <string>主页</string>
                      </property>
                     </widget>
                    </item>
@@ -2142,7 +2142,7 @@
               </sizepolicy>
              </property>
              <property name="title">
-              <string>Face Buttons</string>
+              <string>正面按钮</string>
              </property>
              <property name="flat">
               <bool>false</bool>
@@ -2488,7 +2488,7 @@
               </sizepolicy>
              </property>
              <property name="title">
-              <string>Right Stick</string>
+              <string>右摇杆</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2555,7 +2555,7 @@
                  <item alignment="Qt::AlignHCenter">
                   <widget class="QGroupBox" name="buttonRStickUpGroup">
                    <property name="title">
-                    <string>Up</string>
+                    <string>上</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -2594,7 +2594,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Up</string>
+                       <string>上</string>
                       </property>
                      </widget>
                     </item>
@@ -2625,7 +2625,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonRStickLeftGroup">
                   <property name="title">
-                   <string>Left</string>
+                   <string>左</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -2664,7 +2664,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Left</string>
+                      <string>左</string>
                      </property>
                     </widget>
                    </item>
@@ -2674,7 +2674,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonRStickRightGroup">
                   <property name="title">
-                   <string>Right</string>
+                   <string>右</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -2713,7 +2713,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Right</string>
+                      <string>右</string>
                      </property>
                     </widget>
                    </item>
@@ -2756,7 +2756,7 @@
                  <item>
                   <widget class="QGroupBox" name="buttonRStickDownGroup">
                    <property name="title">
-                    <string>Down</string>
+                    <string>下</string>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignCenter</set>
@@ -2795,7 +2795,7 @@
                        <string notr="true">min-width: 55px;</string>
                       </property>
                       <property name="text">
-                       <string>Down</string>
+                       <string>下</string>
                       </property>
                      </widget>
                     </item>
@@ -2826,7 +2826,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="groupRStickPressed">
                   <property name="title">
-                   <string>Pressed</string>
+                   <string>按下</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -2865,7 +2865,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Pressed</string>
+                      <string>按下</string>
                      </property>
                     </widget>
                    </item>
@@ -2875,7 +2875,7 @@
                 <item alignment="Qt::AlignHCenter">
                  <widget class="QGroupBox" name="buttonRStickModGroup">
                   <property name="title">
-                   <string>Modifier</string>
+                   <string>按住模拟轻摇</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -2914,7 +2914,7 @@
                       <string notr="true">min-width: 55px;</string>
                      </property>
                      <property name="text">
-                      <string>Modifier</string>
+                      <string>按住模拟轻摇</string>
                      </property>
                     </widget>
                    </item>
@@ -2924,7 +2924,7 @@
                 <item>
                  <widget class="QGroupBox" name="buttonRStickRangeGroup">
                   <property name="title">
-                   <string>Range</string>
+                   <string>范围</string>
                   </property>
                   <layout class="QHBoxLayout" name="buttonRStickRangeGroupHorizontalLayout">
                    <property name="spacing">
@@ -2997,7 +2997,7 @@
                   <item>
                    <widget class="QLabel" name="labelRStickDeadzone">
                     <property name="text">
-                     <string>Deadzone: 0%</string>
+                     <string>摇杆死区: 0%</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignHCenter</set>
@@ -3021,7 +3021,7 @@
                   <item>
                    <widget class="QLabel" name="labelRStickModifierRange">
                     <property name="text">
-                     <string>Modifier Range: 0%</string>
+                     <string>修改范围: 0%</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignHCenter</set>

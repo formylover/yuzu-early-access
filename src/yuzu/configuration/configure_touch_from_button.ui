@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Configure Touchscreen Mappings</string>
+   <string>设置触摸屏映射</string>
   </property>
   <layout class="QVBoxLayout">
    <item>
@@ -19,7 +19,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Mapping:</string>
+        <string>提供程序:</string>
        </property>
        <property name="textFormat">
         <enum>Qt::PlainText</enum>
@@ -45,7 +45,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>New</string>
+        <string>新建</string>
        </property>
       </widget>
      </item>
@@ -58,7 +58,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Delete</string>
+        <string>删除</string>
        </property>
       </widget>
      </item>
@@ -71,7 +71,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Rename</string>
+        <string>重命名</string>
        </property>
       </widget>
      </item>
@@ -89,8 +89,8 @@
      <item>
       <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>Click the bottom area to add a point, then press a button to bind.
-Drag points to change position, or double-click table cells to edit values.</string>
+        <string>单击底部区域以添加点，然后按按钮进行绑定。
+拖动点以更改位置，或双击表格单元格以编辑值。</string>
        </property>
        <property name="textFormat">
         <enum>Qt::PlainText</enum>
@@ -113,7 +113,7 @@ Drag points to change position, or double-click table cells to edit values.</str
      <item>
       <widget class="QPushButton" name="button_delete_bind">
        <property name="text">
-        <string>Delete Point</string>
+        <string>删除点</string>
        </property>
       </widget>
      </item>
