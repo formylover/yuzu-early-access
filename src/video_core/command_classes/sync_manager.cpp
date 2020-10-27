@@ -34,7 +34,6 @@ void SyncptIncrManager::Increment(u32 id) {
 u32 SyncptIncrManager::IncrementWhenDone(u32 class_id, u32 id) {
     const u32 handle = current_id++;
     increments.push_back(SyncptIncr{handle, class_id, id});
-
     return handle;
 }
 

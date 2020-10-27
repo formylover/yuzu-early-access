@@ -63,7 +63,7 @@ void Vic::Execute() {
     switch (pixel_format) {
     case VideoPixelFormat::BGRA8:
     case VideoPixelFormat::RGBA8: {
-        LOG_DEBUG(Service_NVDRV, "Writing RGB Frame");
+        LOG_TRACE(Service_NVDRV, "Writing RGB Frame");
         const auto* frame = nvdec_processor->GetFrame();
 
         if (!frame || frame->width == 0 || frame->height == 0) {
@@ -119,7 +119,7 @@ void Vic::Execute() {
         break;
     }
     case VideoPixelFormat::Yuv420: {
-        LOG_DEBUG(Service_NVDRV, "Writing YUV420 Frame");
+        LOG_TRACE(Service_NVDRV, "Writing YUV420 Frame");
 
         const auto* frame = nvdec_processor->GetFrame();
 

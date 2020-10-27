@@ -7,34 +7,33 @@
 #include "common/common_funcs.h"
 #include "common/common_types.h"
 
-namespace Tegra {
-namespace NvdecCommon {
+namespace Tegra::NvdecCommon {
 
 struct NvdecRegisters {
     INSERT_PADDING_WORDS(256);
-    u64 set_codec_id;
+    u64 set_codec_id{};
     INSERT_PADDING_WORDS(254);
-    u64 set_platform_id;
-    u64 picture_info_offset;
-    u64 frame_bitstream_offset;
-    u64 frame_number;
-    u64 h264_slice_data_offsets;
-    u64 h264_mv_dump_offset;
+    u64 set_platform_id{};
+    u64 picture_info_offset{};
+    u64 frame_bitstream_offset{};
+    u64 frame_number{};
+    u64 h264_slice_data_offsets{};
+    u64 h264_mv_dump_offset{};
     INSERT_PADDING_WORDS(6);
-    u64 frame_stats_offset;
-    u64 h264_last_surface_luma_offset;
-    u64 h264_last_surface_chroma_offset;
-    std::array<u64, 17> surface_luma_offset;
-    std::array<u64, 17> surface_chroma_offset;
+    u64 frame_stats_offset{};
+    u64 h264_last_surface_luma_offset{};
+    u64 h264_last_surface_chroma_offset{};
+    std::array<u64, 17> surface_luma_offset{};
+    std::array<u64, 17> surface_chroma_offset{};
     INSERT_PADDING_WORDS(132);
-    u64 vp9_entropy_probs_offset;
-    u64 vp9_backward_updates_offset;
-    u64 vp9_last_frame_segmap_offset;
-    u64 vp9_curr_frame_segmap_offset;
-    u64 padding_0;
-    u64 vp9_last_frame_mvs_offset;
-    u64 vp9_curr_frame_mvs_offset;
-    u64 padding_1;
+    u64 vp9_entropy_probs_offset{};
+    u64 vp9_backward_updates_offset{};
+    u64 vp9_last_frame_segmap_offset{};
+    u64 vp9_curr_frame_segmap_offset{};
+    INSERT_PADDING_WORDS(2);
+    u64 vp9_last_frame_mvs_offset{};
+    u64 vp9_curr_frame_mvs_offset{};
+    INSERT_PADDING_WORDS(2);
 };
 static_assert(sizeof(NvdecRegisters) == (0xBC0), "NvdecRegisters is incorrect size");
 
@@ -46,5 +45,4 @@ enum class VideoCodec : u32 {
     Vp9 = 0x9,
 };
 
-} // namespace NvdecCommon
-} // namespace Tegra
+} // namespace Tegra::NvdecCommon

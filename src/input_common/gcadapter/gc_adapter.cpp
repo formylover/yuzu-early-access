@@ -254,64 +254,31 @@ void Adapter::AdapterScanThread() {
 }
 
 void Adapter::Setup() {
-    // pointer to list of connected usb devices
-    libusb_device** devices{};
+    usb_adapter_handle = libusb_open_device_with_vid_pid(libusb_ctx, 0x057e, 0x0337);
 
-    // populate the list of devices, get the count
-    const ssize_t device_count = libusb_get_device_list(libusb_ctx, &devices);
-    if (device_count < 0) {
-        LOG_ERROR(Input, "libusb_get_device_list failed with error: {}", device_count);
-        // libusb is not working, stop searching for devices
-        adapter_scan_thread_running = false;
+    if (usb_adapter_handle == NULL) {
+        return;
+    }
+    if (!CheckDeviceAccess()) {
+        ClearLibusbHandle();
         return;
     }
 
-    if (devices != nullptr) {
-        for (std::size_t index = 0; index < static_cast<std::size_t>(device_count); ++index) {
-            if (!CheckDeviceAccess(devices[index])) {
-                continue;
-            }
-            LOG_INFO(Input, "GC adapter is now connected");
-            // GC Adapter found and accessible, registering it
-            if (GetGCEndpoint(devices[index])) {
-                adapter_scan_thread_running = false;
-                adapter_input_thread_running = true;
-                rumble_enabled = true;
-                input_error_counter = 0;
-                output_error_counter = 0;
-                adapter_input_thread = std::thread(&Adapter::AdapterInputThread, this);
-            }
-        }
-        libusb_free_device_list(devices, 1);
+    libusb_device* device = libusb_get_device(usb_adapter_handle);
+
+    LOG_INFO(Input, "GC adapter is now connected");
+    // GC Adapter found and accessible, registering it
+    if (GetGCEndpoint(device)) {
+        adapter_scan_thread_running = false;
+        adapter_input_thread_running = true;
+        rumble_enabled = true;
+        input_error_counter = 0;
+        output_error_counter = 0;
+        adapter_input_thread = std::thread(&Adapter::AdapterInputThread, this);
     }
 }
 
-bool Adapter::CheckDeviceAccess(libusb_device* device) {
-    libusb_device_descriptor desc;
-    const int get_descriptor_error = libusb_get_device_descriptor(device, &desc);
-    if (get_descriptor_error) {
-        // could not acquire the descriptor, no point in trying to use it.
-        LOG_ERROR(Input, "libusb_get_device_descriptor failed with error: {}",
-                  get_descriptor_error);
-        return false;
-    }
-
-    if (desc.idVendor != 0x057e || desc.idProduct != 0x0337) {
-        // This isn't the device we are looking for.
-        return false;
-    }
-
-    const int open_error = libusb_open(device, &usb_adapter_handle);
-    if (open_error == LIBUSB_ERROR_ACCESS) {
-        LOG_ERROR(Input, "Yuzu can not gain access to this device: ID {:04X}:{:04X}.",
-                  desc.idVendor, desc.idProduct);
-        return false;
-    }
-    if (open_error) {
-        LOG_ERROR(Input, "libusb_open failed to open device with error = {}", open_error);
-        return false;
-    }
-
+bool Adapter::CheckDeviceAccess() {
     // This fixes payload problems from offbrand GCAdapters
     const int control_transfer_error =
         libusb_control_transfer(usb_adapter_handle, 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
@@ -483,6 +450,8 @@ InputCommon::ButtonMapping Adapter::GetButtonMappingForDevice(
         button_params.Set("port", params.Get("port", 0));
         button_params.Set("button", static_cast<int>(PadButton::Stick));
         button_params.Set("axis", static_cast<int>(gcadapter_axis));
+        button_params.Set("threshold", 0.5f);
+        button_params.Set("direction", "+");
         mapping.insert_or_assign(switch_button, std::move(button_params));
     }
     return mapping;

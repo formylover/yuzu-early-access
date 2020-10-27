@@ -51,13 +51,12 @@ public:
     NvdecCommon::VideoCodec GetCurrentCodec() const;
 
 private:
-    bool codec_swap{};
     bool initialized{};
     NvdecCommon::VideoCodec current_codec{NvdecCommon::VideoCodec::None};
 
-    AVCodec* av_codec = nullptr;
-    AVCodecContext* av_codec_ctx = nullptr;
-    AVFrame* av_frame = nullptr;
+    AVCodec* av_codec{nullptr};
+    AVCodecContext* av_codec_ctx{nullptr};
+    AVFrame* av_frame{nullptr};
 
     GPU& gpu;
     std::unique_ptr<Decoder::H264> h264_decoder;

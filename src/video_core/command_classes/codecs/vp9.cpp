@@ -2,8 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#include <cstring> // for std::memcpy
 #include <numeric>
-#include "common/assert.h"
 #include "video_core/command_classes/codecs/vp9.h"
 #include "video_core/gpu.h"
 #include "video_core/memory_manager.h"
@@ -170,11 +170,7 @@ constexpr Vp9EntropyProbs default_probs{
     .high_precision{128, 128},
 };
 
-VP9::VP9(GPU& gpu) : gpu(gpu) {
-    reference_pool[0].ref = Ref::Last;
-    reference_pool[1].ref = Ref::Golden;
-    reference_pool[2].ref = Ref::AltRef;
-}
+VP9::VP9(GPU& gpu) : gpu(gpu) {}
 
 VP9::~VP9() = default;
 
@@ -215,12 +211,13 @@ s32 VP9::RemapProbability(s32 new_prob, s32 old_prob) {
     new_prob--;
     old_prob--;
 
-    int index;
+    std::size_t index{};
 
     if (old_prob * 2 <= 0xff) {
-        index = RecenterNonNeg(new_prob, old_prob) - 1;
+        index = static_cast<std::size_t>(std::max(0, RecenterNonNeg(new_prob, old_prob) - 1));
     } else {
-        index = RecenterNonNeg(0xff - 1 - new_prob, 0xff - 1 - old_prob) - 1;
+        index = static_cast<std::size_t>(
+            std::max(0, RecenterNonNeg(0xff - 1 - new_prob, 0xff - 1 - old_prob) - 1));
     }
 
     return map_lut[index];
@@ -390,18 +387,20 @@ Vp9FrameContainer VP9::GetCurrentFrame(const NvdecCommon::NvdecRegisters& state)
     }
     // Buffer two frames, saving the last show frame info
     if (next_next_frame.bit_stream.size() != 0) {
-        Vp9FrameContainer temp{};
-        temp.info = frame.info;
-        temp.bit_stream = frame.bit_stream;
+        Vp9FrameContainer temp{
+            .info = frame.info,
+            .bit_stream = frame.bit_stream,
+        };
         next_next_frame.info.show_frame = frame.info.last_frame_shown;
         frame.info = next_next_frame.info;
         frame.bit_stream = next_next_frame.bit_stream;
         next_next_frame = std::move(temp);
 
         if (next_frame.bit_stream.size() != 0) {
-            Vp9FrameContainer temp{};
-            temp.info = frame.info;
-            temp.bit_stream = frame.bit_stream;
+            Vp9FrameContainer temp{
+                .info = frame.info,
+                .bit_stream = frame.bit_stream,
+            };
             next_frame.info.show_frame = frame.info.last_frame_shown;
             frame.info = next_frame.info;
             frame.bit_stream = next_frame.bit_stream;
@@ -534,7 +533,7 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
         }
 
         // mv_probs
-        for (int i = 0; i < 3; i++) {
+        for (s32 i = 0; i < 3; i++) {
             WriteMvProbabilityUpdate(writer, current_frame_info.entropy.joints[i],
                                      prev_frame_probs.joints[i]);
         }
@@ -542,11 +541,11 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
             prev_frame_probs.joints = current_frame_info.entropy.joints;
         }
 
-        for (int i = 0; i < 2; i++) {
+        for (s32 i = 0; i < 2; i++) {
             WriteMvProbabilityUpdate(writer, current_frame_info.entropy.sign[i],
                                      prev_frame_probs.sign[i]);
 
-            for (int j = 0; j < 10; j++) {
+            for (s32 j = 0; j < 10; j++) {
                 const int index = i * 10 + j;
 
                 WriteMvProbabilityUpdate(writer, current_frame_info.entropy.classes[index],
@@ -556,7 +555,7 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
             WriteMvProbabilityUpdate(writer, current_frame_info.entropy.class_0[i],
                                      prev_frame_probs.class_0[i]);
 
-            for (int j = 0; j < 10; j++) {
+            for (s32 j = 0; j < 10; j++) {
                 const int index = i * 10 + j;
 
                 WriteMvProbabilityUpdate(writer, current_frame_info.entropy.prob_bits[index],
@@ -564,9 +563,9 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
             }
         }
 
-        for (int i = 0; i < 2; i++) {
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 3; k++) {
+        for (s32 i = 0; i < 2; i++) {
+            for (s32 j = 0; j < 2; j++) {
+                for (s32 k = 0; k < 3; k++) {
                     const int index = i * 2 * 3 + j * 3 + k;
 
                     WriteMvProbabilityUpdate(writer, current_frame_info.entropy.class_0_fr[index],
@@ -574,7 +573,7 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
                 }
             }
 
-            for (int j = 0; j < 3; j++) {
+            for (s32 j = 0; j < 3; j++) {
                 const int index = i * 3 + j;
 
                 WriteMvProbabilityUpdate(writer, current_frame_info.entropy.fr[index],
@@ -583,7 +582,7 @@ std::vector<u8> VP9::ComposeCompressedHeader() {
         }
 
         if (current_frame_info.allow_high_precision_mv) {
-            for (int index = 0; index < 2; index++) {
+            for (s32 index = 0; index < 2; index++) {
                 WriteMvProbabilityUpdate(writer, current_frame_info.entropy.class_0_hp[index],
                                          prev_frame_probs.class_0_hp[index]);
                 WriteMvProbabilityUpdate(writer, current_frame_info.entropy.high_precision[index],
@@ -643,10 +642,6 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
 
         // On key frames, all frame slots are set to the current frame,
         // so the value of the selected slot doesn't really matter.
-        reference_pool[0].frame = current_frame_number;
-        reference_pool[1].frame = current_frame_number;
-        reference_pool[2].frame = current_frame_number;
-
         frame_ctxs.fill({current_frame_number, false, default_probs});
 
         // intra only, meaning the frame can be recreated with no other references
@@ -682,7 +677,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
         // golden frame may refresh, determined if the next golden frame offset is changed
         bool golden_refresh = false;
         if (grace_period <= 0) {
-            for (int index = 1; index < 3; ++index) {
+            for (s32 index = 1; index < 3; ++index) {
                 if (current_frame_info.frame_offsets[index] !=
                     next_frame.info.frame_offsets[index]) {
                     current_frame_info.refresh_frame[index] = true;
@@ -714,7 +709,7 @@ VpxBitStreamWriter VP9::ComposeUncompressedHeader() {
         } else {
             uncomp_writer.WriteU(static_cast<s32>(refresh_frame_flags), 8);
 
-            for (int index = 1; index < 4; index++) {
+            for (s32 index = 1; index < 4; index++) {
                 uncomp_writer.WriteU(ref_frame_index[index - 1], 3);
                 uncomp_writer.WriteU(current_frame_info.ref_frame_sign_bias[index], 1);
             }
@@ -862,45 +857,6 @@ std::vector<u8>& VP9::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state) {
     return frame;
 }
 
-namespace Util {
-Stream::Stream() = default;
-Stream::~Stream() = default;
-
-void Stream::Seek(s32 cursor, s32 origin) {
-    if (origin == SEEK_SET) {
-        if (cursor < 0) {
-            position = 0;
-        } else if (position >= buffer.size()) {
-            position = buffer.size();
-        }
-    } else if (origin == SEEK_CUR) {
-        Seek(static_cast<s32>(position) + cursor, SEEK_SET);
-    } else if (origin == SEEK_END) {
-        Seek(static_cast<s32>(buffer.size()) - cursor, SEEK_SET);
-    }
-}
-
-u32 Stream::ReadByte() {
-    if (position < buffer.size()) {
-        return buffer[position];
-        position++;
-    } else {
-        return 0xff;
-    }
-}
-
-void Stream::WriteByte(u32 byte) {
-    const auto u8_byte = static_cast<u8>(byte);
-    if (position == buffer.size()) {
-        buffer.push_back(u8_byte);
-        position++;
-    } else {
-        buffer.insert(buffer.begin() + position, u8_byte);
-    }
-}
-
-} // namespace Util
-
 VpxRangeEncoder::VpxRangeEncoder() {
     Write(false);
 }
@@ -908,7 +864,7 @@ VpxRangeEncoder::VpxRangeEncoder() {
 VpxRangeEncoder::~VpxRangeEncoder() = default;
 
 void VpxRangeEncoder::Write(s32 value, s32 value_size) {
-    for (int bit = value_size - 1; bit >= 0; bit--) {
+    for (s32 bit = value_size - 1; bit >= 0; bit--) {
         Write(((value >> bit) & 1) != 0);
     }
 }
@@ -927,23 +883,23 @@ void VpxRangeEncoder::Write(bool bit, s32 probability) {
         local_range = range - split;
     }
 
-    int shift = norm_lut[local_range];
+    s32 shift = norm_lut[local_range];
     local_range <<= shift;
     count += shift;
 
     if (count >= 0) {
-        int offset = shift - count;
+        const s32 offset = shift - count;
 
         if (((low_value << (offset - 1)) >> 31) != 0) {
             const s32 current_pos = static_cast<s32>(base_stream.GetPosition());
-            base_stream.Seek(-1, SEEK_CUR);
+            base_stream.Seek(-1, Common::SeekOrigin::FromCurrentPos);
             while (base_stream.GetPosition() >= 0 && PeekByte() == 0xff) {
                 base_stream.WriteByte(0);
 
-                base_stream.Seek(-2, SEEK_CUR);
+                base_stream.Seek(-2, Common::SeekOrigin::FromCurrentPos);
             }
             base_stream.WriteByte(static_cast<u8>((PeekByte() + 1)));
-            base_stream.Seek(current_pos, SEEK_SET);
+            base_stream.Seek(current_pos, Common::SeekOrigin::SetOrigin);
         }
         base_stream.WriteByte(static_cast<u8>((low_value >> (24 - offset))));
 
@@ -958,14 +914,14 @@ void VpxRangeEncoder::Write(bool bit, s32 probability) {
 }
 
 void VpxRangeEncoder::End() {
-    for (int index = 0; index < 32; index++) {
+    for (std::size_t index = 0; index < 32; ++index) {
         Write(false);
     }
 }
 
 u8 VpxRangeEncoder::PeekByte() {
-    u8 value = static_cast<u8>(base_stream.ReadByte());
-    base_stream.Seek(-1, SEEK_CUR);
+    const u8 value = base_stream.ReadByte();
+    base_stream.Seek(-1, Common::SeekOrigin::FromCurrentPos);
 
     return value;
 }
@@ -997,22 +953,22 @@ void VpxBitStreamWriter::WriteDeltaQ(u32 value) {
 }
 
 void VpxBitStreamWriter::WriteBits(u32 value, u32 bit_count) {
-    int value_pos = 0;
-    int remaining = bit_count;
+    s32 value_pos = 0;
+    s32 remaining = bit_count;
 
     while (remaining > 0) {
-        int copy_size = remaining;
+        s32 copy_size = remaining;
 
-        const int free = GetFreeBufferBits();
+        const s32 free = GetFreeBufferBits();
 
         if (copy_size > free) {
             copy_size = free;
         }
 
-        const int mask = (1 << copy_size) - 1;
+        const s32 mask = (1 << copy_size) - 1;
 
-        const int src_shift = (bit_count - value_pos) - copy_size;
-        const int dst_shift = (buffer_size - buffer_pos) - copy_size;
+        const s32 src_shift = (bit_count - value_pos) - copy_size;
+        const s32 dst_shift = (buffer_size - buffer_pos) - copy_size;
 
         buffer |= ((value >> src_shift) & mask) << dst_shift;
 
@@ -1044,6 +1000,10 @@ void VpxBitStreamWriter::Flush() {
 }
 
 std::vector<u8>& VpxBitStreamWriter::GetByteArray() {
+    return byte_array;
+}
+
+const std::vector<u8>& VpxBitStreamWriter::GetByteArray() const {
     return byte_array;
 }
 

@@ -17,6 +17,25 @@
 
 namespace Service::Nvidia::Devices {
 
+namespace {
+// Splice vectors will copy count amount of type T from the input vector into the dst vector.
+template <typename T>
+std::size_t SpliceVectors(const std::vector<u8>& input, std::vector<T>& dst, std::size_t count,
+                          std::size_t offset) {
+    std::memcpy(dst.data(), input.data() + offset, count * sizeof(T));
+    offset += count * sizeof(T);
+    return offset;
+}
+
+// Write vectors will write data to the output buffer
+template <typename T>
+std::size_t WriteVectors(std::vector<u8>& dst, const std::vector<T>& src, std::size_t offset) {
+    std::memcpy(dst.data() + offset, src.data(), src.size() * sizeof(T));
+    offset += src.size() * sizeof(T);
+    return offset;
+}
+} // Anonymous namespace
+
 namespace NvErrCodes {
 constexpr u32 Success{};
 constexpr u32 OutOfMemory{static_cast<u32>(-12)};
@@ -34,24 +53,6 @@ u32 nvhost_nvdec_common::SetNVMAPfd(const std::vector<u8>& input) {
 
     nvmap_fd = params.nvmap_fd;
     return 0;
-}
-
-// Splice vectors will copy count amount of type T from the input vector into the dst vector.
-template <typename T>
-static std::size_t SpliceVectors(const std::vector<u8>& input, std::vector<T>& dst,
-                                 std::size_t count, std::size_t offset) {
-    std::memcpy(dst.data(), input.data() + offset, count * sizeof(T));
-    offset += count * sizeof(T);
-    return offset;
-}
-
-// Write vectors will write data to the output buffer
-template <typename T>
-static std::size_t WriteVectors(std::vector<u8>& dst, const std::vector<T>& src,
-                                std::size_t offset) {
-    std::memcpy(dst.data() + offset, src.data(), src.size() * sizeof(T));
-    offset += src.size() * sizeof(T);
-    return offset;
 }
 
 u32 nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u8>& output) {
@@ -82,7 +83,7 @@ u32 nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u8>& o
 
     for (const auto& cmd_buffer : command_buffers) {
         auto object = nvmap_dev->GetObject(cmd_buffer.memory_id);
-        ASSERT(object);
+        ASSERT_OR_EXECUTE(object, return NvErrCodes::InvalidInput;);
         const auto map = FindBufferMap(object->dma_map_addr);
         if (!map) {
             LOG_ERROR(Service_NVDRV, "Tried to submit an invalid offset 0x{:X} dma 0x{:X}",
@@ -109,7 +110,7 @@ u32 nvhost_nvdec_common::Submit(const std::vector<u8>& input, std::vector<u8>& o
 
 u32 nvhost_nvdec_common::GetSyncpoint(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetSyncpoint params{};
-    std::memcpy(&params, input.data(), input.size());
+    std::memcpy(&params, input.data(), sizeof(IoctlGetSyncpoint));
     LOG_DEBUG(Service_NVDRV, "called GetSyncpoint, id={}", params.param);
 
     // We found that implementing this causes deadlocks with async gpu, along with degraded
@@ -123,7 +124,6 @@ u32 nvhost_nvdec_common::GetSyncpoint(const std::vector<u8>& input, std::vector<
 u32 nvhost_nvdec_common::GetWaitbase(const std::vector<u8>& input, std::vector<u8>& output) {
     IoctlGetWaitbase params{};
     std::memcpy(&params, input.data(), sizeof(IoctlGetWaitbase));
-    LOG_INFO(Service_NVDRV, "called GetWaitbase, unknown=0x{:X}", params.unknown);
     params.value = 0; // Seems to be hard coded at 0
     std::memcpy(output.data(), &params, sizeof(IoctlGetWaitbase));
     return 0;
@@ -146,9 +146,11 @@ u32 nvhost_nvdec_common::MapBuffer(const std::vector<u8>& input, std::vector<u8>
             return NvErrCodes::InvalidInput;
         }
         if (object->dma_map_addr == 0) {
-            // We are mapping in the lower 32-bit address space
+            // NVDEC and VIC memory is in the 32-bit address space
+            // MapAllocate32 will attempt to map a lower 32-bit value in the shared gpu memory space
             const GPUVAddr low_addr = gpu.MemoryManager().MapAllocate32(object->addr, object->size);
             object->dma_map_addr = static_cast<u32>(low_addr);
+            // Ensure that the dma_map_addr is indeed in the lower 32-bit address space.
             ASSERT(object->dma_map_addr == low_addr);
         }
         if (!object->dma_map_addr) {
@@ -183,14 +185,14 @@ u32 nvhost_nvdec_common::UnmapBuffer(const std::vector<u8>& input, std::vector<u
         }
         if (const auto size{RemoveBufferMap(object->dma_map_addr)}; size) {
             if (vic_device) {
-                // UnmapVicFrame defers texture_cache invalidation of the frame address until the
-                // stream is over
+                // UnmapVicFrame defers texture_cache invalidation of the frame address until
+                // the stream is over
                 gpu.MemoryManager().UnmapVicFrame(object->dma_map_addr, *size);
             } else {
                 gpu.MemoryManager().Unmap(object->dma_map_addr, *size);
             }
         } else {
-            // This occurs quite frequently, however does not seem to effect functionality
+            // This occurs quite frequently, however does not seem to impact functionality
             LOG_DEBUG(Service_NVDRV, "invalid offset=0x{:X} dma=0x{:X}", object->addr,
                       object->dma_map_addr);
         }
@@ -231,7 +233,6 @@ std::optional<std::size_t> nvhost_nvdec_common::RemoveBufferMap(GPUVAddr gpu_add
     if (iter->second.IsAllocated()) {
         size = iter->second.Size();
     }
-
     buffer_mappings.erase(iter);
     return size;
 }

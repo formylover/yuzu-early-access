@@ -17,6 +17,7 @@ class nvhost_nvdec_common : public nvdevice {
 public:
     explicit nvhost_nvdec_common(Core::System& system, std::shared_ptr<nvmap> nvmap_dev);
     ~nvhost_nvdec_common() override;
+
     virtual u32 ioctl(Ioctl command, const std::vector<u8>& input, const std::vector<u8>& input2,
                       std::vector<u8>& output, std::vector<u8>& output2, IoctlCtrl& ctrl,
                       IoctlVersion version) = 0;

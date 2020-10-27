@@ -32,7 +32,7 @@ std::vector<u8>& H264::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state, bo
     H264DecoderContext context{};
     gpu.MemoryManager().ReadBlock(state.picture_info_offset, &context, sizeof(H264DecoderContext));
 
-    s32 frame_number = static_cast<s32>((context.h264_parameter_set.flags >> 46) & 0x1ffff);
+    const s32 frame_number = static_cast<s32>((context.h264_parameter_set.flags >> 46) & 0x1ffff);
     if (!is_first_frame && frame_number != 0) {
         frame.resize(context.frame_data_size);
 
@@ -123,7 +123,7 @@ std::vector<u8>& H264::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state, bo
 
         writer.WriteBit(true);
 
-        for (int index = 0; index < 6; index++) {
+        for (s32 index = 0; index < 6; index++) {
             writer.WriteBit(true);
             const auto matrix_x4 =
                 std::vector<u8>(context.scaling_matrix_4.begin(), context.scaling_matrix_4.end());
@@ -131,7 +131,7 @@ std::vector<u8>& H264::ComposeFrameHeader(NvdecCommon::NvdecRegisters& state, bo
         }
 
         if (context.h264_parameter_set.transform_8x8_mode_flag) {
-            for (int index = 0; index < 2; index++) {
+            for (s32 index = 0; index < 2; index++) {
                 writer.WriteBit(true);
                 const auto matrix_x8 = std::vector<u8>(context.scaling_matrix_8.begin(),
                                                        context.scaling_matrix_8.end());
@@ -194,9 +194,9 @@ void H264BitWriter::WriteScalingList(const std::vector<u8>& list, s32 start, s32
     }
     u8 last_scale = 8;
 
-    for (int index = 0; index < count; index++) {
+    for (s32 index = 0; index < count; index++) {
         const u8 value = list[start + scan[index]];
-        s32 delta_scale = static_cast<s32>(value - last_scale);
+        const s32 delta_scale = static_cast<s32>(value - last_scale);
 
         WriteSe(delta_scale);
 

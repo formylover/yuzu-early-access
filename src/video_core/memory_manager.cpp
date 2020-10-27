@@ -62,26 +62,6 @@ void MemoryManager::Unmap(GPUVAddr gpu_addr, std::size_t size) {
     UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
 }
 
-void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
-    if (!size) {
-        return;
-    }
-
-    const std::optional<VAddr> cpu_addr = GpuToCpuAddress(gpu_addr);
-    ASSERT(cpu_addr);
-    system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(*cpu_addr, size);
-    cache_invalidate_queue.push_back({*cpu_addr, size});
-
-    UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
-}
-
-void MemoryManager::InvalidateQueuedCaches() {
-    for (const auto& entry : cache_invalidate_queue) {
-        rasterizer->InvalidateTextureCache(entry.first, entry.second);
-    }
-    cache_invalidate_queue.clear();
-}
-
 std::optional<GPUVAddr> MemoryManager::AllocateFixed(GPUVAddr gpu_addr, std::size_t size) {
     for (u64 offset{}; offset < size; offset += page_size) {
         if (!GetPageEntry(gpu_addr + offset).IsUnmapped()) {
@@ -118,6 +98,25 @@ void MemoryManager::TryUnlockPage(PageEntry page_entry, std::size_t size) {
                .IsSuccess());
 }
 
+void MemoryManager::UnmapVicFrame(GPUVAddr gpu_addr, std::size_t size) {
+    if (!size) {
+        return;
+    }
+
+    const std::optional<VAddr> cpu_addr = GpuToCpuAddress(gpu_addr);
+    ASSERT(cpu_addr);
+    system.GPU().Renderer().Rasterizer().InvalidateExceptTextureCache(*cpu_addr, size);
+    cache_invalidate_queue.push_back({*cpu_addr, size});
+
+    UpdateRange(gpu_addr, PageEntry::State::Unmapped, size);
+}
+
+void MemoryManager::InvalidateQueuedCaches() {
+    for (const auto& entry : cache_invalidate_queue) {
+        rasterizer->InvalidateTextureCache(entry.first, entry.second);
+    }
+    cache_invalidate_queue.clear();
+}
 PageEntry MemoryManager::GetPageEntry(GPUVAddr gpu_addr) const {
     return page_table[PageEntryIndex(gpu_addr)];
 }
@@ -136,7 +135,7 @@ void MemoryManager::SetPageEntry(GPUVAddr gpu_addr, PageEntry page_entry, std::s
 }
 
 std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size_t align,
-                                                     bool start_low) const {
+                                                     bool start_32bit_address) const {
     if (!align) {
         align = page_size;
     } else {
@@ -144,10 +143,7 @@ std::optional<GPUVAddr> MemoryManager::FindFreeRange(std::size_t size, std::size
     }
 
     u64 available_size{};
-    GPUVAddr gpu_addr{address_space_start};
-    if (start_low) {
-        gpu_addr = GPUVAddr{address_space_start_low};
-    }
+    GPUVAddr gpu_addr{start_32bit_address ? address_space_start_low : address_space_start};
     while (gpu_addr + available_size < address_space_size) {
         if (GetPageEntry(gpu_addr + available_size).IsUnmapped()) {
             available_size += page_size;
@@ -207,7 +203,6 @@ template u8 MemoryManager::Read<u8>(GPUVAddr addr) const;
 template u16 MemoryManager::Read<u16>(GPUVAddr addr) const;
 template u32 MemoryManager::Read<u32>(GPUVAddr addr) const;
 template u64 MemoryManager::Read<u64>(GPUVAddr addr) const;
-template s64 MemoryManager::Read<s64>(GPUVAddr addr) const;
 template void MemoryManager::Write<u8>(GPUVAddr addr, u8 data);
 template void MemoryManager::Write<u16>(GPUVAddr addr, u16 data);
 template void MemoryManager::Write<u32>(GPUVAddr addr, u32 data);
@@ -339,10 +334,6 @@ void MemoryManager::CopyBlock(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr, std
     std::vector<u8> tmp_buffer(size);
     ReadBlock(gpu_src_addr, tmp_buffer.data(), size);
     WriteBlock(gpu_dest_addr, tmp_buffer.data(), size);
-}
-
-u32 MemoryManager::Read32(VAddr addr) {
-    return system.Memory().Read32(addr);
 }
 
 void MemoryManager::CopyBlockUnsafe(GPUVAddr gpu_dest_addr, GPUVAddr gpu_src_addr,

@@ -52,7 +52,7 @@ void CDmaPusher::Step() {
     const auto entries{cdma_queue.front()};
     cdma_queue.pop();
 
-    std::vector<int> values(entries.size());
+    std::vector<u32> values(entries.size());
     std::memcpy(values.data(), entries.data(), entries.size() * sizeof(u32));
 
     for (const u32 value : values) {

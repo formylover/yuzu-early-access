@@ -72,26 +72,26 @@ using ChCommandHeaderList = std::vector<Tegra::ChCommandHeader>;
 using ChCommandList = std::vector<Tegra::ChCommand>;
 
 struct ThiRegisters {
-    u32_le increment_syncpt;
-    u32_le padding0;
-    u32_le increment_syncpt_error;
-    u32_le ctx_switch_incremement_syncpt;
+    u32_le increment_syncpt{};
+    INSERT_PADDING_WORDS(1);
+    u32_le increment_syncpt_error{};
+    u32_le ctx_switch_incremement_syncpt{};
     INSERT_PADDING_WORDS(4);
-    u32_le ctx_switch;
-    u32_le padding1;
-    u32_le ctx_syncpt_eof;
+    u32_le ctx_switch{};
+    INSERT_PADDING_WORDS(1);
+    u32_le ctx_syncpt_eof{};
     INSERT_PADDING_WORDS(5);
-    u32_le method_0;
-    u32_le method_1;
+    u32_le method_0{};
+    u32_le method_1{};
     INSERT_PADDING_WORDS(12);
-    u32_le int_status;
-    u32_le int_mask;
+    u32_le int_status{};
+    u32_le int_mask{};
 };
 
 enum class ThiMethod : u32 {
-    IncSyncpt = offsetof(ThiRegisters, increment_syncpt) / 4,
-    SetMethod0 = offsetof(ThiRegisters, method_0) / 4,
-    SetMethod1 = offsetof(ThiRegisters, method_1) / 4,
+    IncSyncpt = offsetof(ThiRegisters, increment_syncpt) / sizeof(u32),
+    SetMethod0 = offsetof(ThiRegisters, method_0) / sizeof(u32),
+    SetMethod1 = offsetof(ThiRegisters, method_1) / sizeof(u32),
 };
 
 class CDmaPusher {
@@ -126,9 +126,9 @@ private:
     ThiRegisters vic_thi_state{};
     ThiRegisters nvdec_thi_state{};
 
-    int count{};
-    int offset{};
-    int mask{};
+    s32 count{};
+    s32 offset{};
+    s32 mask{};
     bool incrementing{};
 
     // Queue of command lists to be processed

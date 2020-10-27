@@ -6,9 +6,9 @@
 
 #include <unordered_map>
 #include <vector>
-#include "common/cityhash.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"
+#include "common/stream.h"
 #include "video_core/command_classes/codecs/vp9_types.h"
 #include "video_core/command_classes/nvdec_common.h"
 
@@ -16,42 +16,9 @@ namespace Tegra {
 class GPU;
 enum class FrameType { KeyFrame = 0, InterFrame = 1 };
 namespace Decoder {
-namespace Util {
 
-/// The Stream, VpxRangeEncoder, and VpxBitStreamWriter classes are used to compose the
-/// header bitstreams.
-class Stream {
-public:
-    Stream();
-    ~Stream();
-
-    /// Reposition bitstream "cursor" to specified cursor offset from origin
-    void Seek(s32 cursor, s32 origin);
-
-    /// Reads next byte in the stream buffer and increments position
-    u32 ReadByte();
-
-    /// Writes byte at current position
-    void WriteByte(u32 byte);
-
-    std::size_t GetPosition() const {
-        return position;
-    }
-
-    std::vector<u8>& GetBuffer() {
-        return buffer;
-    }
-
-    const std::vector<u8>& GetBuffer() const {
-        return buffer;
-    }
-
-private:
-    std::vector<u8> buffer;
-    std::size_t position{0};
-};
-
-} // namespace Util
+/// The VpxRangeEncoder, and VpxBitStreamWriter classes are used to compose the
+/// VP9 header bitstreams.
 
 class VpxRangeEncoder {
 public:
@@ -80,7 +47,7 @@ public:
 
 private:
     u8 PeekByte();
-    Util::Stream base_stream{};
+    Common::Stream base_stream{};
     u32 low_value{};
     u32 range{0xff};
     s32 count{-24};
@@ -120,6 +87,9 @@ public:
 
     /// Returns byte_array
     std::vector<u8>& GetByteArray();
+
+    /// Returns const byte_array
+    const std::vector<u8>& GetByteArray() const;
 
 private:
     /// Write bit_count bits from value into buffer
@@ -213,7 +183,6 @@ private:
     bool hidden;
     s64 current_frame_number = -2; // since we buffer 2 frames
     s32 grace_period = 6;          // frame offsets need to stabilize
-    std::array<RefPoolElement, 8> reference_pool{};
     std::array<FrameContexts, 4> frame_ctxs{};
     Vp9FrameContainer next_frame{};
     Vp9FrameContainer next_next_frame{};

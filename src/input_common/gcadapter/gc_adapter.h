@@ -125,7 +125,7 @@ private:
     void ResetDevice(std::size_t port);
 
     /// Returns true if we successfully gain access to GC Adapter
-    bool CheckDeviceAccess(libusb_device* device);
+    bool CheckDeviceAccess();
 
     /// Captures GC Adapter endpoint address
     /// Returns true if the endpoind was set correctly

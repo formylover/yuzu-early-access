@@ -4,8 +4,8 @@
 
 #include <cstring>
 #include <fstream>
-#include "codec.h"
 #include "common/assert.h"
+#include "video_core/command_classes/codecs/codec.h"
 #include "video_core/command_classes/codecs/h264.h"
 #include "video_core/command_classes/codecs/vp9.h"
 #include "video_core/gpu.h"
@@ -29,7 +29,6 @@ Codec::~Codec() {
     avcodec_send_packet(av_codec_ctx, nullptr);
     avcodec_receive_frame(av_codec_ctx, av_frame);
     avcodec_flush_buffers(av_codec_ctx);
-    LOG_DEBUG(Service_NVDRV, "Flushed avcontext");
 
     av_frame_unref(av_frame);
     av_free(av_frame);
@@ -37,15 +36,7 @@ Codec::~Codec() {
 }
 
 void Codec::SetTargetCodec(NvdecCommon::VideoCodec codec) {
-    if (initialized) {
-        if (current_codec != codec) {
-            codec_swap = true;
-            LOG_INFO(Service_NVDRV, "NVDEC video codec swap from {} to {}",
-                     static_cast<u32>(current_codec), static_cast<u32>(codec));
-        }
-    } else {
-        LOG_INFO(Service_NVDRV, "NVDEC video codec initialized to {}", static_cast<u32>(codec));
-    }
+    LOG_INFO(Service_NVDRV, "NVDEC video codec initialized to {}", static_cast<u32>(codec));
     current_codec = codec;
 }
 
@@ -57,21 +48,14 @@ void Codec::StateWrite(u32 offset, u64 arguments) {
 void Codec::Decode() {
     bool is_first_frame = false;
 
-    if (initialized && codec_swap) {
-        // Free allocated memory in preparation for new codec.
-        av_frame_unref(av_frame);
-        av_free(av_frame);
-        avcodec_close(av_codec_ctx);
-        avcodec_free_context(&av_codec_ctx);
-        initialized = false;
-        codec_swap = false;
-    }
-
     if (!initialized) {
         if (current_codec == NvdecCommon::VideoCodec::H264) {
             av_codec = avcodec_find_decoder(AV_CODEC_ID_H264);
         } else if (current_codec == NvdecCommon::VideoCodec::Vp9) {
             av_codec = avcodec_find_decoder(AV_CODEC_ID_VP9);
+        } else {
+            LOG_ERROR(Service_NVDRV, "Unknown video codec {}", static_cast<u32>(current_codec));
+            return;
         }
 
         av_codec_ctx = avcodec_alloc_context3(av_codec);
@@ -80,8 +64,13 @@ void Codec::Decode() {
 
         // TODO(ameerj): libavcodec gpu hw acceleration
 
-        if (avcodec_open2(av_codec_ctx, av_codec, nullptr) < 0) {
+        const auto av_error = avcodec_open2(av_codec_ctx, av_codec, nullptr);
+        if (av_error < 0) {
             LOG_ERROR(Service_NVDRV, "avcodec_open2() Failed.");
+            av_frame_unref(av_frame);
+            av_free(av_frame);
+            avcodec_close(av_codec_ctx);
+            return;
         }
         initialized = true;
         is_first_frame = true;
@@ -97,8 +86,6 @@ void Codec::Decode() {
     } else if (current_codec == NvdecCommon::VideoCodec::Vp9) {
         frame_data = vp9_decoder->ComposeFrameHeader(state);
         vp9_hidden_frame = vp9_decoder->WasFrameHidden();
-    } else {
-        LOG_ERROR(Service_NVDRV, "Unknown video codec {}", static_cast<u32>(current_codec));
     }
 
     packet.data = frame_data.data();
