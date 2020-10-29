@@ -53,23 +53,23 @@ enum class ControllerTypes {
 };
 
 struct GCPadStatus {
-    std::size_t port{0};
+    std::size_t port{};
 
     PadButton button{PadButton::Undefined}; // Or-ed PAD_BUTTON_* and PAD_TRIGGER_* bits
 
     PadAxes axis{PadAxes::Undefined};
-    s16 axis_value{0};
-    u8 axis_threshold = 50;
+    s16 axis_value{};
+    u8 axis_threshold{50};
 };
 
 struct GCController {
-    ControllerTypes type;
-    bool enable_vibration;
-    u8 rumble_amplitude;
-    u16 buttons;
-    PadButton last_button;
-    std::array<s16, 6> axis_values;
-    std::array<u8, 6> axis_origin;
+    ControllerTypes type{};
+    bool enable_vibration{};
+    u8 rumble_amplitude{};
+    u16 buttons{};
+    PadButton last_button{};
+    std::array<s16, 6> axis_values{};
+    std::array<u8, 6> axis_origin{};
 };
 
 class Adapter {
@@ -99,18 +99,20 @@ public:
     InputCommon::AnalogMapping GetAnalogMappingForDevice(const Common::ParamPackage& params) const;
 
 private:
+    using AdapterPayload = std::array<u8, 37>;
+
     void UpdatePadType(std::size_t port, ControllerTypes pad_type);
-    void UpdateControllers(const std::array<u8, 37>& adapter_payload);
+    void UpdateControllers(const AdapterPayload& adapter_payload);
     void UpdateYuzuSettings(std::size_t port);
     void UpdateStateButtons(std::size_t port, u8 b1, u8 b2);
-    void UpdateStateAxes(std::size_t port, const std::array<u8, 37>& adapter_payload);
+    void UpdateStateAxes(std::size_t port, const AdapterPayload& adapter_payload);
     void UpdateVibrations();
 
     void AdapterInputThread();
 
     void AdapterScanThread();
 
-    bool IsPayloadCorrect(const std::array<u8, 37>& adapter_payload, int payload_size);
+    bool IsPayloadCorrect(const AdapterPayload& adapter_payload, s32 payload_size);
 
     // Updates vibration state of all controllers
     void SendVibrations();
@@ -152,14 +154,14 @@ private:
 
     libusb_context* libusb_ctx;
 
-    u8 input_endpoint = 0;
-    u8 output_endpoint = 0;
-    u8 input_error_counter = 0;
-    u8 output_error_counter = 0;
-    int vibration_counter = 0;
+    u8 input_endpoint{0};
+    u8 output_endpoint{0};
+    u8 input_error_counter{0};
+    u8 output_error_counter{0};
+    int vibration_counter{0};
 
-    bool configuring = false;
-    bool rumble_enabled = true;
-    bool vibration_changed = true;
+    bool configuring{false};
+    bool rumble_enabled{true};
+    bool vibration_changed{true};
 };
 } // namespace GCAdapter

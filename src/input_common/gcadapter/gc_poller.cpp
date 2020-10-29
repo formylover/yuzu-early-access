@@ -15,20 +15,20 @@ namespace InputCommon {
 
 class GCButton final : public Input::ButtonDevice {
 public:
-    explicit GCButton(u32 port_, int button_, GCAdapter::Adapter* adapter)
+    explicit GCButton(u32 port_, s32 button_, GCAdapter::Adapter* adapter)
         : port(port_), button(button_), gcadapter(adapter) {}
 
     ~GCButton() override;
 
     bool GetStatus() const override {
         if (gcadapter->DeviceConnected(port)) {
-            return gcadapter->GetPadState(port).buttons & button;
+            return (gcadapter->GetPadState(port).buttons & button) != 0;
         }
         return false;
     }
 
     bool SetRumblePlay(f32 amp_high, f32 amp_low, f32 freq_high, f32 freq_low) const override {
-        const float amplitude = amp_high + amp_low > 2 ? 1.0f : (amp_high + amp_low) * 0.5f;
+        const float amplitude = amp_high + amp_low > 2.0f ? 1.0f : (amp_high + amp_low) * 0.5f;
         const auto new_amp =
             static_cast<f32>(pow(amplitude, 0.5f) * (3.0f - 2.0f * pow(amplitude, 0.15f)));
 
@@ -37,7 +37,7 @@ public:
 
 private:
     const u32 port;
-    const int button;
+    const s32 button;
     GCAdapter::Adapter* gcadapter;
 };
 
@@ -79,7 +79,7 @@ std::unique_ptr<Input::ButtonDevice> GCButtonFactory::Create(const Common::Param
     const auto button_id = params.Get("button", 0);
     const auto port = static_cast<u32>(params.Get("port", 0));
 
-    constexpr int PAD_STICK_ID = static_cast<u16>(GCAdapter::PadButton::Stick);
+    constexpr s32 PAD_STICK_ID = static_cast<s32>(GCAdapter::PadButton::Stick);
 
     // button is not an axis/stick button
     if (button_id != PAD_STICK_ID) {
@@ -115,7 +115,7 @@ Common::ParamPackage GCButtonFactory::GetNextInput() const {
     while (queue.Pop(pad)) {
         // This while loop will break on the earliest detected button
         params.Set("engine", "gcpad");
-        params.Set("port", static_cast<int>(pad.port));
+        params.Set("port", static_cast<s32>(pad.port));
         if (pad.button != GCAdapter::PadButton::Undefined) {
             params.Set("button", static_cast<u16>(pad.button));
         }
@@ -253,7 +253,7 @@ Common::ParamPackage GCAnalogFactory::GetNextInput() {
     while (queue.Pop(pad)) {
         if (pad.button != GCAdapter::PadButton::Undefined) {
             params.Set("engine", "gcpad");
-            params.Set("port", static_cast<int>(pad.port));
+            params.Set("port", static_cast<s32>(pad.port));
             params.Set("button", static_cast<u16>(pad.button));
             return params;
         }
@@ -267,21 +267,21 @@ Common::ParamPackage GCAnalogFactory::GetNextInput() {
         if (axis == 0 || axis == 1) {
             analog_x_axis = 0;
             analog_y_axis = 1;
-            controller_number = static_cast<int>(pad.port);
+            controller_number = static_cast<s32>(pad.port);
             break;
         }
         if (axis == 2 || axis == 3) {
             analog_x_axis = 2;
             analog_y_axis = 3;
-            controller_number = static_cast<int>(pad.port);
+            controller_number = static_cast<s32>(pad.port);
             break;
         }
 
         if (analog_x_axis == -1) {
             analog_x_axis = axis;
-            controller_number = static_cast<int>(pad.port);
+            controller_number = static_cast<s32>(pad.port);
         } else if (analog_y_axis == -1 && analog_x_axis != axis &&
-                   controller_number == static_cast<int>(pad.port)) {
+                   controller_number == static_cast<s32>(pad.port)) {
             analog_y_axis = axis;
             break;
         }

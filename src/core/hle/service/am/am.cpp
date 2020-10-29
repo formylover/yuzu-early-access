@@ -1206,6 +1206,8 @@ IApplicationFunctions::IApplicationFunctions(Core::System& system_)
         {151, nullptr, "TryPopFromNotificationStorageChannel"},
         {160, nullptr, "GetHealthWarningDisappearedSystemEvent"},
         {170, nullptr, "SetHdcpAuthenticationActivated"},
+        {180, nullptr, "GetLaunchRequiredVersion"},
+        {181, nullptr, "UpgradeLaunchRequiredVersion"},
         {500, nullptr, "StartContinuousRecordingFlushForDebug"},
         {1000, nullptr, "CreateMovieMaker"},
         {1001, nullptr, "PrepareForJit"},

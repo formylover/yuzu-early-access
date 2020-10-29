@@ -16,7 +16,6 @@
 
 #include "common/logging/log.h"
 #include "common/param_package.h"
-#include "core/settings.h"
 #include "input_common/gcadapter/gc_adapter.h"
 #include "input_common/settings.h"
 
@@ -42,8 +41,8 @@ Adapter::~Adapter() {
 
 void Adapter::AdapterInputThread() {
     LOG_DEBUG(Input, "GC Adapter input thread started");
-    int payload_size;
-    std::array<u8, 37> adapter_payload;
+    s32 payload_size{};
+    AdapterPayload adapter_payload{};
 
     if (adapter_scan_thread.joinable()) {
         adapter_scan_thread.join();
@@ -51,7 +50,7 @@ void Adapter::AdapterInputThread() {
 
     while (adapter_input_thread_running) {
         libusb_interrupt_transfer(usb_adapter_handle, input_endpoint, adapter_payload.data(),
-                                  sizeof(adapter_payload), &payload_size, 16);
+                                  static_cast<s32>(adapter_payload.size()), &payload_size, 16);
         if (IsPayloadCorrect(adapter_payload, payload_size)) {
             UpdateControllers(adapter_payload);
             UpdateVibrations();
@@ -65,8 +64,9 @@ void Adapter::AdapterInputThread() {
     }
 }
 
-bool Adapter::IsPayloadCorrect(const std::array<u8, 37>& adapter_payload, int payload_size) {
-    if (payload_size != sizeof(adapter_payload) || adapter_payload[0] != LIBUSB_DT_HID) {
+bool Adapter::IsPayloadCorrect(const AdapterPayload& adapter_payload, s32 payload_size) {
+    if (payload_size != static_cast<s32>(adapter_payload.size()) ||
+        adapter_payload[0] != LIBUSB_DT_HID) {
         LOG_DEBUG(Input, "Error reading payload (size: {}, type: {:02x})", payload_size,
                   adapter_payload[0]);
         if (input_error_counter++ > 20) {
@@ -81,7 +81,7 @@ bool Adapter::IsPayloadCorrect(const std::array<u8, 37>& adapter_payload, int pa
     return true;
 }
 
-void Adapter::UpdateControllers(const std::array<u8, 37>& adapter_payload) {
+void Adapter::UpdateControllers(const AdapterPayload& adapter_payload) {
     for (std::size_t port = 0; port < pads.size(); ++port) {
         const std::size_t offset = 1 + (9 * port);
         const auto type = static_cast<ControllerTypes>(adapter_payload[offset] >> 4);
@@ -108,6 +108,10 @@ void Adapter::UpdatePadType(std::size_t port, ControllerTypes pad_type) {
 }
 
 void Adapter::UpdateStateButtons(std::size_t port, u8 b1, u8 b2) {
+    if (port >= pads.size()) {
+        return;
+    }
+
     static constexpr std::array<PadButton, 8> b1_buttons{
         PadButton::ButtonA,    PadButton::ButtonB,     PadButton::ButtonX,    PadButton::ButtonY,
         PadButton::ButtonLeft, PadButton::ButtonRight, PadButton::ButtonDown, PadButton::ButtonUp,
@@ -137,7 +141,11 @@ void Adapter::UpdateStateButtons(std::size_t port, u8 b1, u8 b2) {
     }
 }
 
-void Adapter::UpdateStateAxes(std::size_t port, const std::array<u8, 37>& adapter_payload) {
+void Adapter::UpdateStateAxes(std::size_t port, const AdapterPayload& adapter_payload) {
+    if (port >= pads.size()) {
+        return;
+    }
+
     const std::size_t offset = 1 + (9 * port);
     static constexpr std::array<PadAxes, 6> axes{
         PadAxes::StickX,    PadAxes::StickY,      PadAxes::SubstickX,
@@ -156,9 +164,12 @@ void Adapter::UpdateStateAxes(std::size_t port, const std::array<u8, 37>& adapte
 }
 
 void Adapter::UpdateYuzuSettings(std::size_t port) {
+    if (port >= pads.size()) {
+        return;
+    }
+
     constexpr u8 axis_threshold = 50;
-    GCPadStatus pad_status = {};
-    pad_status.port = port;
+    GCPadStatus pad_status = {.port = port};
 
     if (pads[port].buttons != 0) {
         pad_status.button = pads[port].last_button;
@@ -166,7 +177,7 @@ void Adapter::UpdateYuzuSettings(std::size_t port) {
     }
 
     // Accounting for a threshold here to ensure an intentional press
-    for (size_t i = 0; i < pads[port].axis_values.size(); ++i) {
+    for (std::size_t i = 0; i < pads[port].axis_values.size(); ++i) {
         const s16 value = pads[port].axis_values[i];
 
         if (value > axis_threshold || value < -axis_threshold) {
@@ -179,24 +190,11 @@ void Adapter::UpdateYuzuSettings(std::size_t port) {
 }
 
 void Adapter::UpdateVibrations() {
+    // Use 8 states to keep the switching between on/off fast enough for
+    // a human to not notice the difference between switching from on/off
+    // More states = more rumble strengths = slower update time
     constexpr u8 vibration_states = 8;
 
-    if (!Settings::values.vibration_enabled) {
-        // stop all onging vibrations
-        if (vibration_counter != vibration_states) {
-            vibration_counter = vibration_states;
-            vibration_changed = true;
-
-            for (GCController& pad : pads) {
-                pad.rumble_amplitude = 0;
-                pad.enable_vibration = false;
-            }
-            SendVibrations();
-        }
-        return;
-    }
-
-    // Modulate vibrations to 8 states
     vibration_counter = (vibration_counter + 1) % vibration_states;
 
     for (GCController& pad : pads) {
@@ -211,14 +209,15 @@ void Adapter::SendVibrations() {
     if (!rumble_enabled || !vibration_changed) {
         return;
     }
-    int size = 0;
+    s32 size{};
+    constexpr u8 rumble_command = 0x11;
     const u8 p1 = pads[0].enable_vibration;
     const u8 p2 = pads[1].enable_vibration;
     const u8 p3 = pads[2].enable_vibration;
     const u8 p4 = pads[3].enable_vibration;
-    std::array<u8, 5> payload = {0x11, p1, p2, p3, p4};
+    std::array<u8, 5> payload = {rumble_command, p1, p2, p3, p4};
     const int err = libusb_interrupt_transfer(usb_adapter_handle, output_endpoint, payload.data(),
-                                              sizeof(payload), &size, 16);
+                                              static_cast<s32>(payload.size()), &size, 16);
     if (err) {
         LOG_DEBUG(Input, "Adapter libusb write failed: {}", libusb_error_name(err));
         if (output_error_counter++ > 5) {
@@ -236,7 +235,7 @@ bool Adapter::RumblePlay(std::size_t port, f32 amplitude) {
     const auto raw_amp = static_cast<u8>(amplitude * 0x8);
     pads[port].rumble_amplitude = raw_amp;
 
-    return false;
+    return rumble_enabled;
 }
 
 void Adapter::AdapterScanThread() {
@@ -280,13 +279,13 @@ void Adapter::Setup() {
 
 bool Adapter::CheckDeviceAccess() {
     // This fixes payload problems from offbrand GCAdapters
-    const int control_transfer_error =
+    const s32 control_transfer_error =
         libusb_control_transfer(usb_adapter_handle, 0x21, 11, 0x0001, 0, nullptr, 0, 1000);
     if (control_transfer_error < 0) {
         LOG_ERROR(Input, "libusb_control_transfer failed with error= {}", control_transfer_error);
     }
 
-    int kernel_driver_error = libusb_kernel_driver_active(usb_adapter_handle, 0);
+    s32 kernel_driver_error = libusb_kernel_driver_active(usb_adapter_handle, 0);
     if (kernel_driver_error == 1) {
         kernel_driver_error = libusb_detach_kernel_driver(usb_adapter_handle, 0);
         if (kernel_driver_error != 0 && kernel_driver_error != LIBUSB_ERROR_NOT_SUPPORTED) {
@@ -366,7 +365,7 @@ void Adapter::ClearLibusbHandle() {
 }
 
 void Adapter::ResetDevices() {
-    for (size_t i = 0; i < pads.size(); ++i) {
+    for (std::size_t i = 0; i < pads.size(); ++i) {
         ResetDevice(i);
     }
 }
@@ -448,8 +447,8 @@ InputCommon::ButtonMapping Adapter::GetButtonMappingForDevice(
     for (const auto& [switch_button, gcadapter_axis] : switch_to_gcadapter_axis) {
         Common::ParamPackage button_params({{"engine", "gcpad"}});
         button_params.Set("port", params.Get("port", 0));
-        button_params.Set("button", static_cast<int>(PadButton::Stick));
-        button_params.Set("axis", static_cast<int>(gcadapter_axis));
+        button_params.Set("button", static_cast<s32>(PadButton::Stick));
+        button_params.Set("axis", static_cast<s32>(gcadapter_axis));
         button_params.Set("threshold", 0.5f);
         button_params.Set("direction", "+");
         mapping.insert_or_assign(switch_button, std::move(button_params));
@@ -502,11 +501,11 @@ const Common::SPSCQueue<GCPadStatus>& Adapter::GetPadQueue() const {
 }
 
 GCController& Adapter::GetPadState(std::size_t port) {
-    return pads[port];
+    return pads.at(port);
 }
 
 const GCController& Adapter::GetPadState(std::size_t port) const {
-    return pads[port];
+    return pads.at(port);
 }
 
 } // namespace GCAdapter

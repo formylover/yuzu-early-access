@@ -366,7 +366,7 @@ Vp9PictureInfo VP9::GetVp9PictureInfo(const NvdecCommon::NvdecRegisters& state) 
     // to avoid buffering frame data needed for reference frame updating in the header composition.
     std::memcpy(vp9_info.frame_offsets.data(), state.surface_luma_offset.data(), 4 * sizeof(u64));
 
-    return std::move(vp9_info);
+    return vp9_info;
 }
 
 void VP9::InsertEntropy(u64 offset, Vp9EntropyProbs& dst) {
@@ -893,7 +893,7 @@ void VpxRangeEncoder::Write(bool bit, s32 probability) {
         if (((low_value << (offset - 1)) >> 31) != 0) {
             const s32 current_pos = static_cast<s32>(base_stream.GetPosition());
             base_stream.Seek(-1, Common::SeekOrigin::FromCurrentPos);
-            while (base_stream.GetPosition() >= 0 && PeekByte() == 0xff) {
+            while (PeekByte() == 0xff) {
                 base_stream.WriteByte(0);
 
                 base_stream.Seek(-2, Common::SeekOrigin::FromCurrentPos);
