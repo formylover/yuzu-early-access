@@ -17,24 +17,23 @@ class InputSubsystem;
 }
 
 namespace Ui {
-class ConfigureDebugController;
+class ConfigureInputProfileDialog;
 }
 
-class ConfigureDebugController : public QDialog {
+class ConfigureInputProfileDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit ConfigureDebugController(QWidget* parent, InputCommon::InputSubsystem* input_subsystem,
-                                      InputProfiles* profiles);
-    ~ConfigureDebugController() override;
-
-    void ApplyConfiguration();
+    explicit ConfigureInputProfileDialog(QWidget* parent,
+                                         InputCommon::InputSubsystem* input_subsystem,
+                                         InputProfiles* profiles);
+    ~ConfigureInputProfileDialog() override;
 
 private:
     void changeEvent(QEvent* event) override;
     void RetranslateUI();
 
-    std::unique_ptr<Ui::ConfigureDebugController> ui;
+    std::unique_ptr<Ui::ConfigureInputProfileDialog> ui;
 
-    ConfigureInputPlayer* debug_controller;
+    ConfigureInputPlayer* profile_widget;
 };

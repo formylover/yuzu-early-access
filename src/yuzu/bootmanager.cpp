@@ -387,7 +387,12 @@ void GRenderWindow::keyReleaseEvent(QKeyEvent* event) {
 }
 
 void GRenderWindow::mousePressEvent(QMouseEvent* event) {
-    // touch input is handled in TouchBeginEvent
+    if (!Settings::values.touchscreen.enabled) {
+        input_subsystem->GetKeyboard()->PressKey(event->button());
+        return;
+    }
+
+    // Touch input is handled in TouchBeginEvent
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
     }
@@ -403,7 +408,7 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
 }
 
 void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
-    // touch input is handled in TouchUpdateEvent
+    // Touch input is handled in TouchUpdateEvent
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
     }
@@ -416,7 +421,12 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
 }
 
 void GRenderWindow::mouseReleaseEvent(QMouseEvent* event) {
-    // touch input is handled in TouchEndEvent
+    if (!Settings::values.touchscreen.enabled) {
+        input_subsystem->GetKeyboard()->ReleaseKey(event->button());
+        return;
+    }
+
+    // Touch input is handled in TouchEndEvent
     if (event->source() == Qt::MouseEventSynthesizedBySystem) {
         return;
     }
