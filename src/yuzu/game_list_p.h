@@ -301,7 +301,7 @@ public:
                     .pixmap(icon_size)
                     .scaled(icon_size, icon_size, Qt::IgnoreAspectRatio, Qt::SmoothTransformation),
                 Qt::DecorationRole);
-        setData(QObject::tr("Add New Game Directory"), Qt::DisplayRole);
+        setData(QObject::tr("添加新游戏目录"), Qt::DisplayRole);
     }
 
     int type() const override {
