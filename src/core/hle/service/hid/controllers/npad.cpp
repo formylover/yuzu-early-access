@@ -803,13 +803,12 @@ void Controller_NPad::InitializeVibrationDevice(const DeviceHandle& vibration_de
 
 void Controller_NPad::InitializeVibrationDeviceAtIndex(std::size_t npad_index,
                                                        std::size_t device_index) {
-    if (!vibrations[npad_index][device_index]) {
+    if (vibrations[npad_index][device_index]) {
+        vibration_devices_mounted[npad_index][device_index] =
+            vibrations[npad_index][device_index]->GetStatus() == 1;
+    } else {
         vibration_devices_mounted[npad_index][device_index] = false;
-        return;
     }
-
-    vibration_devices_mounted[npad_index][device_index] =
-        vibrations[npad_index][device_index]->GetStatus() == 1;
 }
 
 bool Controller_NPad::IsVibrationDeviceMounted(const DeviceHandle& vibration_device_handle) const {

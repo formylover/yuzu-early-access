@@ -32,7 +32,7 @@ public:
     void ReadControlPlayerValue(std::size_t player_index);
     void SaveControlPlayerValue(std::size_t player_index);
 
-    const std::string GetConfigFilePath() const;
+    const std::string& GetConfigFilePath() const;
 
     static const std::array<int, Settings::NativeButton::NumButtons> default_buttons;
     static const std::array<int, Settings::NativeMotion::NumMotions> default_motions;

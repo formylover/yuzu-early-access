@@ -101,7 +101,7 @@ private:
     void SetPollingResult(const Common::ParamPackage& params, bool abort);
 
     /// Checks whether a given input can be accepted.
-    bool IsInputAcceptable(const Common::ParamPackage& params);
+    bool IsInputAcceptable(const Common::ParamPackage& params) const;
 
     /// Handle mouse button press events.
     void mousePressEvent(QMouseEvent* event) override;

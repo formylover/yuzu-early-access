@@ -33,8 +33,6 @@ enum class CPUAccuracy {
     DebugMode = 2,
 };
 
-extern bool configuring_global;
-
 template <typename Type>
 class Setting final {
 public:
@@ -67,6 +65,13 @@ private:
     Type local{};
 };
 
+/**
+ * The InputSetting class allows for getting a reference to either the global or local members.
+ * This is required as we cannot easily modify the values of user-defined types within containers
+ * using the SetValue() member function found in the Setting class. The primary purpose of this
+ * class is to store an array of 10 PlayerInput structs for both the global and local (per-game)
+ * setting and allows for easily accessing and modifying both settings.
+ */
 template <typename Type>
 class InputSetting final {
 public:
@@ -128,7 +133,7 @@ struct Values {
     bool renderer_debug;
     Setting<int> vulkan_device;
 
-    Setting<u16> resolution_factor = Setting(static_cast<u16>(1));
+    Setting<u16> resolution_factor{1};
     Setting<int> aspect_ratio;
     Setting<int> max_anisotropy;
     Setting<bool> use_frame_limit;
@@ -227,12 +232,17 @@ struct Values {
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
-} extern values;
+};
 
-float Volume();
+extern Values values;
+
+bool IsConfiguringGlobal();
+void SetConfiguringGlobal(bool is_global);
 
 bool IsGPULevelExtreme();
 bool IsGPULevelHigh();
+
+float Volume();
 
 std::string GetTimeZoneString();
 

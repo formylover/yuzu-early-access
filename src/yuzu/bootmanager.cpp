@@ -1,3 +1,7 @@
+﻿#if _MSC_VER >= 1600
+#pragma execution_character_set("utf-8")
+#endif
+
 // Copyright 2014 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -594,8 +598,8 @@ bool GRenderWindow::InitializeOpenGL() {
 
     return true;
 #else
-    QMessageBox::warning(this, tr("OpenGL not available!"),
-                         tr("yuzu has not been compiled with OpenGL support."));
+    QMessageBox::warning(this, tr("OpenGL 不可用!"),
+                         tr("yuzu 尚未使用OpenGL支持进行编译。"));
     return false;
 #endif
 }
@@ -609,8 +613,8 @@ bool GRenderWindow::InitializeVulkan() {
 
     return true;
 #else
-    QMessageBox::critical(this, tr("Vulkan not available!"),
-                          tr("yuzu has not been compiled with Vulkan support."));
+    QMessageBox::critical(this, tr("Vulkan 不可用!"),
+                          tr("yuzu 尚未在Vulkan支持下进行编译。"));
     return false;
 #endif
 }
@@ -619,18 +623,18 @@ bool GRenderWindow::LoadOpenGL() {
     auto context = CreateSharedContext();
     auto scope = context->Acquire();
     if (!gladLoadGL()) {
-        QMessageBox::critical(this, tr("Error while initializing OpenGL 4.3!"),
-                              tr("Your GPU may not support OpenGL 4.3, or you do not have the "
-                                 "latest graphics driver."));
+        QMessageBox::critical(this, tr("初始化时出错 OpenGL 4.3!"),
+                              tr("您的GPU可能不支持OpenGL 4.3，或者您没有 "
+                                 "最新的图形驱动程序。"));
         return false;
     }
 
     QStringList unsupported_gl_extensions = GetUnsupportedGLExtensions();
     if (!unsupported_gl_extensions.empty()) {
         QMessageBox::critical(
-            this, tr("Error while initializing OpenGL!"),
-            tr("Your GPU may not support one or more required OpenGL extensions. Please ensure you "
-               "have the latest graphics driver.<br><br>Unsupported extensions:<br>") +
+            this, tr("初始化OpenGL时出错！"),
+            tr("您的GPU可能不支持一个或多个必需的OpenGL扩展。 请确保你 "
+               "拥有最新的图形驱动程序。<br><br>不支持的扩展：<br>") +
                 unsupported_gl_extensions.join(QStringLiteral("<br>")));
         return false;
     }

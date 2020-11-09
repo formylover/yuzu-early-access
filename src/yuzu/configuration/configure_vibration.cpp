@@ -4,7 +4,9 @@
 
 #include <algorithm>
 #include <unordered_map>
+
 #include <fmt/format.h>
+
 #include "common/param_package.h"
 #include "core/settings.h"
 #include "ui_configure_vibration.h"
@@ -36,7 +38,7 @@ ConfigureVibration::ConfigureVibration(QWidget* parent)
     ui->checkBoxAccurateVibration->setChecked(
         Settings::values.enable_accurate_vibrations.GetValue());
 
-    if (!Settings::configuring_global) {
+    if (!Settings::IsConfiguringGlobal()) {
         ui->checkBoxAccurateVibration->setDisabled(true);
     }
 
@@ -103,11 +105,11 @@ void ConfigureVibration::SetVibrationDevices(std::size_t player_index) {
 
         vibration_param_str += fmt::format("engine:{}", engine);
 
-        if (!guid.empty()) {
-            vibration_param_str += fmt::format(",guid:{}", guid);
-        }
         if (!port.empty()) {
             vibration_param_str += fmt::format(",port:{}", port);
+        }
+        if (!guid.empty()) {
+            vibration_param_str += fmt::format(",guid:{}", guid);
         }
     }
 
@@ -121,6 +123,13 @@ void ConfigureVibration::SetVibrationDevices(std::size_t player_index) {
     } else if (!player.vibrations[1].empty() &&
                player.controller_type == Settings::ControllerType::RightJoycon) {
         player.vibrations[0].clear();
+    }
+}
+
+void ConfigureVibration::SetAllVibrationDevices() {
+    // Set vibration devices for all player indices including handheld
+    for (std::size_t player_idx = 0; player_idx < NUM_PLAYERS + 1; ++player_idx) {
+        SetVibrationDevices(player_idx);
     }
 }
 

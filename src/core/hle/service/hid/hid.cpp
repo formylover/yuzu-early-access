@@ -189,7 +189,7 @@ Hid::Hid(Core::System& system) : ServiceFramework("hid"), system(system) {
         {40, nullptr, "AcquireXpadIdEventHandle"},
         {41, nullptr, "ReleaseXpadIdEventHandle"},
         {51, &Hid::ActivateXpad, "ActivateXpad"},
-        {55, &Hid::GetXpadIds, "GetXpadIds"},
+        {55, &Hid::GetXpadIDs, "GetXpadIds"},
         {56, nullptr, "ActivateJoyXpad"},
         {58, nullptr, "GetJoyXpadLifoHandle"},
         {59, nullptr, "GetJoyXpadIds"},
@@ -411,7 +411,7 @@ void Hid::ActivateXpad(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 }
 
-void Hid::GetXpadIds(Kernel::HLERequestContext& ctx) {
+void Hid::GetXpadIDs(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto applet_resource_user_id{rp.Pop<u64>()};
 

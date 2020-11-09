@@ -17,6 +17,7 @@
 #include "yuzu/configuration/configure_input.h"
 #include "yuzu/configuration/configure_input_profile_dialog.h"
 #include "yuzu/configuration/configure_vibration.h"
+#include "yuzu/configuration/input_profiles.h"
 #include "yuzu/main.h"
 
 namespace {
@@ -356,7 +357,7 @@ bool QtControllerSelectorDialog::CheckIfParametersMet() {
 }
 
 void QtControllerSelectorDialog::SetSupportedControllers() {
-    const QString theme = [this] {
+    const QString theme = [] {
         if (QIcon::themeName().contains(QStringLiteral("dark"))) {
             return QStringLiteral("_dark");
         } else if (QIcon::themeName().contains(QStringLiteral("midnight"))) {
@@ -445,7 +446,7 @@ void QtControllerSelectorDialog::UpdateControllerIcon(std::size_t player_index) 
         }
     }();
 
-    const QString theme = [this] {
+    const QString theme = [] {
         if (QIcon::themeName().contains(QStringLiteral("dark"))) {
             return QStringLiteral("_dark");
         } else if (QIcon::themeName().contains(QStringLiteral("midnight"))) {

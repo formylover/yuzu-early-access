@@ -22,6 +22,7 @@
 #include "applets/web_browser.h"
 #include "configuration/configure_input.h"
 #include "configuration/configure_per_game.h"
+#include "configuration/configure_vibration.h"
 #include "core/file_sys/vfs.h"
 #include "core/file_sys/vfs_real.h"
 #include "core/frontend/applets/controller.h"
@@ -61,6 +62,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QProgressDialog>
+#include <QPushButton>
 #include <QShortcut>
 #include <QStatusBar>
 #include <QSysInfo>
@@ -993,7 +995,11 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
         std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard
-        std::make_unique<QtWebBrowser>(*this),         // Web Browser
+#ifdef YUZU_USE_QT_WEB_ENGINE
+        std::make_unique<QtWebBrowser>(*this), // Web Browser
+#else
+        nullptr, // Web Browser (fallback to default implementation)
+#endif
     });
 
     system.RegisterHostThread();
@@ -1095,6 +1101,8 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
         // Load per game settings
         Config per_game_config(fmt::format("{:016X}", title_id), Config::ConfigType::PerGameConfig);
     }
+
+    ConfigureVibration::SetAllVibrationDevices();
 
     Settings::LogSettings();
 
@@ -2439,13 +2447,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1104" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1118" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 1104 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1118 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

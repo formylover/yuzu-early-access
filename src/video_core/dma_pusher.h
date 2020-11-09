@@ -18,6 +18,8 @@ class System;
 
 namespace Tegra {
 
+class GPU;
+
 enum class SubmissionMode : u32 {
     IncreasingOld = 0,
     Increasing = 1,
@@ -74,8 +76,7 @@ union CommandHeader {
 static_assert(std::is_standard_layout_v<CommandHeader>, "CommandHeader is not standard layout");
 static_assert(sizeof(CommandHeader) == sizeof(u32), "CommandHeader has incorrect size!");
 
-static constexpr CommandHeader BuildCommandHeader(BufferMethods method, u32 arg_count,
-                                                  SubmissionMode mode) {
+inline CommandHeader BuildCommandHeader(BufferMethods method, u32 arg_count, SubmissionMode mode) {
     CommandHeader result{};
     result.method.Assign(static_cast<u32>(method));
     result.arg_count.Assign(arg_count);
@@ -83,18 +84,13 @@ static constexpr CommandHeader BuildCommandHeader(BufferMethods method, u32 arg_
     return result;
 }
 
-class GPU;
-
 struct CommandList final {
     CommandList() = default;
     explicit CommandList(std::size_t size) : command_lists(size) {}
     explicit CommandList(std::vector<Tegra::CommandHeader>&& prefetch_command_list)
         : prefetch_command_list{std::move(prefetch_command_list)} {}
 
-    void RefreshIntegrityChecks(GPU& gpu);
-
     std::vector<Tegra::CommandListHeader> command_lists;
-    std::vector<u64> command_list_hashes;
     std::vector<Tegra::CommandHeader> prefetch_command_list;
 };
 

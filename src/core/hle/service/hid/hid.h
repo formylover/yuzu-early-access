@@ -92,7 +92,7 @@ private:
     void ActivateKeyboard(Kernel::HLERequestContext& ctx);
     void SendKeyboardLockKeyEvent(Kernel::HLERequestContext& ctx);
     void ActivateXpad(Kernel::HLERequestContext& ctx);
-    void GetXpadIds(Kernel::HLERequestContext& ctx);
+    void GetXpadIDs(Kernel::HLERequestContext& ctx);
     void ActivateSixAxisSensor(Kernel::HLERequestContext& ctx);
     void DeactivateSixAxisSensor(Kernel::HLERequestContext& ctx);
     void StartSixAxisSensor(Kernel::HLERequestContext& ctx);

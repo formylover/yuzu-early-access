@@ -858,7 +858,7 @@ void ConfigureInputPlayer::UpdateControllerIcon() {
         }
     }();
 
-    const QString theme = [this] {
+    const QString theme = [] {
         if (QIcon::themeName().contains(QStringLiteral("dark"))) {
             return QStringLiteral("_dark");
         } else if (QIcon::themeName().contains(QStringLiteral("midnight"))) {
@@ -962,7 +962,9 @@ void ConfigureInputPlayer::UpdateMotionButtons() {
 void ConfigureInputPlayer::UpdateMappingWithDefaults() {
     if (ui->comboDevices->currentIndex() == 0) {
         return;
-    } else if (ui->comboDevices->currentIndex() == 1) {
+    }
+
+    if (ui->comboDevices->currentIndex() == 1) {
         // Reset keyboard bindings
         for (int button_id = 0; button_id < Settings::NativeButton::NumButtons; ++button_id) {
             buttons_param[button_id] = Common::ParamPackage{
@@ -1066,7 +1068,7 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
     input_setter = std::nullopt;
 }
 
-bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params) {
+bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params) const {
     if (ui->comboDevices->currentIndex() == 0) {
         return true;
     }
@@ -1075,7 +1077,7 @@ bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params)
     return params.Get("engine", "") == current_input_device.Get("class", "") &&
            params.Get("guid", "") == current_input_device.Get("guid", "") &&
            params.Get("port", "") == current_input_device.Get("port", "");
-};
+}
 
 void ConfigureInputPlayer::mousePressEvent(QMouseEvent* event) {
     if (!input_setter || !event) {

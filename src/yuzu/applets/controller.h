@@ -8,7 +8,6 @@
 #include <memory>
 #include <QDialog>
 #include "core/frontend/applets/controller.h"
-#include "yuzu/configuration/input_profiles.h"
 
 class GMainWindow;
 class QCheckBox;

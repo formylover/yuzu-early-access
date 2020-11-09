@@ -24,6 +24,7 @@
 #include "yuzu/configuration/configure_mouse_advanced.h"
 #include "yuzu/configuration/configure_touchscreen_advanced.h"
 #include "yuzu/configuration/configure_vibration.h"
+#include "yuzu/configuration/input_profiles.h"
 
 namespace {
 template <typename Dialog, typename... Args>
