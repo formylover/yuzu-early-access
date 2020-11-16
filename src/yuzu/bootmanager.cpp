@@ -14,6 +14,7 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QScreen>
+#include <QString>
 #include <QStringList>
 #include <QWindow>
 
@@ -623,19 +624,33 @@ bool GRenderWindow::LoadOpenGL() {
     auto context = CreateSharedContext();
     auto scope = context->Acquire();
     if (!gladLoadGL()) {
-        QMessageBox::critical(this, tr("初始化时出错 OpenGL 4.3!"),
-                              tr("您的GPU可能不支持OpenGL 4.3，或者您没有 "
-                                 "最新的图形驱动程序。"));
+        QMessageBox::warning(
+            this, tr("初始化OpenGL时出错！"),
+            tr("您的GPU可能不支持OpenGL，或者您没有最新的图形驱动程序。"));
+        return false;
+    }
+
+    const QString renderer =
+        QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
+
+    if (!GLAD_GL_VERSION_4_3) {
+        LOG_ERROR(Frontend, "GPU does not support OpenGL 4.3: {}", renderer.toStdString());
+        QMessageBox::warning(this, tr("初始化OpenGL 4.3时出错！"),
+                             tr("您的GPU可能不支持OpenGL 4.3，或者您没有 "
+                                "最新的图形驱动程序。<br><br>GL 渲染器:<br>%1")
+                                 .arg(renderer));
         return false;
     }
 
     QStringList unsupported_gl_extensions = GetUnsupportedGLExtensions();
     if (!unsupported_gl_extensions.empty()) {
-        QMessageBox::critical(
+        QMessageBox::warning(
             this, tr("初始化OpenGL时出错！"),
             tr("您的GPU可能不支持一个或多个必需的OpenGL扩展。 请确保你 "
-               "拥有最新的图形驱动程序。<br><br>不支持的扩展：<br>") +
-                unsupported_gl_extensions.join(QStringLiteral("<br>")));
+               "拥有最新的图形驱动程序。<br><br>GL 渲染器:<br>%1<br><br>不支持 "
+               "扩展名:<br>%2")
+                .arg(renderer)
+                .arg(unsupported_gl_extensions.join(QStringLiteral("<br>"))));
         return false;
     }
     return true;
@@ -665,8 +680,13 @@ QStringList GRenderWindow::GetUnsupportedGLExtensions() const {
     if (!GLAD_GL_ARB_depth_buffer_float)
         unsupported_ext.append(QStringLiteral("ARB_depth_buffer_float"));
 
-    for (const QString& ext : unsupported_ext)
-        LOG_CRITICAL(Frontend, "Unsupported GL extension: {}", ext.toStdString());
+    if (!unsupported_ext.empty()) {
+        LOG_ERROR(Frontend, "GPU does not support all required extensions: {}",
+                  glGetString(GL_RENDERER));
+    }
+    for (const QString& ext : unsupported_ext) {
+        LOG_ERROR(Frontend, "Unsupported GL extension: {}", ext.toStdString());
+    }
 
     return unsupported_ext;
 }

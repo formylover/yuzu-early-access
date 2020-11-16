@@ -45,6 +45,8 @@ public:
     static const std::array<UISettings::Shortcut, 16> default_hotkeys;
 
 private:
+    void Initialize(const std::string& config_name);
+
     void ReadValues();
     void ReadPlayerValue(std::size_t player_index);
     void ReadDebugValues();
@@ -79,7 +81,6 @@ private:
     void SaveMouseValues();
     void SaveTouchscreenValues();
     void SaveMotionTouchValues();
-    void SaveInputProfileNames();
 
     // Save functions based off the respective config section names.
     void SaveAudioValues();

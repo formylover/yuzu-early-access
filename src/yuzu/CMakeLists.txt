@@ -25,11 +25,6 @@ add_executable(yuzu
     compatdb.ui
     compatibility_list.cpp
     compatibility_list.h
-    configuration/input_profiles.cpp
-    configuration/input_profiles.h
-    configuration/configure_vibration.cpp
-    configuration/configure_vibration.h
-    configuration/configure_vibration.ui
     configuration/config.cpp
     configuration/config.h
     configuration/configuration_shared.cpp
@@ -110,9 +105,14 @@ add_executable(yuzu
     configuration/configure_ui.cpp
     configuration/configure_ui.h
     configuration/configure_ui.ui
+    configuration/configure_vibration.cpp
+    configuration/configure_vibration.h
+    configuration/configure_vibration.ui
     configuration/configure_web.cpp
     configuration/configure_web.h
     configuration/configure_web.ui
+    configuration/input_profiles.cpp
+    configuration/input_profiles.h
     debugger/console.cpp
     debugger/console.h
     debugger/profiler.cpp

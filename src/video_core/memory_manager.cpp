@@ -117,6 +117,7 @@ void MemoryManager::InvalidateQueuedCaches() {
     }
     cache_invalidate_queue.clear();
 }
+
 PageEntry MemoryManager::GetPageEntry(GPUVAddr gpu_addr) const {
     return page_table[PageEntryIndex(gpu_addr)];
 }

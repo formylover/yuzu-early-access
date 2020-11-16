@@ -6,9 +6,39 @@
 
 #include "common/common_paths.h"
 #include "common/file_util.h"
+#include "yuzu/configuration/config.h"
 #include "yuzu/configuration/input_profiles.h"
 
 namespace FS = Common::FS;
+
+namespace {
+
+bool ProfileExistsInFilesystem(std::string_view profile_name) {
+    return FS::Exists(fmt::format("{}input" DIR_SEP "{}.ini",
+                                  FS::GetUserPath(FS::UserPath::ConfigDir), profile_name));
+}
+
+bool IsINI(std::string_view filename) {
+    const std::size_t index = filename.rfind('.');
+
+    if (index == std::string::npos) {
+        return false;
+    }
+
+    return filename.substr(index) == ".ini";
+}
+
+std::string GetNameWithoutExtension(const std::string& filename) {
+    const std::size_t index = filename.rfind('.');
+
+    if (index == std::string::npos) {
+        return filename;
+    }
+
+    return filename.substr(0, index);
+}
+
+} // namespace
 
 InputProfiles::InputProfiles() {
     const std::string input_profile_loc =
@@ -27,6 +57,8 @@ InputProfiles::InputProfiles() {
         });
 }
 
+InputProfiles::~InputProfiles() = default;
+
 std::vector<std::string> InputProfiles::GetInputProfileNames() {
     std::vector<std::string> profile_names;
     profile_names.reserve(map_profiles.size());
@@ -43,11 +75,11 @@ std::vector<std::string> InputProfiles::GetInputProfileNames() {
     return profile_names;
 }
 
-bool InputProfiles::IsProfileNameValid(std::string profile_name) {
+bool InputProfiles::IsProfileNameValid(std::string_view profile_name) {
     return profile_name.find_first_of("<>:;\"/\\|,.!?*") == std::string::npos;
 }
 
-bool InputProfiles::CreateProfile(std::string profile_name, std::size_t player_index) {
+bool InputProfiles::CreateProfile(const std::string& profile_name, std::size_t player_index) {
     if (ProfileExistsInMap(profile_name)) {
         return false;
     }
@@ -58,7 +90,7 @@ bool InputProfiles::CreateProfile(std::string profile_name, std::size_t player_i
     return SaveProfile(profile_name, player_index);
 }
 
-bool InputProfiles::DeleteProfile(std::string profile_name) {
+bool InputProfiles::DeleteProfile(const std::string& profile_name) {
     if (!ProfileExistsInMap(profile_name)) {
         return false;
     }
@@ -71,7 +103,7 @@ bool InputProfiles::DeleteProfile(std::string profile_name) {
     return !ProfileExistsInMap(profile_name) && !ProfileExistsInFilesystem(profile_name);
 }
 
-bool InputProfiles::LoadProfile(std::string profile_name, std::size_t player_index) {
+bool InputProfiles::LoadProfile(const std::string& profile_name, std::size_t player_index) {
     if (!ProfileExistsInMap(profile_name)) {
         return false;
     }
@@ -85,7 +117,7 @@ bool InputProfiles::LoadProfile(std::string profile_name, std::size_t player_ind
     return true;
 }
 
-bool InputProfiles::SaveProfile(std::string profile_name, std::size_t player_index) {
+bool InputProfiles::SaveProfile(const std::string& profile_name, std::size_t player_index) {
     if (!ProfileExistsInMap(profile_name)) {
         return false;
     }
@@ -94,31 +126,6 @@ bool InputProfiles::SaveProfile(std::string profile_name, std::size_t player_ind
     return true;
 }
 
-bool InputProfiles::ProfileExistsInMap(std::string profile_name) {
+bool InputProfiles::ProfileExistsInMap(const std::string& profile_name) const {
     return map_profiles.find(profile_name) != map_profiles.end();
-}
-
-bool InputProfiles::ProfileExistsInFilesystem(std::string profile_name) {
-    return FS::Exists(fmt::format("{}input" DIR_SEP "{}.ini",
-                                  FS::GetUserPath(FS::UserPath::ConfigDir), profile_name));
-}
-
-bool InputProfiles::IsINI(std::string filename) {
-    const std::size_t index = filename.rfind('.');
-
-    if (index == std::string::npos) {
-        return false;
-    }
-
-    return filename.substr(index) == ".ini";
-}
-
-std::string InputProfiles::GetNameWithoutExtension(std::string filename) {
-    const std::size_t index = filename.rfind('.');
-
-    if (index == std::string::npos) {
-        return filename;
-    }
-
-    return filename.substr(0, index);
 }

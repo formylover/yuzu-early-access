@@ -375,13 +375,17 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             }
 
             connect(analog_button, &QPushButton::clicked, [=, this] {
-                if (QMessageBox::information(
-                        this, tr("Map 模拟摇杆"),
-                        tr("“按“确定”后，先水平移动操纵杆，然后再 "
-                           "垂直。\n要反转轴，请先垂直移动操纵杆， "
-                           "然后水平。"),
-                        QMessageBox::Ok | QMessageBox::Cancel) != QMessageBox::Ok) {
-                    return;
+                if (!map_analog_stick_accepted) {
+                    map_analog_stick_accepted =
+                        QMessageBox::information(
+                            this, tr("Map 模拟摇杆"),
+                            tr("按确定后，首先水平移动游戏杆，然后 "
+                               "垂直。\n要反转轴，请先移动操纵杆 "
+                               "垂直，然后水平。"),
+                            QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok;
+                    if (!map_analog_stick_accepted) {
+                        return;
+                    }
                 }
                 HandleClick(
                     analog_map_buttons[analog_id][sub_button_id],
@@ -694,6 +698,8 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
     const auto current_guid = button_param->Get("guid", "");
     const auto current_port = button_param->Get("port", "");
 
+    const bool is_keyboard_mouse = current_engine == "keyboard" || current_engine == "mouse";
+
     UpdateInputDevices();
 
     if (buttons_empty) {
@@ -702,13 +708,22 @@ void ConfigureInputPlayer::UpdateInputDeviceCombobox() {
 
     const bool all_one_device =
         std::all_of(buttons_param.begin(), buttons_param.end(),
-                    [current_engine, current_guid, current_port](const Common::ParamPackage param) {
+                    [current_engine, current_guid, current_port,
+                     is_keyboard_mouse](const Common::ParamPackage param) {
+                        if (is_keyboard_mouse) {
+                            return !param.Has("engine") || param.Get("engine", "") == "keyboard" ||
+                                   param.Get("engine", "") == "mouse";
+                        }
                         return !param.Has("engine") || (param.Get("engine", "") == current_engine &&
                                                         param.Get("guid", "") == current_guid &&
                                                         param.Get("port", "") == current_port);
                     });
 
     if (all_one_device) {
+        if (is_keyboard_mouse) {
+            ui->comboDevices->setCurrentIndex(1);
+            return;
+        }
         const auto devices_it = std::find_if(
             input_devices.begin(), input_devices.end(),
             [current_engine, current_guid, current_port](const Common::ParamPackage param) {
@@ -1071,6 +1086,11 @@ void ConfigureInputPlayer::SetPollingResult(const Common::ParamPackage& params, 
 bool ConfigureInputPlayer::IsInputAcceptable(const Common::ParamPackage& params) const {
     if (ui->comboDevices->currentIndex() == 0) {
         return true;
+    }
+
+    // Keyboard/Mouse
+    if (ui->comboDevices->currentIndex() == 1) {
+        return params.Get("engine", "") == "keyboard" || params.Get("engine", "") == "mouse";
     }
 
     const auto current_input_device = input_devices[ui->comboDevices->currentIndex()];
