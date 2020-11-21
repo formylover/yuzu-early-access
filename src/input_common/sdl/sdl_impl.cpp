@@ -402,8 +402,7 @@ public:
 
     bool SetRumblePlay(f32 amp_low, f32 freq_low, f32 amp_high, f32 freq_high) const override {
         const auto process_amplitude = [](f32 amplitude) {
-            return static_cast<u16>(std::pow(amplitude, 0.5f) *
-                                    (3.0f - 2.0f * std::pow(amplitude, 0.15f)) * 0xFFFF);
+            return static_cast<u16>((amplitude + std::pow(amplitude, 0.3f)) * 0.5f * 0xFFFF);
         };
 
         const auto processed_amp_low = process_amplitude(amp_low);
@@ -679,6 +678,10 @@ SDLState::SDLState() {
     RegisterFactory<VibrationDevice>("sdl", vibration_factory);
     RegisterFactory<MotionDevice>("sdl", motion_factory);
 
+    // This hint allows for the detection of more than 4 XInput devices by
+    // detecting the rest of the devices as RawInput or DirectInput devices.
+    SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
+
     // If the frontend is going to manage the event loop, then we don't start one here
     start_thread = SDL_WasInit(SDL_INIT_JOYSTICK) == 0;
     if (start_thread && SDL_Init(SDL_INIT_JOYSTICK) < 0) {
@@ -698,7 +701,7 @@ SDLState::SDLState() {
             using namespace std::chrono_literals;
             while (initialized) {
                 SDL_PumpEvents();
-                std::this_thread::sleep_for(5ms);
+                std::this_thread::sleep_for(1ms);
             }
         });
     }

@@ -90,7 +90,7 @@
         <item>
          <widget class="QCheckBox" name="toggle_console">
           <property name="text">
-           <string>显示日志窗口 (仅限 Windows)</string>
+           <string>显示日志控制台</string>
           </property>
          </widget>
         </item>
@@ -102,6 +102,34 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="extended_logging">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>选中后，日志的最大大小将从100 MB增加到1 GB</string>
+        </property>
+        <property name="text">
+         <string>启用扩展日志记录</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_3">
+        <property name="font">
+         <font>
+          <italic>true</italic>
+         </font>
+        </property>
+        <property name="text">
+         <string>yuzu关闭时，它将自动重置。</string>
+        </property>
+        <property name="indent">
+         <number>20</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -115,7 +143,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
-         <widget class="QLabel" name="label_3">
+         <widget class="QLabel" name="label_4">
           <property name="text">
            <string>参数字符串</string>
           </property>
@@ -140,8 +168,8 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="whatsThis">
-         <string>选中时，图形API在较慢的调试模式进入</string>
+        <property name="toolTip">
+         <string>选中后，图形API进入较慢的调试模式</string>
         </property>
         <property name="text">
          <string>启用图形调试</string>
@@ -153,8 +181,8 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="whatsThis">
-         <string>选中后，它将禁用宏即时编译器。 启用此功能会使游戏运行缓慢</string>
+        <property name="toolTip">
+         <string>选中后，它将禁用宏即时编译器。 启用此功能会使游戏运行速度变慢</string>
         </property>
         <property name="text">
          <string>禁用 Macro JIT</string>
@@ -169,7 +197,7 @@
      <property name="title">
       <string>Dump</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_6">
+     <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
@@ -178,7 +206,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="label_5">
         <property name="font">
          <font>
           <italic>true</italic>
@@ -200,7 +228,7 @@
      <property name="title">
       <string>高级</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_7">
+     <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
        <widget class="QCheckBox" name="quest_flag">
         <property name="text">

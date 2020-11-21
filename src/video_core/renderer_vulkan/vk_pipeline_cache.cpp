@@ -344,6 +344,12 @@ VKPipelineCache::DecompileShaders(const FixedPipelineState& fixed_state) {
     }
     specialization.ndc_minus_one_to_one = fixed_state.ndc_minus_one_to_one;
 
+    // Alpha test
+    specialization.alpha_test_func =
+        FixedPipelineState::UnpackComparisonOp(fixed_state.alpha_test_func.Value());
+    // memcpy from u32 to float TODO: C++20 std::bit_cast
+    std::memcpy(&specialization.alpha_test_ref, &fixed_state.alpha_test_ref, sizeof(float));
+
     SPIRVProgram program;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 

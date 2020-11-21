@@ -2075,6 +2075,49 @@ private:
         return {};
     }
 
+    void AlphaTest(Id pointer) {
+        const Id true_label = OpLabel();
+        const Id skip_label = OpLabel();
+        const Id alpha_reference = Constant(t_float, specialization.alpha_test_ref);
+        const Id alpha_value = OpLoad(t_float, pointer);
+        Id condition;
+        using Compare = Maxwell::ComparisonOp;
+        switch (specialization.alpha_test_func) {
+        case Compare::NeverOld:
+            condition = v_false; // Never true
+            break;
+        case Compare::LessOld:
+            condition = OpFOrdLessThan(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::EqualOld:
+            condition = OpFOrdEqual(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::LessEqualOld:
+            condition = OpFOrdLessThanEqual(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::GreaterOld:
+            // Note: requires "Equal" to properly work for ssbu. perhaps a precision issue
+            condition = OpFOrdGreaterThanEqual(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::NotEqualOld:
+            // Note: not accurate when tested against a unit test
+            // TODO: confirm if used by games
+            condition = OpFOrdNotEqual(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::GreaterEqualOld:
+            condition = OpFOrdGreaterThanEqual(t_bool, alpha_reference, alpha_value);
+            break;
+        case Compare::AlwaysOld:
+            return;
+        default:
+            UNREACHABLE();
+        }
+        OpBranchConditional(condition, true_label, skip_label);
+        AddLabel(true_label);
+        OpKill();
+        AddLabel(skip_label);
+    }
+
     void PreExit() {
         if (stage == ShaderType::Vertex && specialization.ndc_minus_one_to_one) {
             const u32 position_index = out_indices.position.value();
@@ -2097,8 +2140,6 @@ private:
             UNIMPLEMENTED_IF_MSG(header.ps.omap.sample_mask != 0,
                                  "Sample mask write is unimplemented");
 
-            // TODO(Rodrigo): Alpha testing
-
             // Write the color outputs using the data in the shader registers, disabled
             // rendertargets/components are skipped in the register assignment.
             u32 current_reg = 0;
@@ -2110,6 +2151,9 @@ private:
                     }
                     const Id pointer = AccessElement(t_out_float, frag_colors[rt], component);
                     OpStore(pointer, SafeGetRegister(current_reg));
+                    if (rt == 0 && component == 3) {
+                        AlphaTest(pointer);
+                    }
                     ++current_reg;
                 }
             }

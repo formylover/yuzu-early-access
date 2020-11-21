@@ -46,6 +46,7 @@ public:
         JoyDual,
         JoyLeft,
         JoyRight,
+        GameCube,
         Pokeball,
     };
 
@@ -55,6 +56,7 @@ public:
         JoyconDual = 5,
         JoyconLeft = 6,
         JoyconRight = 7,
+        GameCube = 8,
         Pokeball = 9,
     };
 
@@ -104,7 +106,11 @@ public:
             BitField<3, 1, u32> joycon_left;
             BitField<4, 1, u32> joycon_right;
 
-            BitField<6, 1, u32> pokeball; // TODO(ogniK): Confirm when possible
+            BitField<5, 1, u32> gamecube;
+            BitField<6, 1, u32> pokeball;
+            BitField<7, 1, u32> lark;
+            BitField<8, 1, u32> handheldlark;
+            BitField<9, 1, u32> lucia;
         };
     };
     static_assert(sizeof(NpadStyleSet) == 4, "NpadStyleSet is an invalid size");
@@ -322,6 +328,20 @@ private:
     };
     static_assert(sizeof(SixAxisGeneric) == 0x708, "SixAxisGeneric is an invalid size");
 
+    struct TriggerState {
+        s64_le timestamp{};
+        s64_le timestamp2{};
+        u32 l_analog{};
+        u32 r_analog{};
+    };
+    static_assert(sizeof(TriggerState) == 0x18, "TriggerState is an invalid size");
+
+    struct TriggerGeneric {
+        CommonHeader common{};
+        std::array<TriggerState, 17> trigger{};
+    };
+    static_assert(sizeof(TriggerGeneric) == 0x1B8, "TriggerGeneric is an invalid size");
+
     enum class ColorReadError : u32_le {
         ReadOk = 0,
         ColorDoesntExist = 1,
@@ -387,8 +407,12 @@ private:
         NPadProperties properties;
         INSERT_PADDING_WORDS(1);
         std::array<u32, 3> battery_level;
-        INSERT_PADDING_BYTES(0x5c);
-        INSERT_PADDING_BYTES(0xdf8);
+        INSERT_PADDING_BYTES(0x60); // NfcXcdDeviceHandle Header + States
+        INSERT_PADDING_BYTES(0x04); // AppletFooterUiAttribute
+        INSERT_PADDING_BYTES(0x1);  // AppletFooterUiType
+        INSERT_PADDING_BYTES(0x8);  // Mutex
+        TriggerGeneric gc_trigger_states;
+        INSERT_PADDING_BYTES(0xc2f);
     };
     static_assert(sizeof(NPadEntry) == 0x5000, "NPadEntry is an invalid size");
 
@@ -436,6 +460,7 @@ private:
     bool sixaxis_sensors_enabled{true};
     bool sixaxis_at_rest{true};
     std::array<ControllerPad, 10> npad_pad_states{};
+    std::array<TriggerState, 10> npad_trigger_states{};
     bool is_in_lr_assignment_mode{false};
     Core::System& system;
 };

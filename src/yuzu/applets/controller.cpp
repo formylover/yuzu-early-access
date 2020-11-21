@@ -67,6 +67,9 @@ bool IsControllerCompatible(Settings::ControllerType controller_type,
         return parameters.allow_right_joycon;
     case Settings::ControllerType::Handheld:
         return parameters.enable_single_mode && parameters.allow_handheld;
+    case Settings::ControllerType::GameCube:
+        return parameters.allow_gamecube_controller;
+    case Settings::ControllerType::Pokeball:
     default:
         return false;
     }
@@ -86,6 +89,8 @@ constexpr Settings::ControllerType GetControllerTypeFromIndex(int index) {
         return Settings::ControllerType::RightJoycon;
     case 4:
         return Settings::ControllerType::Handheld;
+    case 5:
+        return Settings::ControllerType::GameCube;
     }
 }
 
@@ -93,6 +98,7 @@ constexpr Settings::ControllerType GetControllerTypeFromIndex(int index) {
 constexpr int GetIndexFromControllerType(Settings::ControllerType type) {
     switch (type) {
     case Settings::ControllerType::ProController:
+    case Settings::ControllerType::Pokeball:
     default:
         return 0;
     case Settings::ControllerType::DualJoyconDetached:
@@ -103,6 +109,8 @@ constexpr int GetIndexFromControllerType(Settings::ControllerType type) {
         return 3;
     case Settings::ControllerType::Handheld:
         return 4;
+    case Settings::ControllerType::GameCube:
+        return 5;
     }
 }
 
@@ -399,7 +407,7 @@ void QtControllerSelectorDialog::SetSupportedControllers() {
             QStringLiteral("image: url(:/controller/applet_joycon_right%0_disabled); ").arg(theme));
     }
 
-    if (parameters.allow_pro_controller) {
+    if (parameters.allow_pro_controller || parameters.allow_gamecube_controller) {
         ui->controllerSupported5->setStyleSheet(
             QStringLiteral("image: url(:/controller/applet_pro_controller%0); ").arg(theme));
     } else {
@@ -432,6 +440,7 @@ void QtControllerSelectorDialog::UpdateControllerIcon(std::size_t player_index) 
     const QString stylesheet = [this, player_index] {
         switch (GetControllerTypeFromIndex(emulated_controllers[player_index]->currentIndex())) {
         case Settings::ControllerType::ProController:
+        case Settings::ControllerType::GameCube:
             return QStringLiteral("image: url(:/controller/applet_pro_controller%0); ");
         case Settings::ControllerType::DualJoyconDetached:
             return QStringLiteral("image: url(:/controller/applet_dual_joycon%0); ");
@@ -441,6 +450,7 @@ void QtControllerSelectorDialog::UpdateControllerIcon(std::size_t player_index) 
             return QStringLiteral("image: url(:/controller/applet_joycon_right%0); ");
         case Settings::ControllerType::Handheld:
             return QStringLiteral("image: url(:/controller/applet_handheld%0); ");
+        case Settings::ControllerType::Pokeball:
         default:
             return QString{};
         }
