@@ -187,7 +187,7 @@ struct System::Impl {
 
         service_manager = std::make_shared<Service::SM::ServiceManager>(kernel);
 
-        Service::Init(service_manager, system);
+        services = std::make_unique<Service::Services>(service_manager, system);
         GDBStub::DeferStart();
 
         interrupt_manager = std::make_unique<Core::Hardware::InterruptManager>(system);
@@ -210,8 +210,9 @@ struct System::Impl {
 
     ResultStatus Load(System& system, Frontend::EmuWindow& emu_window, const std::string& filepath,
                       std::size_t program_index) {
-        app_loader =
-            Loader::GetLoader(GetGameFileFromPath(virtual_filesystem, filepath), program_index);
+        app_loader = Loader::GetLoader(system, GetGameFileFromPath(virtual_filesystem, filepath),
+                                       program_index);
+
         if (!app_loader) {
             LOG_CRITICAL(Core, "Failed to obtain loader for {}!", filepath);
             return ResultStatus::ErrorGetLoader;
@@ -225,7 +226,7 @@ struct System::Impl {
             return init_result;
         }
 
-        telemetry_session->AddInitialInfo(*app_loader);
+        telemetry_session->AddInitialInfo(*app_loader, fs_controller, *content_provider);
         auto main_process =
             Kernel::Process::Create(system, "main", Kernel::Process::ProcessType::Userland);
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
@@ -297,7 +298,7 @@ struct System::Impl {
 
         // Shutdown emulation session
         GDBStub::Shutdown();
-        Service::Shutdown();
+        services.reset();
         service_manager.reset();
         cheat_engine.reset();
         telemetry_session.reset();
@@ -307,8 +308,8 @@ struct System::Impl {
         cpu_manager.Shutdown();
 
         // Shutdown kernel and core timing
-        kernel.Shutdown();
         core_timing.Shutdown();
+        kernel.Shutdown();
 
         // Close app loader
         app_loader.reset();
@@ -339,7 +340,7 @@ struct System::Impl {
         Service::Glue::ApplicationLaunchProperty launch{};
         launch.title_id = process.GetTitleID();
 
-        FileSys::PatchManager pm{launch.title_id};
+        FileSys::PatchManager pm{launch.title_id, fs_controller, *content_provider};
         launch.version = pm.GetGameVersion().value_or(0);
 
         // TODO(DarkLordZach): When FSController/Game Card Support is added, if
@@ -398,6 +399,9 @@ struct System::Impl {
 
     /// Service manager
     std::shared_ptr<Service::SM::ServiceManager> service_manager;
+
+    /// Services
+    std::unique_ptr<Service::Services> services;
 
     /// Telemetry session for this emulation session
     std::unique_ptr<Core::TelemetrySession> telemetry_session;

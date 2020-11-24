@@ -121,6 +121,7 @@ void Load(VkDevice device, DeviceDispatch& dld) noexcept {
     X(vkCmdSetPrimitiveTopologyEXT);
     X(vkCmdSetStencilOpEXT);
     X(vkCmdSetStencilTestEnableEXT);
+    X(vkCmdResolveImage);
     X(vkCreateBuffer);
     X(vkCreateBufferView);
     X(vkCreateCommandPool);
@@ -476,8 +477,7 @@ DebugCallback Instance::TryCreateDebugCallback(
                            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
                            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
         .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                       VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+                       VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
         .pfnUserCallback = callback,
         .pUserData = nullptr,
     };

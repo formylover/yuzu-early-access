@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <QWidget>
 
@@ -112,6 +113,15 @@ private:
     /// Update UI to reflect current configuration.
     void UpdateUI();
 
+    /// Sets the available controllers.
+    void SetConnectableControllers();
+
+    /// Gets the Controller Type for a given controller combobox index.
+    Settings::ControllerType GetControllerTypeFromIndex(int index) const;
+
+    /// Gets the controller combobox index for a given Controller Type.
+    int GetIndexFromControllerType(Settings::ControllerType type) const;
+
     /// Update the available input devices.
     void UpdateInputDevices();
 
@@ -121,14 +131,8 @@ private:
     /// Hides and disables controller settings based on the current controller type.
     void UpdateControllerAvailableButtons();
 
-    /// Disables controller settings based on the current controller type.
-    void UpdateControllerEnabledButtons();
-
     /// Shows or hides motion groupboxes based on the current controller type.
     void UpdateMotionButtons();
-
-    /// Alters the button name based on the current controller type.
-    void UpdateControllerButtonNames();
 
     /// Gets the default controller mapping for this device and auto configures the input to match.
     void UpdateMappingWithDefaults();
@@ -156,6 +160,9 @@ private:
 
     std::unique_ptr<QTimer> timeout_timer;
     std::unique_ptr<QTimer> poll_timer;
+
+    /// Stores a pair of "Connected Controllers" combobox index and Controller Type enum.
+    std::vector<std::pair<int, Settings::ControllerType>> index_controller_type_pairs;
 
     static constexpr int PLAYER_COUNT = 8;
     std::array<QCheckBox*, PLAYER_COUNT> player_connected_checkbox;

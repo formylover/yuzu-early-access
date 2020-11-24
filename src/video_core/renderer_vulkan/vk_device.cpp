@@ -46,6 +46,7 @@ constexpr std::array REQUIRED_EXTENSIONS{
     VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
     VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
     VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
@@ -161,18 +162,32 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(
         VK_FORMAT_BC2_SRGB_BLOCK,
         VK_FORMAT_BC3_SRGB_BLOCK,
         VK_FORMAT_BC7_SRGB_BLOCK,
+        VK_FORMAT_ASTC_4x4_UNORM_BLOCK,
         VK_FORMAT_ASTC_4x4_SRGB_BLOCK,
-        VK_FORMAT_ASTC_8x8_SRGB_BLOCK,
-        VK_FORMAT_ASTC_8x5_SRGB_BLOCK,
+        VK_FORMAT_ASTC_5x4_UNORM_BLOCK,
         VK_FORMAT_ASTC_5x4_SRGB_BLOCK,
         VK_FORMAT_ASTC_5x5_UNORM_BLOCK,
         VK_FORMAT_ASTC_5x5_SRGB_BLOCK,
-        VK_FORMAT_ASTC_10x8_UNORM_BLOCK,
-        VK_FORMAT_ASTC_10x8_SRGB_BLOCK,
+        VK_FORMAT_ASTC_6x5_UNORM_BLOCK,
+        VK_FORMAT_ASTC_6x5_SRGB_BLOCK,
         VK_FORMAT_ASTC_6x6_UNORM_BLOCK,
         VK_FORMAT_ASTC_6x6_SRGB_BLOCK,
+        VK_FORMAT_ASTC_8x5_UNORM_BLOCK,
+        VK_FORMAT_ASTC_8x5_SRGB_BLOCK,
+        VK_FORMAT_ASTC_8x6_UNORM_BLOCK,
+        VK_FORMAT_ASTC_8x6_SRGB_BLOCK,
+        VK_FORMAT_ASTC_8x8_UNORM_BLOCK,
+        VK_FORMAT_ASTC_8x8_SRGB_BLOCK,
+        VK_FORMAT_ASTC_10x5_UNORM_BLOCK,
+        VK_FORMAT_ASTC_10x5_SRGB_BLOCK,
+        VK_FORMAT_ASTC_10x6_UNORM_BLOCK,
+        VK_FORMAT_ASTC_10x6_SRGB_BLOCK,
+        VK_FORMAT_ASTC_10x8_UNORM_BLOCK,
+        VK_FORMAT_ASTC_10x8_SRGB_BLOCK,
         VK_FORMAT_ASTC_10x10_UNORM_BLOCK,
         VK_FORMAT_ASTC_10x10_SRGB_BLOCK,
+        VK_FORMAT_ASTC_12x10_UNORM_BLOCK,
+        VK_FORMAT_ASTC_12x10_SRGB_BLOCK,
         VK_FORMAT_ASTC_12x12_UNORM_BLOCK,
         VK_FORMAT_ASTC_12x12_SRGB_BLOCK,
         VK_FORMAT_ASTC_8x6_UNORM_BLOCK,
@@ -214,7 +229,7 @@ bool VKDevice::Create() {
     features2.features = {
         .robustBufferAccess = false,
         .fullDrawIndexUint32 = false,
-        .imageCubeArray = false,
+        .imageCubeArray = true,
         .independentBlend = true,
         .geometryShader = true,
         .tessellationShader = true,
@@ -242,7 +257,7 @@ bool VKDevice::Create() {
         .shaderTessellationAndGeometryPointSize = false,
         .shaderImageGatherExtended = true,
         .shaderStorageImageExtendedFormats = false,
-        .shaderStorageImageMultisample = false,
+        .shaderStorageImageMultisample = true,
         .shaderStorageImageReadWithoutFormat = is_formatless_image_load_supported,
         .shaderStorageImageWriteWithoutFormat = true,
         .shaderUniformBufferArrayDynamicIndexing = false,
@@ -268,7 +283,6 @@ bool VKDevice::Create() {
         .variableMultisampleRate = false,
         .inheritedQueries = false,
     };
-
     VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_semaphore{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR,
         .pNext = nullptr,
@@ -380,6 +394,20 @@ bool VKDevice::Create() {
         LOG_INFO(Render_Vulkan, "Device doesn't support extended dynamic state");
     }
 
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2;
+    if (ext_robustness2) {
+        robustness2 = {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT,
+            .pNext = nullptr,
+            .robustBufferAccess2 = false,
+            .robustImageAccess2 = true,
+            .nullDescriptor = true,
+        };
+        SetNext(next, robustness2);
+    } else {
+        LOG_INFO(Render_Vulkan, "Device doesn't support robustness2");
+    }
+
     if (!ext_depth_range_unrestricted) {
         LOG_INFO(Render_Vulkan, "Device doesn't support depth range unrestricted");
     }
@@ -406,6 +434,12 @@ bool VKDevice::Create() {
 
     CollectTelemetryParameters();
 
+    if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
+        LOG_WARNING(
+            Render_Vulkan,
+            "Blacklisting RADV for VK_EXT_extended_dynamic state, likely due to a bug in yuzu");
+        ext_extended_dynamic_state = false;
+    }
     if (ext_extended_dynamic_state && IsRDNA(properties.deviceName, driver_id)) {
         // AMD's proprietary driver supports VK_EXT_extended_dynamic_state but on RDNA devices it
         // seems to cause stability issues
@@ -458,7 +492,7 @@ void VKDevice::ReportLoss() const {
     LOG_CRITICAL(Render_Vulkan, "Device loss occured!");
 
     // Wait for the log to flush and for Nsight Aftermath to dump the results
-    std::this_thread::sleep_for(std::chrono::seconds{3});
+    std::this_thread::sleep_for(std::chrono::seconds{15});
 }
 
 void VKDevice::SaveShader(const std::vector<u32>& spirv) const {
@@ -569,6 +603,7 @@ bool VKDevice::IsSuitable(vk::PhysicalDevice physical, VkSurfaceKHR surface) {
     const auto features{physical.GetFeatures()};
     const std::array feature_report = {
         std::make_pair(features.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics"),
+        std::make_pair(features.imageCubeArray, "imageCubeArray"),
         std::make_pair(features.independentBlend, "independentBlend"),
         std::make_pair(features.depthClamp, "depthClamp"),
         std::make_pair(features.samplerAnisotropy, "samplerAnisotropy"),
@@ -580,6 +615,7 @@ bool VKDevice::IsSuitable(vk::PhysicalDevice physical, VkSurfaceKHR surface) {
         std::make_pair(features.occlusionQueryPrecise, "occlusionQueryPrecise"),
         std::make_pair(features.fragmentStoresAndAtomics, "fragmentStoresAndAtomics"),
         std::make_pair(features.shaderImageGatherExtended, "shaderImageGatherExtended"),
+        std::make_pair(features.shaderStorageImageMultisample, "shaderStorageImageMultisample"),
         std::make_pair(features.shaderStorageImageWriteWithoutFormat,
                        "shaderStorageImageWriteWithoutFormat"),
     };
@@ -608,6 +644,7 @@ std::vector<const char*> VKDevice::LoadExtensions() {
     bool has_ext_transform_feedback{};
     bool has_ext_custom_border_color{};
     bool has_ext_extended_dynamic_state{};
+    bool has_ext_robustness2{};
     for (const VkExtensionProperties& extension : physical.EnumerateDeviceExtensionProperties()) {
         const auto test = [&](std::optional<std::reference_wrapper<bool>> status, const char* name,
                               bool push) {
@@ -627,11 +664,13 @@ std::vector<const char*> VKDevice::LoadExtensions() {
         test(has_khr_shader_float16_int8, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME, false);
         test(ext_depth_range_unrestricted, VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME, true);
         test(ext_index_type_uint8, VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, true);
+        test(ext_sampler_filter_minmax, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, true);
         test(ext_shader_viewport_index_layer, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
              true);
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
+        test(has_ext_robustness2, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, false);
         if (instance_version >= VK_API_VERSION_1_1) {
             test(has_ext_subgroup_size_control, VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, false);
         }
@@ -730,6 +769,18 @@ std::vector<const char*> VKDevice::LoadExtensions() {
         if (dynamic_state.extendedDynamicState) {
             extensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
             ext_extended_dynamic_state = true;
+        }
+    }
+
+    if (has_ext_robustness2) {
+        VkPhysicalDeviceRobustness2FeaturesEXT robustness2;
+        robustness2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+        robustness2.pNext = nullptr;
+        features.pNext = &robustness2;
+        physical.GetFeatures2KHR(features);
+        if (robustness2.nullDescriptor && robustness2.robustImageAccess2) {
+            extensions.push_back(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+            ext_robustness2 = true;
         }
     }
 

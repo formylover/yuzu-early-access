@@ -32,6 +32,8 @@
 #include "yuzu/configuration/input_profiles.h"
 #include "yuzu/util/limitable_input_dialog.h"
 
+using namespace Service::HID;
+
 const std::array<std::string, ConfigureInputPlayer::ANALOG_SUB_BUTTONS_NUM>
     ConfigureInputPlayer::analog_sub_buttons{{
         "up",
@@ -52,60 +54,10 @@ void UpdateController(Settings::ControllerType controller_type, std::size_t npad
     }
     Service::SM::ServiceManager& sm = system.ServiceManager();
 
-    auto& npad =
-        sm.GetService<Service::HID::Hid>("hid")
-            ->GetAppletResource()
-            ->GetController<Service::HID::Controller_NPad>(Service::HID::HidController::NPad);
+    auto& npad = sm.GetService<Hid>("hid")->GetAppletResource()->GetController<Controller_NPad>(
+        HidController::NPad);
 
     npad.UpdateControllerAt(npad.MapSettingsTypeToNPad(controller_type), npad_index, connected);
-}
-
-/// Maps the controller type combobox index to Controller Type enum
-constexpr Settings::ControllerType GetControllerTypeFromIndex(int index, std::size_t player_index) {
-    switch (index) {
-    case 0:
-    default:
-        return Settings::ControllerType::ProController;
-    case 1:
-        return Settings::ControllerType::DualJoyconDetached;
-    case 2:
-        return Settings::ControllerType::LeftJoycon;
-    case 3:
-        return Settings::ControllerType::RightJoycon;
-    case 4:
-        if (player_index == 0) {
-            return Settings::ControllerType::Handheld;
-        }
-        [[fallthrough]];
-    case 5:
-        return Settings::ControllerType::GameCube;
-    case 6:
-        return Settings::ControllerType::Pokeball;
-    }
-}
-
-/// Maps the Controller Type enum to controller type combobox index
-constexpr int GetIndexFromControllerType(Settings::ControllerType type, std::size_t player_index) {
-    switch (type) {
-    case Settings::ControllerType::ProController:
-    default:
-        return 0;
-    case Settings::ControllerType::DualJoyconDetached:
-        return 1;
-    case Settings::ControllerType::LeftJoycon:
-        return 2;
-    case Settings::ControllerType::RightJoycon:
-        return 3;
-    case Settings::ControllerType::Handheld:
-        if (player_index == 0) {
-            return 4;
-        }
-        [[fallthrough]];
-    case Settings::ControllerType::GameCube:
-        return 5;
-    case Settings::ControllerType::Pokeball:
-        return 6;
-    }
 }
 
 QString GetKeyName(int key_code) {
@@ -208,7 +160,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
     if (param.Get("engine", "") == "mouse") {
         if (param.Has("button")) {
             const QString button_str = QString::number(int(param.Get("button", 0)));
-            return QObject::tr("Click %1").arg(button_str);
+            return QObject::tr("请点击 %1").arg(button_str);
         }
         return GetKeyName(param.Get("code", 0));
     }
@@ -273,13 +225,13 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
         if (dir == "left" || dir == "right") {
             const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
 
-            return QObject::tr("Mouse %1").arg(axis_x_str);
+            return QObject::tr("鼠标 %1").arg(axis_x_str);
         }
 
         if (dir == "up" || dir == "down") {
             const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
 
-            return QObject::tr("Mouse %1").arg(axis_y_str);
+            return QObject::tr("鼠标 %1").arg(axis_y_str);
         }
 
         return {};
@@ -378,7 +330,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("Clear"), [&] {
+                    context_menu.addAction(tr("清除"), [&] {
                         buttons_param[button_id].Clear();
                         button_map[button_id]->setText(tr("[没有设置]"));
                     });
@@ -401,7 +353,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("Clear"), [&] {
+                    context_menu.addAction(tr("清除"), [&] {
                         motions_param[motion_id].Clear();
                         motion_map[motion_id]->setText(tr("[没有设置]"));
                     });
@@ -444,7 +396,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             connect(analog_button, &QPushButton::customContextMenuRequested,
                     [=, this](const QPoint& menu_location) {
                         QMenu context_menu;
-                        context_menu.addAction(tr("Clear"), [&] {
+                        context_menu.addAction(tr("清除"), [&] {
                             analogs_param[analog_id].Clear();
                             analog_map_buttons[analog_id][sub_button_id]->setText(tr("[没有设置]"));
                         });
@@ -468,7 +420,7 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("Clear"), [&] {
+                    context_menu.addAction(tr("清除"), [&] {
                         analogs_param[analog_id].Set("modifier", "");
                         analog_map_modifier_button[analog_id]->setText(tr("[没有设置]"));
                     });
@@ -500,26 +452,13 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
     connect(ui->groupConnectedController, &QGroupBox::toggled,
             [this](bool checked) { emit Connected(checked); });
 
-    // Set up controller type. Only Player 1 can choose Handheld.
-    ui->comboControllerType->clear();
-
-    QStringList controller_types = {
-        tr("Pro Controller"),
-        tr("Dual Joycons"),
-        tr("Left Joycon"),
-        tr("Right Joycon"),
-    };
-
     if (player_index == 0) {
-        controller_types.append(tr("Handheld"));
         connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged),
-                [this, player_index](int index) {
-                    emit HandheldStateChanged(GetControllerTypeFromIndex(index, player_index) ==
+                [this](int index) {
+                    emit HandheldStateChanged(GetControllerTypeFromIndex(index) ==
                                               Settings::ControllerType::Handheld);
                 });
     }
-
-    controller_types.append(tr("GameCube Controller"));
 
     if (debug || player_index == 9) {
         ui->groupConnectedController->setCheckable(false);
@@ -529,24 +468,17 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
     if (debug) {
         ui->buttonScreenshot->setEnabled(false);
         ui->buttonHome->setEnabled(false);
-        QStringList debug_controller_types = {
-            tr("Pro Controller"),
-        };
-        ui->comboControllerType->addItems(debug_controller_types);
+        ui->comboControllerType->addItem(tr("Pro Controller"));
     } else {
-        ui->comboControllerType->addItems(controller_types);
+        SetConnectableControllers();
     }
 
     UpdateControllerIcon();
     UpdateControllerAvailableButtons();
-    UpdateControllerEnabledButtons();
-    UpdateControllerButtonNames();
     UpdateMotionButtons();
     connect(ui->comboControllerType, qOverload<int>(&QComboBox::currentIndexChanged), [this](int) {
         UpdateControllerIcon();
         UpdateControllerAvailableButtons();
-        UpdateControllerEnabledButtons();
-        UpdateControllerButtonNames();
         UpdateMotionButtons();
     });
 
@@ -634,6 +566,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             &ConfigureInputPlayer::SaveProfile);
 
     LoadConfiguration();
+
+    // TODO(wwylele): enable this when we actually emulate it
+    ui->buttonHome->setEnabled(false);
 }
 
 ConfigureInputPlayer::~ConfigureInputPlayer() = default;
@@ -658,8 +593,7 @@ void ConfigureInputPlayer::ApplyConfiguration() {
                    [](const Common::ParamPackage& param) { return param.Serialize(); });
 
     const auto controller_type =
-        GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
-
+        GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     const auto player_connected = ui->groupConnectedController->isChecked() &&
                                   controller_type != Settings::ControllerType::Handheld;
 
@@ -745,11 +679,8 @@ void ConfigureInputPlayer::LoadConfiguration() {
     if (debug) {
         return;
     }
-    if (player_index != 0 && player.controller_type == Settings::ControllerType::GameCube) {
-        ui->comboControllerType->setCurrentIndex(4);
-    } else {
-        ui->comboControllerType->setCurrentIndex(static_cast<int>(player.controller_type));
-    }
+
+    ui->comboControllerType->setCurrentIndex(GetIndexFromControllerType(player.controller_type));
     ui->groupConnectedController->setChecked(
         player.connected ||
         (player_index == 0 && Settings::values.players.GetValue()[HANDHELD_INDEX].connected));
@@ -924,6 +855,82 @@ void ConfigureInputPlayer::UpdateUI() {
     }
 }
 
+void ConfigureInputPlayer::SetConnectableControllers() {
+    const auto add_controllers = [this](bool enable_all,
+                                        Controller_NPad::NpadStyleSet npad_style_set = {}) {
+        index_controller_type_pairs.clear();
+        ui->comboControllerType->clear();
+
+        if (enable_all || npad_style_set.pro_controller == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Settings::ControllerType::ProController);
+            ui->comboControllerType->addItem(tr("Pro Controller"));
+        }
+
+        if (enable_all || npad_style_set.joycon_dual == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Settings::ControllerType::DualJoyconDetached);
+            ui->comboControllerType->addItem(tr("Dual Joycons"));
+        }
+
+        if (enable_all || npad_style_set.joycon_left == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Settings::ControllerType::LeftJoycon);
+            ui->comboControllerType->addItem(tr("Left Joycon"));
+        }
+
+        if (enable_all || npad_style_set.joycon_right == 1) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Settings::ControllerType::RightJoycon);
+            ui->comboControllerType->addItem(tr("Right Joycon"));
+        }
+
+        if (player_index == 0 && (enable_all || npad_style_set.handheld == 1)) {
+            index_controller_type_pairs.emplace_back(ui->comboControllerType->count(),
+                                                     Settings::ControllerType::Handheld);
+            ui->comboControllerType->addItem(tr("Handheld"));
+        }
+    };
+
+    Core::System& system{Core::System::GetInstance()};
+
+    if (!system.IsPoweredOn()) {
+        add_controllers(true);
+        return;
+    }
+
+    Service::SM::ServiceManager& sm = system.ServiceManager();
+
+    auto& npad = sm.GetService<Hid>("hid")->GetAppletResource()->GetController<Controller_NPad>(
+        HidController::NPad);
+
+    add_controllers(false, npad.GetSupportedStyleSet());
+}
+
+Settings::ControllerType ConfigureInputPlayer::GetControllerTypeFromIndex(int index) const {
+    const auto it =
+        std::find_if(index_controller_type_pairs.begin(), index_controller_type_pairs.end(),
+                     [index](const auto& pair) { return pair.first == index; });
+
+    if (it == index_controller_type_pairs.end()) {
+        return Settings::ControllerType::ProController;
+    }
+
+    return it->second;
+}
+
+int ConfigureInputPlayer::GetIndexFromControllerType(Settings::ControllerType type) const {
+    const auto it =
+        std::find_if(index_controller_type_pairs.begin(), index_controller_type_pairs.end(),
+                     [type](const auto& pair) { return pair.second == type; });
+
+    if (it == index_controller_type_pairs.end()) {
+        return -1;
+    }
+
+    return it->first;
+}
+
 void ConfigureInputPlayer::UpdateInputDevices() {
     input_devices = input_subsystem->GetInputDevices();
     ui->comboDevices->clear();
@@ -936,10 +943,7 @@ void ConfigureInputPlayer::UpdateControllerIcon() {
     // We aren't using Qt's built in theme support here since we aren't drawing an icon (and its
     // "nonstandard" to use an image through the icon support)
     const QString stylesheet = [this] {
-        const auto layout =
-            GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
-        switch (layout) {
-        case Settings::ControllerType::Pokeball:
+        switch (GetControllerTypeFromIndex(ui->comboControllerType->currentIndex())) {
         case Settings::ControllerType::ProController:
             return QStringLiteral("image: url(:/controller/pro_controller%0)");
         case Settings::ControllerType::DualJoyconDetached:
@@ -950,8 +954,6 @@ void ConfigureInputPlayer::UpdateControllerIcon() {
             return QStringLiteral("image: url(:/controller/single_joycon_right_vertical%0)");
         case Settings::ControllerType::Handheld:
             return QStringLiteral("image: url(:/controller/handheld%0)");
-        case Settings::ControllerType::GameCube:
-            return QStringLiteral("image: url(:/controller/gc_controller%0)");
         default:
             return QString{};
         }
@@ -971,14 +973,14 @@ void ConfigureInputPlayer::UpdateControllerIcon() {
 }
 
 void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
-    auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
+    auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
     if (debug) {
         layout = Settings::ControllerType::ProController;
     }
 
     // List of all the widgets that will be hidden by any of the following layouts that need
     // "unhidden" after the controller type changes
-    const std::array<QWidget*, 11> layout_show = {
+    const std::array<QWidget*, 9> layout_show = {
         ui->buttonShoulderButtonsSLSR,
         ui->horizontalSpacerShoulderButtonsWidget,
         ui->horizontalSpacerShoulderButtonsWidget2,
@@ -988,8 +990,6 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
         ui->buttonShoulderButtonsRight,
         ui->buttonMiscButtonsPlusHome,
         ui->bottomRight,
-        ui->buttonMiscButtonsMinusGroup,
-        ui->buttonMiscButtonsScreenshotGroup,
     };
 
     for (auto* widget : layout_show) {
@@ -1022,68 +1022,10 @@ void ConfigureInputPlayer::UpdateControllerAvailableButtons() {
             ui->bottomLeft,
         };
         break;
-    case Settings::ControllerType::GameCube:
-        layout_hidden = {
-            ui->buttonShoulderButtonsSLSR,
-            ui->horizontalSpacerShoulderButtonsWidget2,
-            ui->buttonMiscButtonsMinusGroup,
-            ui->buttonMiscButtonsScreenshotGroup,
-        };
-        break;
-    case Settings::ControllerType::Pokeball:
-        break;
     }
 
     for (auto* widget : layout_hidden) {
         widget->hide();
-    }
-}
-
-void ConfigureInputPlayer::UpdateControllerEnabledButtons() {
-    auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
-    if (debug) {
-        layout = Settings::ControllerType::ProController;
-    }
-
-    // List of all the widgets that will be disabled by any of the following layouts that need
-    // "enabled" after the controller type changes
-    const std::array<QWidget*, 4> layout_enable = {
-        ui->buttonHome,
-        ui->buttonLStickPressedGroup,
-        ui->groupRStickPressed,
-        ui->buttonShoulderButtonsButtonZLGroup,
-    };
-
-    for (auto* widget : layout_enable) {
-        widget->setEnabled(true);
-    }
-
-    std::vector<QWidget*> layout_disable;
-    switch (layout) {
-    case Settings::ControllerType::ProController:
-    case Settings::ControllerType::DualJoyconDetached:
-    case Settings::ControllerType::Handheld:
-    case Settings::ControllerType::LeftJoycon:
-    case Settings::ControllerType::RightJoycon:
-        // TODO(wwylele): enable this when we actually emulate it
-        layout_disable = {
-            ui->buttonHome,
-        };
-        break;
-    case Settings::ControllerType::GameCube:
-        layout_disable = {
-            ui->buttonHome,
-            ui->buttonLStickPressedGroup,
-            ui->groupRStickPressed,
-            ui->buttonShoulderButtonsButtonZLGroup,
-        };
-        break;
-    case Settings::ControllerType::Pokeball:
-        break;
-    }
-
-    for (auto* widget : layout_disable) {
-        widget->setEnabled(false);
     }
 }
 
@@ -1094,15 +1036,12 @@ void ConfigureInputPlayer::UpdateMotionButtons() {
         ui->buttonMotionRightGroup->hide();
         return;
     }
-    const auto layout =
-        GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
 
     // Show/hide the "Motion 1/2" groupboxes depending on the currently selected controller.
-    switch (layout) {
+    switch (GetControllerTypeFromIndex(ui->comboControllerType->currentIndex())) {
     case Settings::ControllerType::ProController:
     case Settings::ControllerType::LeftJoycon:
     case Settings::ControllerType::Handheld:
-    case Settings::ControllerType::Pokeball:
         // Show "Motion 1" and hide "Motion 2".
         ui->buttonMotionLeftGroup->show();
         ui->buttonMotionRightGroup->hide();
@@ -1112,39 +1051,11 @@ void ConfigureInputPlayer::UpdateMotionButtons() {
         ui->buttonMotionLeftGroup->hide();
         ui->buttonMotionRightGroup->show();
         break;
-    case Settings::ControllerType::GameCube:
-        // Hide both "Motion 1/2".
-        ui->buttonMotionLeftGroup->hide();
-        ui->buttonMotionRightGroup->hide();
-        break;
     case Settings::ControllerType::DualJoyconDetached:
     default:
         // Show both "Motion 1/2".
         ui->buttonMotionLeftGroup->show();
         ui->buttonMotionRightGroup->show();
-        break;
-    }
-}
-
-void ConfigureInputPlayer::UpdateControllerButtonNames() {
-    auto layout = GetControllerTypeFromIndex(ui->comboControllerType->currentIndex(), player_index);
-    if (debug) {
-        layout = Settings::ControllerType::ProController;
-    }
-
-    switch (layout) {
-    case Settings::ControllerType::ProController:
-    case Settings::ControllerType::DualJoyconDetached:
-    case Settings::ControllerType::Handheld:
-    case Settings::ControllerType::LeftJoycon:
-    case Settings::ControllerType::RightJoycon:
-    case Settings::ControllerType::Pokeball:
-        ui->buttonMiscButtonsPlusGroup->setTitle(tr("+"));
-        ui->buttonShoulderButtonsZRGroup->setTitle(tr("ZR"));
-        break;
-    case Settings::ControllerType::GameCube:
-        ui->buttonMiscButtonsPlusGroup->setTitle(tr("开始"));
-        ui->buttonShoulderButtonsZRGroup->setTitle(tr("Z"));
         break;
     }
 }

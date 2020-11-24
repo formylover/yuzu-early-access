@@ -18,6 +18,10 @@
 
 #include "common/common_types.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable : 26812) // Disable prefer enum class over enum
+#endif
+
 namespace Vulkan::vk {
 
 /**
@@ -40,6 +44,9 @@ public:
 
     /// Construct an empty span.
     constexpr Span() noexcept = default;
+
+    /// Construct an empty span
+    constexpr Span(std::nullptr_t) noexcept {}
 
     /// Construct a span from a single element.
     constexpr Span(const T& value) noexcept : ptr{&value}, num{1} {}
@@ -217,6 +224,7 @@ struct DeviceDispatch : public InstanceDispatch {
     PFN_vkCmdSetPrimitiveTopologyEXT vkCmdSetPrimitiveTopologyEXT;
     PFN_vkCmdSetStencilOpEXT vkCmdSetStencilOpEXT;
     PFN_vkCmdSetStencilTestEnableEXT vkCmdSetStencilTestEnableEXT;
+    PFN_vkCmdResolveImage vkCmdResolveImage;
     PFN_vkCreateBuffer vkCreateBuffer;
     PFN_vkCreateBufferView vkCreateBufferView;
     PFN_vkCreateCommandPool vkCreateCommandPool;
@@ -929,6 +937,12 @@ public:
                             regions.data(), filter);
     }
 
+    void ResolveImage(VkImage src_image, VkImageLayout src_layout, VkImage dst_image,
+                      VkImageLayout dst_layout, Span<VkImageResolve> regions) {
+        dld->vkCmdResolveImage(handle, src_image, src_layout, dst_image, dst_layout, regions.size(),
+                               regions.data());
+    }
+
     void Dispatch(u32 x, u32 y, u32 z) const noexcept {
         dld->vkCmdDispatch(handle, x, y, z);
     }
@@ -941,6 +955,23 @@ public:
                                   memory_barriers.size(), memory_barriers.data(),
                                   buffer_barriers.size(), buffer_barriers.data(),
                                   image_barriers.size(), image_barriers.data());
+    }
+
+    void PipelineBarrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                         VkDependencyFlags dependency_flags = 0) const noexcept {
+        PipelineBarrier(src_stage_mask, dst_stage_mask, dependency_flags, {}, {}, {});
+    }
+
+    void PipelineBarrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                         VkDependencyFlags dependency_flags,
+                         const VkBufferMemoryBarrier& buffer_barrier) const noexcept {
+        PipelineBarrier(src_stage_mask, dst_stage_mask, dependency_flags, {}, buffer_barrier, {});
+    }
+
+    void PipelineBarrier(VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
+                         VkDependencyFlags dependency_flags,
+                         const VkImageMemoryBarrier& image_barrier) const noexcept {
+        PipelineBarrier(src_stage_mask, dst_stage_mask, dependency_flags, {}, {}, image_barrier);
     }
 
     void CopyBufferToImage(VkBuffer src_buffer, VkImage dst_image, VkImageLayout dst_image_layout,
@@ -974,6 +1005,13 @@ public:
     void PushConstants(VkPipelineLayout layout, VkShaderStageFlags flags, u32 offset, u32 size,
                        const void* values) const noexcept {
         dld->vkCmdPushConstants(handle, layout, flags, offset, size, values);
+    }
+
+    template <typename T>
+    void PushConstants(VkPipelineLayout layout, VkShaderStageFlags flags,
+                       const T& data) const noexcept {
+        static_assert(std::is_trivially_copyable_v<T>, "<data> is not trivially copyable");
+        dld->vkCmdPushConstants(handle, layout, flags, 0, static_cast<u32>(sizeof(T)), &data);
     }
 
     void SetViewport(u32 first, Span<VkViewport> viewports) const noexcept {

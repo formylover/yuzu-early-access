@@ -400,7 +400,8 @@ public:
         return joystick->RumblePlay(0, 0);
     }
 
-    bool SetRumblePlay(f32 amp_low, f32 freq_low, f32 amp_high, f32 freq_high) const override {
+    bool SetRumblePlay(f32 amp_low, [[maybe_unused]] f32 freq_low, f32 amp_high,
+                       [[maybe_unused]] f32 freq_high) const override {
         const auto process_amplitude = [](f32 amplitude) {
             return static_cast<u16>((amplitude + std::pow(amplitude, 0.3f)) * 0.5f * 0xFFFF);
         };
@@ -678,10 +679,6 @@ SDLState::SDLState() {
     RegisterFactory<VibrationDevice>("sdl", vibration_factory);
     RegisterFactory<MotionDevice>("sdl", motion_factory);
 
-    // This hint allows for the detection of more than 4 XInput devices by
-    // detecting the rest of the devices as RawInput or DirectInput devices.
-    SDL_SetHint(SDL_HINT_XINPUT_ENABLED, "0");
-
     // If the frontend is going to manage the event loop, then we don't start one here
     start_thread = SDL_WasInit(SDL_INIT_JOYSTICK) == 0;
     if (start_thread && SDL_Init(SDL_INIT_JOYSTICK) < 0) {
@@ -868,6 +865,8 @@ Common::ParamPackage SDLEventToMotionParamPackage(SDLState& state, const SDL_Eve
 Common::ParamPackage BuildParamPackageForBinding(int port, const std::string& guid,
                                                  const SDL_GameControllerButtonBind& binding) {
     switch (binding.bindType) {
+    case SDL_CONTROLLER_BINDTYPE_NONE:
+        break;
     case SDL_CONTROLLER_BINDTYPE_AXIS:
         return BuildAnalogParamPackageForButton(port, guid, binding.value.axis);
     case SDL_CONTROLLER_BINDTYPE_BUTTON:
@@ -988,7 +987,7 @@ class SDLPoller : public InputCommon::Polling::DevicePoller {
 public:
     explicit SDLPoller(SDLState& state_) : state(state_) {}
 
-    void Start(const std::string& device_id) override {
+    void Start([[maybe_unused]] const std::string& device_id) override {
         state.event_queue.Clear();
         state.polling = true;
     }

@@ -9,9 +9,6 @@
     <file alias="pro_controller">pro_controller.png</file>
     <file alias="pro_controller_dark">pro_controller_dark.png</file>
     <file alias="pro_controller_midnight">pro_controller_midnight.png</file>
-    <file alias="gc_controller">gc_controller.png</file>
-    <file alias="gc_controller_dark">gc_controller_dark.png</file>
-    <file alias="gc_controller_midnight">gc_controller_midnight.png</file>
     <file alias="single_joycon_left">single_joycon_left.png</file>
     <file alias="single_joycon_left_dark">single_joycon_left_dark.png</file>
     <file alias="single_joycon_left_midnight">single_joycon_left_midnight.png</file>

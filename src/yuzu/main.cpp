@@ -481,9 +481,16 @@ void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view
 #else
 
 void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view additional_args) {
-    LOG_WARNING(Frontend,
-                "(STUBBED) called - Trying to open website page at '{}' with arguments '{}'!",
-                filename, additional_args);
+    QMessageBox::warning(
+        this, tr("网络小程序"),
+        tr("此版本的yuzu是在没有QtWebEngine支持的情况下构建的，这意味着yuzu无法 "
+           "正确显示所需的游戏手册或网页。"),
+        QMessageBox::Ok, QMessageBox::Ok);
+
+    LOG_INFO(Frontend,
+             "(STUBBED) called - Missing QtWebEngine dependency needed to open website page at "
+             "'{}' with arguments '{}'!",
+             filename, additional_args);
 
     emit WebBrowserFinishedBrowsing();
 }
@@ -995,11 +1002,7 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
         nullptr,                                       // Photo Viewer
         std::make_unique<QtProfileSelector>(*this),    // Profile Selector
         std::make_unique<QtSoftwareKeyboard>(*this),   // Software Keyboard
-#ifdef YUZU_USE_QT_WEB_ENGINE
-        std::make_unique<QtWebBrowser>(*this), // Web Browser
-#else
-        nullptr, // Web Browser (fallback to default implementation)
-#endif
+        std::make_unique<QtWebBrowser>(*this),         // Web Browser
     });
 
     system.RegisterHostThread();
@@ -1095,8 +1098,10 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
 
     last_filename_booted = filename;
 
+    auto& system = Core::System::GetInstance();
     const auto v_file = Core::GetGameFileFromPath(vfs, filename.toUtf8().constData());
-    const auto loader = Loader::GetLoader(v_file, program_index);
+    const auto loader = Loader::GetLoader(system, v_file, program_index);
+
     if (!(loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success)) {
         // Load per game settings
         Config per_game_config(fmt::format("{:016X}", title_id), Config::ConfigType::PerGameConfig);
@@ -1148,9 +1153,13 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
 
     std::string title_name;
     std::string title_version;
-    const auto res = Core::System::GetInstance().GetGameName(title_name);
+    const auto res = system.GetGameName(title_name);
 
-    const auto metadata = FileSys::PatchManager(title_id).GetControlMetadata();
+    const auto metadata = [&system, title_id] {
+        const FileSys::PatchManager pm(title_id, system.GetFileSystemController(),
+                                       system.GetContentProvider());
+        return pm.GetControlMetadata();
+    }();
     if (metadata.first != nullptr) {
         title_version = metadata.first->GetVersionString();
         title_name = metadata.first->GetApplicationName();
@@ -1161,7 +1170,7 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
     UpdateWindowTitle(title_name, title_version);
 
-    loading_screen->Prepare(Core::System::GetInstance().GetAppLoader());
+    loading_screen->Prepare(system.GetAppLoader());
     loading_screen->show();
 
     emulation_running = true;
@@ -1280,16 +1289,18 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
                                        const std::string& game_path) {
     std::string path;
     QString open_target;
+    auto& system = Core::System::GetInstance();
 
-    const auto [user_save_size, device_save_size] = [this, &program_id, &game_path] {
-        FileSys::PatchManager pm{program_id};
+    const auto [user_save_size, device_save_size] = [this, &game_path, &program_id, &system] {
+        const FileSys::PatchManager pm{program_id, system.GetFileSystemController(),
+                                       system.GetContentProvider()};
         const auto control = pm.GetControlMetadata().first;
         if (control != nullptr) {
             return std::make_pair(control->GetDefaultNormalSaveSize(),
                                   control->GetDeviceSaveDataSize());
         } else {
             const auto file = Core::GetGameFileFromPath(vfs, game_path);
-            const auto loader = Loader::GetLoader(file);
+            const auto loader = Loader::GetLoader(system, file);
 
             FileSys::NACP nacp{};
             loader->ReadControlData(nacp);
@@ -1616,7 +1627,8 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
                                 "或用户取消了操作."));
     };
 
-    const auto loader = Loader::GetLoader(vfs->OpenFile(game_path, FileSys::Mode::Read));
+    auto& system = Core::System::GetInstance();
+    const auto loader = Loader::GetLoader(system, vfs->OpenFile(game_path, FileSys::Mode::Read));
     if (loader == nullptr) {
         failed();
         return;
@@ -1628,7 +1640,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
         return;
     }
 
-    const auto& installed = Core::System::GetInstance().GetContentProvider();
+    const auto& installed = system.GetContentProvider();
     const auto romfs_title_id = SelectRomFSDumpTarget(installed, program_id);
 
     if (!romfs_title_id) {
@@ -1643,7 +1655,7 @@ void GMainWindow::OnGameListDumpRomFS(u64 program_id, const std::string& game_pa
 
     if (*romfs_title_id == program_id) {
         const u64 ivfc_offset = loader->ReadRomFSIVFCOffset();
-        FileSys::PatchManager pm{program_id};
+        const FileSys::PatchManager pm{program_id, system.GetFileSystemController(), installed};
         romfs = pm.PatchRomFS(file, ivfc_offset, FileSys::ContentRecordType::Program);
     } else {
         romfs = installed.GetEntry(*romfs_title_id, FileSys::ContentRecordType::Data)->GetRomFS();
@@ -1760,7 +1772,8 @@ void GMainWindow::OnGameListShowList(bool show) {
 void GMainWindow::OnGameListOpenPerGameProperties(const std::string& file) {
     u64 title_id{};
     const auto v_file = Core::GetGameFileFromPath(vfs, file);
-    const auto loader = Loader::GetLoader(v_file);
+    const auto loader = Loader::GetLoader(Core::System::GetInstance(), v_file);
+
     if (loader == nullptr || loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
         QMessageBox::information(this, tr("属性"),
                                  tr("游戏性能无法加载."));
@@ -2448,13 +2461,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1138" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1152" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 1138 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1152 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

@@ -340,8 +340,6 @@ enum class ControllerType {
     LeftJoycon,
     RightJoycon,
     Handheld,
-    GameCube,
-    Pokeball,
 };
 
 struct PlayerInput {
