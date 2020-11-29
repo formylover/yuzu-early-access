@@ -123,6 +123,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(
         VK_FORMAT_R16G16_UNORM,
         VK_FORMAT_R16G16_SNORM,
         VK_FORMAT_R16G16_SFLOAT,
+        VK_FORMAT_R16G16_SINT,
         VK_FORMAT_R16_UNORM,
         VK_FORMAT_R16_UINT,
         VK_FORMAT_R8G8B8A8_SRGB,
@@ -207,7 +208,7 @@ std::unordered_map<VkFormat, VkFormatProperties> GetFormatProperties(
 
 VKDevice::VKDevice(VkInstance instance_, u32 instance_version_, vk::PhysicalDevice physical_,
                    VkSurfaceKHR surface, const vk::InstanceDispatch& dld_)
-    : dld{dld_}, physical{physical_}, properties{physical.GetProperties()},
+    : instance{instance_}, dld{dld_}, physical{physical_}, properties{physical.GetProperties()},
       instance_version{instance_version_}, format_properties{GetFormatProperties(physical, dld)} {
     SetupFamilies(surface);
     SetupFeatures();
@@ -433,6 +434,7 @@ bool VKDevice::Create() {
     }
 
     CollectTelemetryParameters();
+    CollectToolingInfo();
 
     if (ext_extended_dynamic_state && driver_id == VK_DRIVER_ID_MESA_RADV) {
         LOG_WARNING(
@@ -531,6 +533,16 @@ bool VKDevice::IsOptimalAstcSupported(const VkPhysicalDeviceFeatures& features) 
         }
     }
     return true;
+}
+
+bool VKDevice::TestDepthStencilBlits() const {
+    static constexpr VkFormatFeatureFlags required_features =
+        VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT;
+    const auto test_features = [](VkFormatProperties properties) {
+        return (properties.optimalTilingFeatures & required_features) == required_features;
+    };
+    return test_features(format_properties.at(VK_FORMAT_D32_SFLOAT_S8_UINT)) &&
+           test_features(format_properties.at(VK_FORMAT_D24_UNORM_S8_UINT));
 }
 
 bool VKDevice::IsFormatSupported(VkFormat wanted_format, VkFormatFeatureFlags wanted_usage,
@@ -667,6 +679,8 @@ std::vector<const char*> VKDevice::LoadExtensions() {
         test(ext_sampler_filter_minmax, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, true);
         test(ext_shader_viewport_index_layer, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
              true);
+        test(ext_tooling_info, VK_EXT_TOOLING_INFO_EXTENSION_NAME, true);
+        test(ext_shader_stencil_export, VK_EXT_SHADER_STENCIL_EXPORT_EXTENSION_NAME, true);
         test(has_ext_transform_feedback, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, false);
         test(has_ext_custom_border_color, VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, false);
         test(has_ext_extended_dynamic_state, VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME, false);
@@ -815,6 +829,7 @@ void VKDevice::SetupFamilies(VkSurfaceKHR surface) {
 void VKDevice::SetupFeatures() {
     const auto supported_features{physical.GetFeatures()};
     is_formatless_image_load_supported = supported_features.shaderStorageImageReadWithoutFormat;
+    is_blit_depth_stencil_supported = TestDepthStencilBlits();
     is_optimal_astc_supported = IsOptimalAstcSupported(supported_features);
 }
 
@@ -842,6 +857,32 @@ void VKDevice::CollectTelemetryParameters() {
     reported_extensions.reserve(std::size(extensions));
     for (const auto& extension : extensions) {
         reported_extensions.emplace_back(extension.extensionName);
+    }
+}
+
+void VKDevice::CollectToolingInfo() {
+    if (!ext_tooling_info) {
+        return;
+    }
+    const auto vkGetPhysicalDeviceToolPropertiesEXT =
+        reinterpret_cast<PFN_vkGetPhysicalDeviceToolPropertiesEXT>(
+            dld.vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceToolPropertiesEXT"));
+    if (!vkGetPhysicalDeviceToolPropertiesEXT) {
+        return;
+    }
+    u32 tool_count = 0;
+    if (vkGetPhysicalDeviceToolPropertiesEXT(physical, &tool_count, nullptr) != VK_SUCCESS) {
+        return;
+    }
+    std::vector<VkPhysicalDeviceToolPropertiesEXT> tools(tool_count);
+    if (vkGetPhysicalDeviceToolPropertiesEXT(physical, &tool_count, tools.data()) != VK_SUCCESS) {
+        return;
+    }
+    for (const VkPhysicalDeviceToolPropertiesEXT& tool : tools) {
+        const std::string_view name = tool.name;
+        LOG_INFO(Render_Vulkan, "{}", name);
+        has_renderdoc = has_renderdoc || name == "RenderDoc";
+        has_nsight_graphics = has_nsight_graphics || name == "NVIDIA Nsight Graphics";
     }
 }
 

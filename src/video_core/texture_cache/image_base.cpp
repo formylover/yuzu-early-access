@@ -69,11 +69,6 @@ ImageBase::ImageBase(const ImageInfo& info_, GPUVAddr gpu_addr_, VAddr cpu_addr_
     }
 }
 
-bool ImageBase::Overlaps(VAddr overlap_cpu_addr, size_t overlap_size) const noexcept {
-    const VAddr overlap_end = overlap_cpu_addr + overlap_size;
-    return cpu_addr < overlap_end && overlap_cpu_addr < cpu_addr_end;
-}
-
 std::optional<SubresourceBase> ImageBase::TryFindBase(GPUVAddr other_addr) const noexcept {
     if (other_addr < gpu_addr) {
         // Subresource address can't be lower than the base

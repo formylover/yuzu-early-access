@@ -37,6 +37,7 @@
 #include "common/assert.h"
 #include "common/bit_util.h"
 #include "common/common_types.h"
+#include "common/div_ceil.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/engines/maxwell_3d.h"
 #include "video_core/surface.h"
@@ -84,16 +85,6 @@ struct LevelInfo {
     u32 bpp_log2;
     u32 tile_width_spacing;
 };
-
-template <typename T>
-[[nodiscard]] constexpr T DivCeil(T number, T divisor) {
-    return (number + divisor - 1) / divisor;
-}
-
-template <typename T>
-[[nodiscard]] constexpr T DivCeilLog2(T value, size_t alignment_log2) {
-    return (value + (T(1) << alignment_log2) - 1) >> alignment_log2;
-}
 
 [[nodiscard]] constexpr u32 AdjustTileSize(u32 shift, u32 unit_factor, u32 dimension) {
     if (shift == 0) {
@@ -153,8 +144,8 @@ template <u32 GOB_EXTENT>
 
 [[nodiscard]] constexpr Extent3D AdjustTileSize(Extent3D size, Extent2D tile_size) {
     return {
-        .width = DivCeil(size.width, tile_size.width),
-        .height = DivCeil(size.height, tile_size.height),
+        .width = Common::DivCeil(size.width, tile_size.width),
+        .height = Common::DivCeil(size.height, tile_size.height),
         .depth = size.depth,
     };
 }
@@ -173,7 +164,7 @@ template <u32 GOB_EXTENT>
 }
 
 [[nodiscard]] constexpr u32 AdjustSize(u32 size, u32 level, u32 block_size) {
-    return DivCeil(AdjustMipSize(size, level), block_size);
+    return Common::DivCeil(AdjustMipSize(size, level), block_size);
 }
 
 [[nodiscard]] constexpr u32 LayerSize(const TICEntry& config, PixelFormat format) {
@@ -202,7 +193,6 @@ template <u32 GOB_EXTENT>
     case ImageType::e2D:
     case ImageType::e3D:
     case ImageType::Linear:
-    case ImageType::Rect:
         return true;
     case ImageType::e1D:
     case ImageType::Buffer:
@@ -280,8 +270,8 @@ template <u32 GOB_EXTENT>
 [[nodiscard]] constexpr Extent2D NumGobs(const LevelInfo& info, u32 level) {
     const Extent3D blocks = NumLevelBlocks(info, level);
     const Extent2D gobs{
-        .width = DivCeilLog2(blocks.width, GOB_SIZE_X_SHIFT),
-        .height = DivCeilLog2(blocks.height, GOB_SIZE_Y_SHIFT),
+        .width = Common::DivCeilLog2(blocks.width, GOB_SIZE_X_SHIFT),
+        .height = Common::DivCeilLog2(blocks.height, GOB_SIZE_Y_SHIFT),
     };
     const Extent2D gob = GobSize(info.bpp_log2, info.block.height, info.tile_width_spacing);
     const bool is_small = IsSmallerThanGobSize(blocks, gob, info.block.depth);
@@ -297,9 +287,9 @@ template <u32 GOB_EXTENT>
     const Extent3D tile_shift = TileShift(info, level);
     const Extent2D gobs = NumGobs(info, level);
     return Extent3D{
-        .width = DivCeilLog2(gobs.width, tile_shift.width),
-        .height = DivCeilLog2(gobs.height, tile_shift.height),
-        .depth = DivCeilLog2(blocks.depth, tile_shift.depth),
+        .width = Common::DivCeilLog2(gobs.width, tile_shift.width),
+        .height = Common::DivCeilLog2(gobs.height, tile_shift.height),
+        .depth = Common::DivCeilLog2(blocks.depth, tile_shift.depth),
     };
 }
 
@@ -513,8 +503,8 @@ template <u32 GOB_EXTENT>
     static constexpr u32 STRIDE_ALIGNMENT = 32;
     ASSERT(info.type == ImageType::Linear);
     const Extent2D num_tiles{
-        .width = DivCeil(info.size.width, DefaultBlockWidth(info.format)),
-        .height = DivCeil(info.size.height, DefaultBlockHeight(info.format)),
+        .width = Common::DivCeil(info.size.width, DefaultBlockWidth(info.format)),
+        .height = Common::DivCeil(info.size.height, DefaultBlockHeight(info.format)),
     };
     const u32 width_alignment = STRIDE_ALIGNMENT / BytesPerBlock(info.format);
     return Extent2D{
@@ -528,8 +518,8 @@ template <u32 GOB_EXTENT>
     ASSERT(info.type != ImageType::Linear);
     const Extent3D size = AdjustMipSize(info.size, level);
     const Extent3D num_tiles{
-        .width = DivCeil(size.width, DefaultBlockWidth(info.format)),
-        .height = DivCeil(size.height, DefaultBlockHeight(info.format)),
+        .width = Common::DivCeil(size.width, DefaultBlockWidth(info.format)),
+        .height = Common::DivCeil(size.height, DefaultBlockHeight(info.format)),
         .depth = size.depth,
     };
     const u32 bpp_log2 = BytesPerBlockLog2(info.format);
@@ -1048,47 +1038,6 @@ void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const Ima
     }
 }
 
-std::string CompareImageInfos(const ImageInfo& lhs, const ImageInfo& rhs) {
-    std::string message;
-    if (lhs.format != rhs.format) {
-        message += fmt::format("- Different formats: {} vs {}\n", lhs.format, rhs.format);
-    }
-    if (lhs.type != rhs.type) {
-        message += fmt::format("- Different types: {} vs {}\n", lhs.type, rhs.type);
-    }
-    if (lhs.size != rhs.size) {
-        message += fmt::format("- Different sizes: {} vs {}\n", lhs.size, rhs.size);
-    }
-    if (lhs.resources.layers != rhs.resources.layers) {
-        message += fmt::format("- Different number of layers: {} vs {}\n", lhs.resources.layers,
-                               rhs.resources.layers);
-    }
-    if (lhs.resources.levels != rhs.resources.levels) {
-        message += fmt::format("- Different number of levels: {} vs {}\n", lhs.resources.levels,
-                               rhs.resources.levels);
-    }
-    if (lhs.num_samples != rhs.num_samples) {
-        message += fmt::format("- Different number of samples: {} vs {}\n", lhs.num_samples,
-                               rhs.num_samples);
-    }
-    if (lhs.type == rhs.type) {
-        if (lhs.type == ImageType::Linear) {
-            if (lhs.pitch != rhs.pitch) {
-                message += fmt::format("- Different pitch: {} vs {}\n", lhs.pitch, rhs.pitch);
-            }
-        } else {
-            if (lhs.block != rhs.block) {
-                message += fmt::format("- Different block size: {} vs {}\n", lhs.block, rhs.block);
-            }
-        }
-    }
-    if (message.empty()) {
-        return "Identical";
-    } else {
-        return fmt::format("\n{}", message);
-    }
-}
-
 bool IsBlockLinearSizeCompatible(const ImageInfo& lhs, const ImageInfo& rhs, u32 lhs_level,
                                  u32 rhs_level, bool strict_size) noexcept {
     ASSERT(lhs.type != ImageType::Linear);
@@ -1228,6 +1177,16 @@ void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase*
     }
     if (!src && dst && GetFormatType(dst->info.format) != SurfaceType::ColorTexture) {
         src_info.format = src->info.format;
+    }
+}
+
+u32 MapSizeBytes(const ImageBase& image) {
+    if (True(image.flags & ImageFlagBits::AcceleratedUpload)) {
+        return image.guest_size_bytes;
+    } else if (True(image.flags & ImageFlagBits::Converted)) {
+        return image.converted_size_bytes;
+    } else {
+        return image.unswizzled_size_bytes;
     }
 }
 

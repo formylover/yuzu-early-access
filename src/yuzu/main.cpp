@@ -176,7 +176,7 @@ void GMainWindow::ShowTelemetryCallout() {
            "<br/><br/>你想与我们分享您的使用情况的数据？");
     if (QMessageBox::question(this, tr("数据"), telemetry_message) != QMessageBox::Yes) {
         Settings::values.enable_telemetry = false;
-        Settings::Apply();
+        Settings::Apply(Core::System::GetInstance());
     }
 }
 
@@ -306,7 +306,7 @@ void GMainWindow::ControllerSelectorReconfigureControllers(
     emit ControllerSelectorReconfigureFinished();
 
     // Don't forget to apply settings.
-    Settings::Apply();
+    Settings::Apply(Core::System::GetInstance());
     config->Save();
 
     UpdateStatusButtons();
@@ -575,11 +575,11 @@ void GMainWindow::InitializeWidgets() {
         if (emulation_running) {
             return;
         }
-        bool is_async = !Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
-                        Settings::values.use_multi_core.GetValue();
+        const bool is_async = !Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
+                              Settings::values.use_multi_core.GetValue();
         Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
-        Settings::Apply();
+        Settings::Apply(Core::System::GetInstance());
     });
     async_status_button->setText(tr("异步模式"));
     async_status_button->setCheckable(true);
@@ -594,12 +594,12 @@ void GMainWindow::InitializeWidgets() {
             return;
         }
         Settings::values.use_multi_core.SetValue(!Settings::values.use_multi_core.GetValue());
-        bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
-                        Settings::values.use_multi_core.GetValue();
+        const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
+                              Settings::values.use_multi_core.GetValue();
         Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
         multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
-        Settings::Apply();
+        Settings::Apply(Core::System::GetInstance());
     });
     multicore_status_button->setText(tr("多核运行"));
     multicore_status_button->setCheckable(true);
@@ -634,7 +634,7 @@ void GMainWindow::InitializeWidgets() {
             Settings::values.renderer_backend.SetValue(Settings::RendererBackend::OpenGL);
         }
 
-        Settings::Apply();
+        Settings::Apply(Core::System::GetInstance());
     });
 #endif // HAS_VULKAN
     statusBar()->insertPermanentWidget(0, renderer_status_button);
@@ -1123,6 +1123,10 @@ void GMainWindow::BootGame(const QString& filename, std::size_t program_index) {
     emit EmulationStarting(emu_thread.get());
     emu_thread->start();
 
+    // Register an ExecuteProgram callback such that Core can execute a sub-program
+    system.RegisterExecuteProgramCallback(
+        [this](std::size_t program_index) { render_window->ExecuteProgram(program_index); });
+
     connect(render_window, &GRenderWindow::Closed, this, &GMainWindow::OnStopGame);
     // BlockingQueuedConnection is important here, it makes sure we've finished refreshing our views
     // before the CPU continues
@@ -1342,12 +1346,12 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
             const auto user_id = manager.GetUser(static_cast<std::size_t>(index));
             ASSERT(user_id);
             path = nand_dir + FileSys::SaveDataFactory::GetFullPath(
-                                  FileSys::SaveDataSpaceId::NandUser,
+                                  system, FileSys::SaveDataSpaceId::NandUser,
                                   FileSys::SaveDataType::SaveData, program_id, user_id->uuid, 0);
         } else {
             // Device save data
             path = nand_dir + FileSys::SaveDataFactory::GetFullPath(
-                                  FileSys::SaveDataSpaceId::NandUser,
+                                  system, FileSys::SaveDataSpaceId::NandUser,
                                   FileSys::SaveDataType::SaveData, program_id, {}, 0);
         }
 
@@ -2130,14 +2134,14 @@ void GMainWindow::OnPauseGame() {
 }
 
 void GMainWindow::OnStopGame() {
-    Core::System& system{Core::System::GetInstance()};
+    auto& system{Core::System::GetInstance()};
     if (system.GetExitLock() && !ConfirmForceLockedExit()) {
         return;
     }
 
     ShutdownGame();
 
-    Settings::RestoreGlobalState();
+    Settings::RestoreGlobalState(system.IsPoweredOn());
     UpdateStatusButtons();
 }
 
@@ -2312,10 +2316,11 @@ void GMainWindow::OnConfigurePerGame() {
 
 void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file_name) {
     const auto v_file = Core::GetGameFileFromPath(vfs, file_name);
+    const auto& system = Core::System::GetInstance();
 
     ConfigurePerGame dialog(this, title_id);
     dialog.LoadFromFile(v_file);
-    auto result = dialog.exec();
+    const auto result = dialog.exec();
     if (result == QDialog::Accepted) {
         dialog.ApplyConfiguration();
 
@@ -2325,13 +2330,14 @@ void GMainWindow::OpenPerGameConfiguration(u64 title_id, const std::string& file
         }
 
         // Do not cause the global config to write local settings into the config file
-        Settings::RestoreGlobalState();
+        const bool is_powered_on = system.IsPoweredOn();
+        Settings::RestoreGlobalState(is_powered_on);
 
-        if (!Core::System::GetInstance().IsPoweredOn()) {
+        if (!is_powered_on) {
             config->Save();
         }
     } else {
-        Settings::RestoreGlobalState();
+        Settings::RestoreGlobalState(system.IsPoweredOn());
     }
 }
 
@@ -2461,13 +2467,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1152" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1174" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 1152 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1174 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }
@@ -2602,7 +2608,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
         if (emu_thread) {
             ShutdownGame();
 
-            Settings::RestoreGlobalState();
+            Settings::RestoreGlobalState(Core::System::GetInstance().IsPoweredOn());
             UpdateStatusButtons();
         }
     } else {
@@ -2774,7 +2780,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
     if (emu_thread != nullptr) {
         ShutdownGame();
 
-        Settings::RestoreGlobalState();
+        Settings::RestoreGlobalState(Core::System::GetInstance().IsPoweredOn());
         UpdateStatusButtons();
     }
 

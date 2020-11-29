@@ -10,7 +10,6 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/cpu_manager.h"
-#include "core/gdbstub/gdbstub.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/kernel/scheduler.h"
@@ -114,22 +113,23 @@ void CpuManager::MultiCoreRunGuestThread() {
         auto& sched = kernel.CurrentScheduler();
         sched.OnThreadStart();
     }
+    auto* thread = kernel.CurrentScheduler().GetCurrentThread();
+    auto& host_context = thread->GetHostContext();
+    host_context->SetRewindPoint(std::function<void(void*)>(GuestRewindFunction), this);
     MultiCoreRunGuestLoop();
 }
 
 void CpuManager::MultiCoreRunGuestLoop() {
     auto& kernel = system.Kernel();
-    auto* thread = kernel.CurrentScheduler().GetCurrentThread();
+
     while (true) {
         auto* physical_core = &kernel.CurrentPhysicalCore();
-        auto& arm_interface = thread->ArmInterface();
         system.EnterDynarmicProfile();
         while (!physical_core->IsInterrupted()) {
-            arm_interface.Run();
+            physical_core->Run();
             physical_core = &kernel.CurrentPhysicalCore();
         }
         system.ExitDynarmicProfile();
-        arm_interface.ClearExclusiveState();
         auto& scheduler = kernel.CurrentScheduler();
         scheduler.TryDoContextSwitch();
     }
@@ -210,6 +210,9 @@ void CpuManager::SingleCoreRunGuestThread() {
         auto& sched = kernel.CurrentScheduler();
         sched.OnThreadStart();
     }
+    auto* thread = kernel.CurrentScheduler().GetCurrentThread();
+    auto& host_context = thread->GetHostContext();
+    host_context->SetRewindPoint(std::function<void(void*)>(GuestRewindFunction), this);
     SingleCoreRunGuestLoop();
 }
 
@@ -218,17 +221,15 @@ void CpuManager::SingleCoreRunGuestLoop() {
     auto* thread = kernel.CurrentScheduler().GetCurrentThread();
     while (true) {
         auto* physical_core = &kernel.CurrentPhysicalCore();
-        auto& arm_interface = thread->ArmInterface();
         system.EnterDynarmicProfile();
         if (!physical_core->IsInterrupted()) {
-            arm_interface.Run();
+            physical_core->Run();
             physical_core = &kernel.CurrentPhysicalCore();
         }
         system.ExitDynarmicProfile();
         thread->SetPhantomMode(true);
         system.CoreTiming().Advance();
         thread->SetPhantomMode(false);
-        arm_interface.ClearExclusiveState();
         PreemptSingleCore();
         auto& scheduler = kernel.Scheduler(current_core);
         scheduler.TryDoContextSwitch();
@@ -346,7 +347,7 @@ void CpuManager::RunThread(std::size_t core) {
     bool sc_sync_first_use = sc_sync;
 
     // Cleanup
-    auto cleanup = detail::ScopeExit([&] {
+    SCOPE_EXIT({
         data.host_context->Exit();
         data.enter_barrier.reset();
         data.exit_barrier.reset();

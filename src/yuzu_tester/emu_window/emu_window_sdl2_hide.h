@@ -17,13 +17,10 @@ public:
     explicit EmuWindow_SDL2_Hide();
     ~EmuWindow_SDL2_Hide();
 
-    void PollEvents() override;
-
+    /// Whether the screen is being shown or not.
     bool IsShown() const override;
 
     std::unique_ptr<Core::Frontend::GraphicsContext> CreateSharedContext() const override;
-
-    void ExecuteProgram(std::size_t /*program_index*/) override{};
 
 private:
     /// Whether the GPU and driver supports the OpenGL extension required

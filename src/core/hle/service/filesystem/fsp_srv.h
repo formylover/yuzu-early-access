@@ -33,8 +33,7 @@ enum class LogMode : u32 {
 
 class FSP_SRV final : public ServiceFramework<FSP_SRV> {
 public:
-    explicit FSP_SRV(FileSystemController& fsc_, const FileSys::ContentProvider& content_provider_,
-                     const Core::Reporter& reporter_);
+    explicit FSP_SRV(Core::System& system_);
     ~FSP_SRV() override;
 
 private:
@@ -50,11 +49,10 @@ private:
     void OpenDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
     void OpenDataStorageByDataId(Kernel::HLERequestContext& ctx);
     void OpenPatchDataStorageByCurrentProcess(Kernel::HLERequestContext& ctx);
-    void OpenDataStorageWithProgramIndex(Kernel::HLERequestContext& ctx);
     void SetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
     void GetGlobalAccessLogMode(Kernel::HLERequestContext& ctx);
     void OutputAccessLogToSdCard(Kernel::HLERequestContext& ctx);
-    void GetProgramIndexForAccessLog(Kernel::HLERequestContext& ctx);
+    void GetAccessLogVersionInfo(Kernel::HLERequestContext& ctx);
     void OpenMultiCommitManager(Kernel::HLERequestContext& ctx);
 
     FileSystemController& fsc;

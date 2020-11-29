@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <fmt/format.h>
 
 #include "video_core/texture_cache/texture_cache.h"
@@ -222,8 +224,6 @@ struct fmt::formatter<VideoCommon::ImageType> : fmt::formatter<fmt::string_view>
                 return "3D";
             case ImageType::Linear:
                 return "Linear";
-            case ImageType::Rect:
-                return "Rect";
             case ImageType::Buffer:
                 return "Buffer";
             }
@@ -245,3 +245,18 @@ struct fmt::formatter<VideoCommon::Extent3D> {
                               extent.depth);
     }
 };
+
+namespace VideoCommon {
+
+struct ImageBase;
+struct ImageViewBase;
+struct RenderTargets;
+
+[[nodiscard]] std::string Name(const ImageBase& image);
+
+[[nodiscard]] std::string Name(const ImageViewBase& image_view,
+                               std::optional<ImageViewType> type = std::nullopt);
+
+[[nodiscard]] std::string Name(const RenderTargets& render_targets);
+
+} // namespace VideoCommon

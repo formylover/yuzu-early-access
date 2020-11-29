@@ -25,7 +25,6 @@
 #include "core/file_sys/sdmc_factory.h"
 #include "core/file_sys/vfs_concat.h"
 #include "core/file_sys/vfs_real.h"
-#include "core/gdbstub/gdbstub.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/hle/kernel/client_port.h"
 #include "core/hle/kernel/kernel.h"
@@ -92,33 +91,43 @@ FileSys::VirtualFile GetGameFileFromPath(const FileSys::VirtualFilesystem& vfs,
     std::string dir_name;
     std::string filename;
     Common::SplitPath(path, &dir_name, &filename, nullptr);
+
     if (filename == "00") {
         const auto dir = vfs->OpenDirectory(dir_name, FileSys::Mode::Read);
         std::vector<FileSys::VirtualFile> concat;
-        for (u8 i = 0; i < 0x10; ++i) {
-            auto next = dir->GetFile(fmt::format("{:02X}", i));
-            if (next != nullptr)
+
+        for (u32 i = 0; i < 0x10; ++i) {
+            const auto file_name = fmt::format("{:02X}", i);
+            auto next = dir->GetFile(file_name);
+
+            if (next != nullptr) {
                 concat.push_back(std::move(next));
-            else {
-                next = dir->GetFile(fmt::format("{:02x}", i));
-                if (next != nullptr)
-                    concat.push_back(std::move(next));
-                else
+            } else {
+                next = dir->GetFile(file_name);
+
+                if (next == nullptr) {
                     break;
+                }
+
+                concat.push_back(std::move(next));
             }
         }
 
-        if (concat.empty())
+        if (concat.empty()) {
             return nullptr;
+        }
 
-        return FileSys::ConcatenatedVfsFile::MakeConcatenatedFile(concat, dir->GetName());
+        return FileSys::ConcatenatedVfsFile::MakeConcatenatedFile(std::move(concat),
+                                                                  dir->GetName());
     }
 
-    if (Common::FS::IsDirectory(path))
-        return vfs->OpenFile(path + "/" + "main", FileSys::Mode::Read);
+    if (Common::FS::IsDirectory(path)) {
+        return vfs->OpenFile(path + "/main", FileSys::Mode::Read);
+    }
 
     return vfs->OpenFile(path, FileSys::Mode::Read);
 }
+
 struct System::Impl {
     explicit Impl(System& system)
         : kernel{system}, fs_controller{system}, memory{system},
@@ -145,7 +154,7 @@ struct System::Impl {
     }
 
     ResultStatus Init(System& system, Frontend::EmuWindow& emu_window) {
-        LOG_DEBUG(HW_Memory, "initialized OK");
+        LOG_DEBUG(Core, "initialized OK");
 
         device_memory = std::make_unique<Core::DeviceMemory>();
 
@@ -186,11 +195,8 @@ struct System::Impl {
         }
 
         service_manager = std::make_shared<Service::SM::ServiceManager>(kernel);
-
         services = std::make_unique<Service::Services>(service_manager, system);
-        GDBStub::DeferStart();
-
-        interrupt_manager = std::make_unique<Core::Hardware::InterruptManager>(system);
+        interrupt_manager = std::make_unique<Hardware::InterruptManager>(system);
 
         // Initialize time manager, which must happen after kernel is created
         time_manager.Initialize();
@@ -239,6 +245,7 @@ struct System::Impl {
         }
         AddGlueRegistrationForProcess(*app_loader, *main_process);
         kernel.MakeCurrentProcess(main_process.get());
+        kernel.InitializeCores();
 
         // Initialize cheat engine
         if (cheat_engine) {
@@ -297,7 +304,6 @@ struct System::Impl {
         }
 
         // Shutdown emulation session
-        GDBStub::Shutdown();
         services.reset();
         service_manager.reset();
         cheat_engine.reset();
@@ -418,6 +424,8 @@ struct System::Impl {
     bool is_multicore{};
     bool is_async_gpu{};
 
+    ExecuteProgramCallback execute_program_callback;
+
     std::array<u64, Core::Hardware::NUM_CPU_CORES> dynarmic_ticks{};
     std::array<MicroProfileToken, Core::Hardware::NUM_CPU_CORES> microprofile_dynarmic{};
 };
@@ -447,6 +455,14 @@ System::ResultStatus System::SingleStep() {
 
 void System::InvalidateCpuInstructionCaches() {
     impl->kernel.InvalidateAllInstructionCaches();
+}
+
+void System::InvalidateCpuInstructionCacheRange(VAddr addr, std::size_t size) {
+    impl->kernel.InvalidateCpuInstructionCacheRange(addr, size);
+}
+
+void System::Shutdown() {
+    impl->Shutdown();
 }
 
 System::ResultStatus System::Load(Frontend::EmuWindow& emu_window, const std::string& filepath,
@@ -479,11 +495,11 @@ const TelemetrySession& System::TelemetrySession() const {
 }
 
 ARM_Interface& System::CurrentArmInterface() {
-    return impl->kernel.CurrentScheduler().GetCurrentThread()->ArmInterface();
+    return impl->kernel.CurrentPhysicalCore().ArmInterface();
 }
 
 const ARM_Interface& System::CurrentArmInterface() const {
-    return impl->kernel.CurrentScheduler().GetCurrentThread()->ArmInterface();
+    return impl->kernel.CurrentPhysicalCore().ArmInterface();
 }
 
 std::size_t System::CurrentCoreIndex() const {
@@ -543,15 +559,11 @@ const Kernel::Process* System::CurrentProcess() const {
 }
 
 ARM_Interface& System::ArmInterface(std::size_t core_index) {
-    auto* thread = impl->kernel.Scheduler(core_index).GetCurrentThread();
-    ASSERT(thread && !thread->IsHLEThread());
-    return thread->ArmInterface();
+    return impl->kernel.PhysicalCore(core_index).ArmInterface();
 }
 
 const ARM_Interface& System::ArmInterface(std::size_t core_index) const {
-    auto* thread = impl->kernel.Scheduler(core_index).GetCurrentThread();
-    ASSERT(thread && !thread->IsHLEThread());
-    return thread->ArmInterface();
+    return impl->kernel.PhysicalCore(core_index).ArmInterface();
 }
 
 ExclusiveMonitor& System::Monitor() {
@@ -638,7 +650,11 @@ const std::string& System::GetStatusDetails() const {
     return impl->status_details;
 }
 
-Loader::AppLoader& System::GetAppLoader() const {
+Loader::AppLoader& System::GetAppLoader() {
+    return *impl->app_loader;
+}
+
+const Loader::AppLoader& System::GetAppLoader() const {
     return *impl->app_loader;
 }
 
@@ -754,14 +770,6 @@ const System::CurrentBuildProcessID& System::GetCurrentProcessBuildID() const {
     return impl->build_id;
 }
 
-System::ResultStatus System::Init(Frontend::EmuWindow& emu_window) {
-    return impl->Init(*this, emu_window);
-}
-
-void System::Shutdown() {
-    impl->Shutdown();
-}
-
 Service::SM::ServiceManager& System::ServiceManager() {
     return *impl->service_manager;
 }
@@ -790,6 +798,18 @@ void System::ExitDynarmicProfile() {
 
 bool System::IsMulticore() const {
     return impl->is_multicore;
+}
+
+void System::RegisterExecuteProgramCallback(ExecuteProgramCallback&& callback) {
+    impl->execute_program_callback = std::move(callback);
+}
+
+void System::ExecuteProgram(std::size_t program_index) {
+    if (impl->execute_program_callback) {
+        impl->execute_program_callback(program_index);
+    } else {
+        LOG_CRITICAL(Core, "execute_program_callback must be initialized by the frontend");
+    }
 }
 
 } // namespace Core

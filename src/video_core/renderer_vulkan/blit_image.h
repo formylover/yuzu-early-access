@@ -41,6 +41,12 @@ public:
                    Tegra::Engines::Fermi2D::Filter filter,
                    Tegra::Engines::Fermi2D::Operation operation);
 
+    void BlitDepthStencil(const Framebuffer* dst_framebuffer, VkImageView src_depth_view,
+                          VkImageView src_stencil_view, const std::array<Offset2D, 2>& dst_region,
+                          const std::array<Offset2D, 2>& src_region,
+                          Tegra::Engines::Fermi2D::Filter filter,
+                          Tegra::Engines::Fermi2D::Operation operation);
+
     void ConvertD32ToR32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
 
     void ConvertR32ToD32(const Framebuffer* dst_framebuffer, const ImageView& src_image_view);
@@ -55,6 +61,8 @@ private:
 
     [[nodiscard]] VkPipeline FindOrEmplacePipeline(const BlitImagePipelineKey& key);
 
+    [[nodiscard]] VkPipeline BlitDepthStencilPipeline(VkRenderPass renderpass);
+
     void ConvertDepthToColorPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass);
 
     void ConvertColorToDepthPipeline(vk::Pipeline& pipeline, VkRenderPass renderpass);
@@ -63,18 +71,23 @@ private:
     VKScheduler& scheduler;
     StateTracker& state_tracker;
 
-    vk::DescriptorSetLayout set_layout;
-    DescriptorAllocator descriptor_allocator;
+    vk::DescriptorSetLayout one_texture_set_layout;
+    vk::DescriptorSetLayout two_textures_set_layout;
+    DescriptorAllocator one_texture_descriptor_allocator;
+    DescriptorAllocator two_textures_descriptor_allocator;
+    vk::PipelineLayout one_texture_pipeline_layout;
+    vk::PipelineLayout two_textures_pipeline_layout;
     vk::ShaderModule full_screen_vert;
     vk::ShaderModule blit_color_to_color_frag;
+    vk::ShaderModule blit_depth_stencil_frag;
     vk::ShaderModule convert_depth_to_float_frag;
     vk::ShaderModule convert_float_to_depth_frag;
     vk::Sampler linear_sampler;
     vk::Sampler nearest_sampler;
-    vk::PipelineLayout pipeline_layout;
 
-    std::vector<BlitImagePipelineKey> keys;
-    std::vector<vk::Pipeline> pipelines;
+    std::vector<BlitImagePipelineKey> blit_color_keys;
+    std::vector<vk::Pipeline> blit_color_pipelines;
+    vk::Pipeline blit_depth_stencil_pipeline;
     vk::Pipeline convert_d32_to_r32_pipeline;
     vk::Pipeline convert_r32_to_d32_pipeline;
     vk::Pipeline convert_d16_to_r16_pipeline;

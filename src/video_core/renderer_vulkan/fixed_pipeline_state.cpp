@@ -8,6 +8,7 @@
 
 #include <boost/functional/hash.hpp>
 
+#include "common/bit_cast.h"
 #include "common/cityhash.h"
 #include "common/common_types.h"
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
@@ -45,7 +46,7 @@ void FixedPipelineState::Fill(const Maxwell& regs, bool has_extended_dynamic_sta
                                     regs.polygon_offset_fill_enable};
     const u32 topology_index = static_cast<u32>(regs.draw.topology.Value());
 
-    raw = 0;
+    raw1 = 0;
     primitive_restart_enable.Assign(regs.primitive_restart.enabled != 0 ? 1 : 0);
     depth_bias_enable.Assign(enabled_lut[POLYGON_OFFSET_ENABLE_LUT[topology_index]] != 0 ? 1 : 0);
     depth_clamp_disabled.Assign(regs.view_volume_clip_control.depth_clamp_disabled.Value());
@@ -61,13 +62,14 @@ void FixedPipelineState::Fill(const Maxwell& regs, bool has_extended_dynamic_sta
     topology.Assign(regs.draw.topology);
     msaa_mode.Assign(regs.multisample_mode);
 
-    alpha_raw = 0;
+    raw2 = 0;
     const auto test_func =
         regs.alpha_test_enabled == 1 ? regs.alpha_test_func : Maxwell::ComparisonOp::Always;
     alpha_test_func.Assign(PackComparisonOp(test_func));
-    std::memcpy(&alpha_test_ref, &regs.alpha_test_ref, sizeof(u32)); // TODO: C++20 std::bit_cast
+    early_z.Assign(regs.force_early_fragment_tests != 0 ? 1 : 0);
 
-    std::memcpy(&point_size, &regs.point_size, sizeof(point_size)); // TODO: C++20 std::bit_cast
+    alpha_test_ref = Common::BitCast<u32>(regs.alpha_test_ref);
+    point_size = Common::BitCast<u32>(regs.point_size);
 
     for (std::size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
         binding_divisors[index] =

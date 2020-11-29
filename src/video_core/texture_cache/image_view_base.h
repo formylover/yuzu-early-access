@@ -20,6 +20,7 @@ struct NullImageParams {};
 enum class ImageViewFlagBits : u16 {
     PreemtiveDownload = 1 << 0,
     Strong = 1 << 1,
+    Slice = 1 << 2,
 };
 DECLARE_ENUM_FLAG_OPERATORS(ImageViewFlagBits)
 
@@ -28,7 +29,7 @@ struct ImageViewBase {
                            ImageId image_id);
     explicit ImageViewBase(const NullImageParams&);
 
-    constexpr bool IsBuffer() const noexcept {
+    [[nodiscard]] bool IsBuffer() const noexcept {
         return type == ImageViewType::Buffer;
     }
 
@@ -36,7 +37,7 @@ struct ImageViewBase {
     PixelFormat format{};
     ImageViewType type{};
     SubresourceRange range;
-    Extent3D size = {1, 1, 1};
+    Extent3D size{0, 0, 0};
     ImageViewFlagBits flags{};
 
     u64 invalidation_tick = 0;

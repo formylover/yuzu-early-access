@@ -184,7 +184,7 @@ void ConfigureProfileManager::ApplyConfiguration() {
         return;
     }
 
-    Settings::Apply();
+    Settings::Apply(Core::System::GetInstance());
 }
 
 void ConfigureProfileManager::SelectUser(const QModelIndex& index) {

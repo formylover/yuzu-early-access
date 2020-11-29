@@ -102,8 +102,8 @@ public:
         float render_surface_scale = 1.0f;
     };
 
-    /// Polls window events
-    virtual void PollEvents() = 0;
+    /// Called from GPU thread when a frame is displayed.
+    virtual void OnFrameDisplayed() {}
 
     /**
      * Returns a GraphicsContext that the frontend provides to be used for rendering.
@@ -112,12 +112,6 @@ public:
 
     /// Returns if window is shown (not minimized)
     virtual bool IsShown() const = 0;
-
-    /**
-     * Instructs the window to re-launch the application using the specified program_index.
-     * @param program_index Specifies the index within the application of the program to launch.
-     */
-    virtual void ExecuteProgram(std::size_t program_index) = 0;
 
     /**
      * Signal that a touch pressed event has occurred (e.g. mouse click pressed)

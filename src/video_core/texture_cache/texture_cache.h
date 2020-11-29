@@ -31,7 +31,6 @@
 #include "video_core/texture_cache/format_lookup_table.h"
 #include "video_core/texture_cache/image_base.h"
 #include "video_core/texture_cache/image_info.h"
-#include "video_core/texture_cache/image_info_page_table.h"
 #include "video_core/texture_cache/image_view_base.h"
 #include "video_core/texture_cache/image_view_info.h"
 #include "video_core/texture_cache/render_targets.h"
@@ -54,13 +53,19 @@ using VideoCore::Surface::SurfaceType;
 
 template <class P>
 class TextureCache {
+    /// Address shift for caching images into a hash table
     static constexpr u64 PAGE_SHIFT = 20;
 
+    /// Enables debugging features to the texture cache
     static constexpr bool ENABLE_VALIDATION = P::ENABLE_VALIDATION;
+    /// Implement blits as copies between framebuffers
     static constexpr bool FRAMEBUFFER_BLITS = P::FRAMEBUFFER_BLITS;
+    /// True when some copies have to be emulated
     static constexpr bool HAS_EMULATED_COPIES = P::HAS_EMULATED_COPIES;
 
+    /// Image view ID for null descriptors
     static constexpr ImageViewId NULL_IMAGE_VIEW_ID{0};
+    /// Sampler ID for bugged sampler ids
     static constexpr SamplerId NULL_SAMPLER_ID{0};
 
     using Runtime = typename P::Runtime;
@@ -88,128 +93,87 @@ public:
     explicit TextureCache(Runtime&, VideoCore::RasterizerInterface&, Tegra::Engines::Maxwell3D&,
                           Tegra::Engines::KeplerCompute&, Tegra::MemoryManager&);
 
+    /// Notify the cache that a new frame has been queued
     void TickFrame();
 
-    [[nodiscard]] std::unique_lock<std::mutex> AcquireLock() {
-        return std::unique_lock{mutex};
-    }
+    /// Return an unique mutually exclusive lock for the cache
+    [[nodiscard]] std::unique_lock<std::mutex> AcquireLock();
 
-    [[nodiscard]] const ImageView& GetImageView(ImageViewId id) const noexcept {
-        return slot_image_views[id];
-    }
+    /// Return a constant reference to the given image view id
+    [[nodiscard]] const ImageView& GetImageView(ImageViewId id) const noexcept;
 
-    [[nodiscard]] ImageView& GetImageView(ImageViewId id) noexcept {
-        return slot_image_views[id];
-    }
+    /// Return a reference to the given image view id
+    [[nodiscard]] ImageView& GetImageView(ImageViewId id) noexcept;
 
+    /// Fill image_view_ids with the graphics images in indices
     void FillGraphicsImageViews(std::span<const u32> indices,
                                 std::span<ImageViewId> image_view_ids);
 
+    /// Fill image_view_ids with the compute images in indices
     void FillComputeImageViews(std::span<const u32> indices, std::span<ImageViewId> image_view_ids);
 
-    /**
-     * Get the sampler from the graphics descriptor table in the specified index
-     *
-     * @param index Index in elements of the sampler
-     * @returns     Sampler in the specified index
-     *
-     * @pre @a index is less than the size of the descriptor table
-     */
+    /// Get the sampler from the graphics descriptor table in the specified index
     Sampler* GetGraphicsSampler(u32 index);
 
-    /**
-     * Get the sampler from the compute descriptor table in the specified index
-     *
-     * @param index Index in elements of the sampler
-     * @returns     Sampler in the specified index
-     *
-     * @pre @a index is less than the size of the descriptor table
-     */
+    /// Get the sampler from the compute descriptor table in the specified index
     Sampler* GetComputeSampler(u32 index);
 
+    /// Refresh the state for graphics image view and sampler descriptors
     void SynchronizeGraphicsDescriptors();
 
+    /// Refresh the state for compute image view and sampler descriptors
     void SynchronizeComputeDescriptors();
 
-    /*
-     * Update bound render targets and upload memory if necessary
-     */
+    /// Update bound render targets and upload memory if necessary
+    /// @param is_clear True when the render targets are being used for clears
     void UpdateRenderTargets(bool is_clear);
 
-    /**
-     * Create or find a framebuffer with the currently bound render targets
-     * @sa UpdateRenderTargets should be called before calling this method
-     *
-     * @returns Pointer to a valid framebuffer
-     */
+    /// Find a framebuffer with the currently bound render targets
+    /// UpdateRenderTargets should be called before this
     Framebuffer* GetFramebuffer();
 
-    /**
-     * Mark images in a range as modified from the CPU
-     *
-     * @param cpu_addr Virtual CPU address where memory has been written
-     * @param size     Size in bytes of the written memory
-     */
+    /// Mark images in a range as modified from the CPU
     void WriteMemory(VAddr cpu_addr, size_t size);
 
-    /**
-     * Download contents of host images to guest memory in a region
-     *
-     * @note Memory download happens immediately when this method is called
-     *
-     * @param cpu_addr Virtual CPU address of the desired memory download
-     * @param size     Size in bytes of the desired memory download
-     */
+    /// Download contents of host images to guest memory in a region
     void DownloadMemory(VAddr cpu_addr, size_t size);
 
+    /// Remove images in a region
     void UnmapMemory(VAddr cpu_addr, size_t size);
 
+    /// Blit an image with the given parameters
     void BlitImage(const Tegra::Engines::Fermi2D::Surface& dst,
                    const Tegra::Engines::Fermi2D::Surface& src,
                    const Tegra::Engines::Fermi2D::Config& copy);
 
-    /**
-     * Invalidate the contents of the color buffer index
-     * These contents become unspecified, the cache can assume aggressive optimizations.
-     * @sa UpdateRenderTargets does not have to be called before this
-     *
-     * @param index Index of the color buffer to invalidate
-     */
+    /// Invalidate the contents of the color buffer index
+    /// These contents become unspecified, the cache can assume aggressive optimizations.
     void InvalidateColorBuffer(size_t index);
 
-    /**
-     * Invalidate the contents of the depth buffer
-     * These contents become unspecified, the cache can assume aggressive optimizations.
-     * @sa UpdateRenderTargets does not have to be called before this
-     */
+    /// Invalidate the contents of the depth buffer
+    /// These contents become unspecified, the cache can assume aggressive optimizations.
     void InvalidateDepthBuffer();
 
-    /**
-     * Tries to find a cached image view in the given CPU address
-     *
-     * @param cpu_addr Virtual CPU address
-     * @returns        Pointer to image view
-     */
+    /// Try to find a cached image view in the given CPU address
     [[nodiscard]] ImageView* TryFindFramebufferImageView(VAddr cpu_addr);
 
+    /// Return true when there are uncommitted images to be downloaded
     [[nodiscard]] bool HasUncommittedFlushes() const noexcept;
 
+    /// Return true when the caller should wait for async downloads
     [[nodiscard]] bool ShouldWaitAsyncFlushes() const noexcept;
 
+    /// Commit asynchronous downloads
     void CommitAsyncFlushes();
 
+    /// Pop asynchronous downloads
     void PopAsyncFlushes();
 
+    /// Return true when a CPU region is modified from the GPU
     [[nodiscard]] bool IsRegionGpuModified(VAddr addr, size_t size);
 
 private:
-    /**
-     * Iterate over all page indices in a range
-     *
-     * @param addr Start of the address to iterate
-     * @param size Size in bytes of the address to iterate
-     * @param func Function to call on each page index
-     */
+    /// Iterate over all page indices in a range
     template <typename Func>
     static void ForEachPage(VAddr addr, size_t size, Func&& func) {
         static constexpr bool RETURNS_BOOL = std::is_same_v<std::invoke_result<Func, u64>, bool>;
@@ -225,103 +189,115 @@ private:
         }
     }
 
+    /// Fills image_view_ids in the image views in indices
     void FillImageViews(DescriptorTable<TICEntry>& table,
                         std::span<ImageViewId> cached_image_view_ids, std::span<const u32> indices,
                         std::span<ImageViewId> image_view_ids);
 
+    /// Find or create an image view in the guest descriptor table
     ImageViewId VisitImageView(DescriptorTable<TICEntry>& table,
                                std::span<ImageViewId> cached_image_view_ids, u32 index);
 
+    /// Find or create a framebuffer with the given render target parameters
     FramebufferId GetFramebufferId(const RenderTargets& key);
 
-    void UpdateImageContents(Image& image);
+    /// Refresh the contents (pixel data) of an image
+    void RefreshContents(Image& image);
 
+    /// Upload data from guest to an image
     template <typename MapBuffer>
     void UploadImageContents(Image& image, MapBuffer& map, size_t buffer_offset);
 
+    /// Find or create an image view from a guest descriptor
     [[nodiscard]] ImageViewId FindImageView(const TICEntry& config);
 
+    /// Create a new image view from a guest descriptor
     [[nodiscard]] ImageViewId CreateImageView(const TICEntry& config);
 
+    /// Find or create an image from the given parameters
     [[nodiscard]] ImageId FindOrInsertImage(const ImageInfo& info, GPUVAddr gpu_addr,
                                             RelaxedOptions options = RelaxedOptions{});
 
+    /// Find an image from the given parameters
     [[nodiscard]] ImageId FindImage(const ImageInfo& info, GPUVAddr gpu_addr,
                                     RelaxedOptions options);
 
+    /// Create an image from the given parameters
     [[nodiscard]] ImageId InsertImage(const ImageInfo& info, GPUVAddr gpu_addr,
                                       RelaxedOptions options);
 
-    [[nodiscard]] ImageId ResolveImageOverlaps(const ImageInfo& info, GPUVAddr gpu_addr,
-                                               VAddr cpu_addr);
+    /// Create a new image and join perfectly matching existing images
+    /// Remove joined images from the cache
+    [[nodiscard]] ImageId JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr);
 
+    /// Return a blit image pair from the given guest blit parameters
     [[nodiscard]] BlitImages GetBlitImages(const Tegra::Engines::Fermi2D::Surface& dst,
                                            const Tegra::Engines::Fermi2D::Surface& src);
 
+    /// Find or create a sampler from a guest descriptor sampler
     [[nodiscard]] SamplerId FindSampler(const TSCEntry& config);
 
-    /**
-     * Find or create an image view for the given color buffer index
-     *
-     * @param index Index of the color buffer to find
-     * @returns     Image view of the given color buffer
-     */
+    /// Find or create an image view for the given color buffer index
     [[nodiscard]] ImageViewId FindColorBuffer(size_t index, bool is_clear);
 
-    /**
-     * Find or create an image view for the depth buffer
-     *
-     * @returns Image view for the depth buffer
-     */
+    /// Find or create an image view for the depth buffer
     [[nodiscard]] ImageViewId FindDepthBuffer(bool is_clear);
 
+    /// Find or create a view for a render target with the given image parameters
     [[nodiscard]] ImageViewId FindRenderTargetView(const ImageInfo& info, GPUVAddr gpu_addr,
                                                    bool is_clear);
 
+    /// Iterates over all the images in a region calling func
     template <typename Func>
     void ForEachImageInRegion(VAddr cpu_addr, size_t size, Func&& func);
 
+    /// Find or create an image view in the given image with the passed parameters
     [[nodiscard]] ImageViewId FindOrEmplaceImageView(ImageId image_id, const ImageViewInfo& info);
 
-    /**
-     * Register image in the page table
-     *
-     * @param Image to register
-     */
+    /// Register image in the page table
     void RegisterImage(ImageId image);
 
-    /**
-     * Unregister image from the page table
-     *
-     * @param Image to unregister
-     */
+    /// Unregister image from the page table
     void UnregisterImage(ImageId image);
 
+    /// Track CPU reads and writes for image
     void TrackImage(ImageBase& image);
 
+    /// Stop tracking CPU reads and writes for image
     void UntrackImage(ImageBase& image);
 
+    /// Delete image from the cache
     void DeleteImage(ImageId image);
 
+    /// Remove image views references from the cache
     void RemoveImageViewReferences(std::span<const ImageViewId> removed_views);
 
+    /// Remove framebuffers using the given image views from the cache
     void RemoveFramebuffers(std::span<const ImageViewId> removed_views);
 
+    /// Mark an image as modified from the GPU
     void MarkModification(ImageBase& image) noexcept;
 
+    /// Synchronize image aliases, copying data if needed
     void SynchronizeAliases(ImageId image_id);
 
+    /// Prepare an image to be used
     void PrepareImage(ImageId image_id, bool is_modification, bool invalidate);
 
+    /// Prepare an image view to be used
     void PrepareImageView(ImageViewId image_view_id, bool is_modification, bool invalidate);
 
+    /// Execute copies from one image to the other, even if they are incompatible
     void CopyImage(ImageId dst_id, ImageId src_id, std::span<const ImageCopy> copies);
 
+    /// Bind an image view as render target, downloading resources preemtively if needed
     void BindRenderTarget(ImageViewId* old_id, ImageViewId new_id);
 
+    /// Create a render target from a given image and image view parameters
     [[nodiscard]] std::pair<FramebufferId, ImageViewId> RenderTargetFromImage(
         ImageId, const ImageViewInfo& view_info);
 
+    /// Returns true if the current clear parameters clear the whole image of a given image view
     [[nodiscard]] bool IsFullClear(ImageViewId id);
 
     Runtime& runtime;

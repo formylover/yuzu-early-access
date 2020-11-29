@@ -146,6 +146,10 @@ public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
+    [[nodiscard]] VkImageView DepthView();
+
+    [[nodiscard]] VkImageView StencilView();
+
     [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType type) const noexcept {
         return *image_views[static_cast<size_t>(type)];
     }
@@ -171,7 +175,12 @@ public:
     }
 
 private:
+    [[nodiscard]] vk::ImageView MakeDepthStencilView(VkImageAspectFlags aspect_mask);
+
+    const VKDevice* device = nullptr;
     std::array<vk::ImageView, VideoCommon::NUM_IMAGE_VIEW_TYPES> image_views;
+    vk::ImageView depth_view;
+    vk::ImageView stencil_view;
     vk::BufferView buffer_view;
     VkImage image_handle = VK_NULL_HANDLE;
     VkImageView render_target = VK_NULL_HANDLE;
@@ -195,9 +204,8 @@ private:
 
 class Framebuffer {
 public:
-    explicit Framebuffer(TextureCacheRuntime&, const VideoCommon::SlotVector<Image>& slot_images,
-                         std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer,
-                         std::array<u8, NUM_RT> draw_buffers, VideoCommon::Extent2D size);
+    explicit Framebuffer(TextureCacheRuntime&, std::span<ImageView*, NUM_RT> color_buffers,
+                         ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
 
     [[nodiscard]] VkFramebuffer Handle() const noexcept {
         return *framebuffer;

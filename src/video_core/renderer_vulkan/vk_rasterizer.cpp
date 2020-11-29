@@ -460,7 +460,6 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
     texture_cache.SynchronizeGraphicsDescriptors();
 
     texture_cache.UpdateRenderTargets(false);
-    const Framebuffer* const framebuffer = texture_cache.GetFramebuffer();
 
     const auto shaders = pipeline_cache.GetShaders();
     key.shaders = GetShaderAddresses(shaders);
@@ -468,6 +467,7 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
 
     buffer_cache.Unmap();
 
+    const Framebuffer* const framebuffer = texture_cache.GetFramebuffer();
     key.renderpass = framebuffer->RenderPass();
 
     auto* const pipeline =
@@ -477,14 +477,14 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
         return;
     }
 
-    scheduler.RequestRenderpass(framebuffer);
-    scheduler.BindGraphicsPipeline(pipeline->GetHandle());
-
     UpdateDynamicStates();
 
     buffer_bindings.Bind(device, scheduler);
 
     BeginTransformFeedback();
+
+    scheduler.RequestRenderpass(framebuffer);
+    scheduler.BindGraphicsPipeline(pipeline->GetHandle());
 
     const auto pipeline_layout = pipeline->GetLayout();
     const auto descriptor_set = pipeline->CommitDescriptorSet();
@@ -658,7 +658,7 @@ void RasterizerVulkan::FlushRegion(VAddr addr, u64 size) {
     query_cache.FlushRegion(addr, size);
 }
 
-void Vulkan::RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size) {
+void RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size) {
     if (addr == 0 || size == 0) {
         return;
     }
@@ -667,7 +667,7 @@ void Vulkan::RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size
     query_cache.InvalidateRegion(addr, size);
 }
 
-void Vulkan::RasterizerVulkan::InvalidateTextureCache(VAddr addr, u64 size) {
+void RasterizerVulkan::InvalidateTextureCache(VAddr addr, u64 size) {
     if (addr == 0 || size == 0) {
         return;
     }

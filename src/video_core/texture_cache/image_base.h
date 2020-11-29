@@ -38,13 +38,16 @@ struct AliasedImage {
 struct ImageBase {
     explicit ImageBase(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr);
 
-    [[nodiscard]] bool Overlaps(VAddr overlap_cpu_addr, size_t overlap_size) const noexcept;
-
     [[nodiscard]] std::optional<SubresourceBase> TryFindBase(GPUVAddr other_addr) const noexcept;
 
     [[nodiscard]] ImageViewId FindView(const ImageViewInfo& info) const noexcept;
 
     void InsertView(const ImageViewInfo& info, ImageViewId image_view_id);
+
+    [[nodiscard]] bool Overlaps(VAddr overlap_cpu_addr, size_t overlap_size) const noexcept {
+        const VAddr overlap_end = overlap_cpu_addr + overlap_size;
+        return cpu_addr < overlap_end && overlap_cpu_addr < cpu_addr_end;
+    }
 
     ImageInfo info;
 

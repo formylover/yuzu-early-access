@@ -77,8 +77,6 @@ void ConvertImage(std::span<const u8> input, const ImageInfo& info, std::span<u8
 void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const ImageInfo& info,
                   std::span<const BufferImageCopy> copies, std::span<const u8> memory);
 
-[[nodiscard]] std::string CompareImageInfos(const ImageInfo& lhs, const ImageInfo& rhs);
-
 [[nodiscard]] bool IsBlockLinearSizeCompatible(const ImageInfo& new_info,
                                                const ImageInfo& overlap_info, u32 new_level,
                                                u32 overlap_level, bool strict_size) noexcept;
@@ -103,5 +101,7 @@ void SwizzleImage(Tegra::MemoryManager& gpu_memory, GPUVAddr gpu_addr, const Ima
 
 void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase* dst,
                       const ImageBase* src);
+
+[[nodiscard]] u32 MapSizeBytes(const ImageBase& image);
 
 } // namespace VideoCommon

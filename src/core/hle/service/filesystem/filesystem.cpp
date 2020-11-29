@@ -717,7 +717,8 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
     }
 
     if (save_data_factory == nullptr) {
-        save_data_factory = std::make_unique<FileSys::SaveDataFactory>(std::move(nand_directory));
+        save_data_factory =
+            std::make_unique<FileSys::SaveDataFactory>(system, std::move(nand_directory));
     }
 
     if (sdmc_factory == nullptr) {
@@ -728,11 +729,9 @@ void FileSystemController::CreateFactories(FileSys::VfsFilesystem& vfs, bool ove
 }
 
 void InstallInterfaces(Core::System& system) {
-    std::make_shared<FSP_LDR>()->InstallAsService(system.ServiceManager());
-    std::make_shared<FSP_PR>()->InstallAsService(system.ServiceManager());
-    std::make_shared<FSP_SRV>(system.GetFileSystemController(), system.GetContentProvider(),
-                              system.GetReporter())
-        ->InstallAsService(system.ServiceManager());
+    std::make_shared<FSP_LDR>(system)->InstallAsService(system.ServiceManager());
+    std::make_shared<FSP_PR>(system)->InstallAsService(system.ServiceManager());
+    std::make_shared<FSP_SRV>(system)->InstallAsService(system.ServiceManager());
 }
 
 } // namespace Service::FileSystem

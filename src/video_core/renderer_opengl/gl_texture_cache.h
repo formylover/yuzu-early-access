@@ -189,10 +189,6 @@ public:
         return internal_format;
     }
 
-    [[nodiscard]] bool Is3D() const noexcept {
-        return is_slice_view;
-    }
-
 private:
     void SetupView(const Device& device, Image& image, ImageViewType type, GLuint handle,
                    const VideoCommon::ImageViewInfo& info, VideoCommon::SubresourceRange range);
@@ -201,7 +197,6 @@ private:
     std::vector<OGLTextureView> stored_views;
     GLuint default_handle = 0;
     GLenum internal_format = GL_NONE;
-    bool is_slice_view = false;
 };
 
 class ImageAlloc : public VideoCommon::ImageAllocBase {};
@@ -220,9 +215,8 @@ private:
 
 class Framebuffer {
 public:
-    explicit Framebuffer(TextureCacheRuntime&, const VideoCommon::SlotVector<Image>&,
-                         std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer,
-                         std::array<u8, NUM_RT> draw_buffers, VideoCommon::Extent2D size);
+    explicit Framebuffer(TextureCacheRuntime&, std::span<ImageView*, NUM_RT> color_buffers,
+                         ImageView* depth_buffer, const VideoCommon::RenderTargets& key);
 
     [[nodiscard]] GLuint Handle() const noexcept {
         return framebuffer.handle;

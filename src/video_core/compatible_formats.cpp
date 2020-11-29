@@ -18,20 +18,20 @@ using Table = std::array<std::array<u64, 2>, MaxPixelFormat>;
 // Compatibility table taken from Table 3.X.2 in:
 // https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_texture_view.txt
 
-constexpr std::array VIEW_CLASS_128_BITS = {
+constexpr std::array VIEW_CLASS_128_BITS{
     PixelFormat::R32G32B32A32_FLOAT,
     PixelFormat::R32G32B32A32_UINT,
     PixelFormat::R32G32B32A32_SINT,
 };
 
-constexpr std::array VIEW_CLASS_96_BITS = {
+constexpr std::array VIEW_CLASS_96_BITS{
     PixelFormat::R32G32B32_FLOAT,
 };
 // Missing formats:
 // PixelFormat::RGB32UI,
 // PixelFormat::RGB32I,
 
-constexpr std::array VIEW_CLASS_64_BITS = {
+constexpr std::array VIEW_CLASS_64_BITS{
     PixelFormat::R32G32_FLOAT,       PixelFormat::R32G32_UINT,
     PixelFormat::R32G32_SINT,        PixelFormat::R16G16B16A16_FLOAT,
     PixelFormat::R16G16B16A16_UNORM, PixelFormat::R16G16B16A16_SNORM,
@@ -40,7 +40,7 @@ constexpr std::array VIEW_CLASS_64_BITS = {
 
 // TODO: How should we handle 48 bits?
 
-constexpr std::array VIEW_CLASS_32_BITS = {
+constexpr std::array VIEW_CLASS_32_BITS{
     PixelFormat::R16G16_FLOAT,      PixelFormat::B10G11R11_FLOAT, PixelFormat::R32_FLOAT,
     PixelFormat::A2B10G10R10_UNORM, PixelFormat::R16G16_UINT,     PixelFormat::R32_UINT,
     PixelFormat::R16G16_SINT,       PixelFormat::R32_SINT,        PixelFormat::A8B8G8R8_UNORM,
@@ -52,43 +52,105 @@ constexpr std::array VIEW_CLASS_32_BITS = {
 
 // TODO: How should we handle 24 bits?
 
-constexpr std::array VIEW_CLASS_16_BITS = {
+constexpr std::array VIEW_CLASS_16_BITS{
     PixelFormat::R16_FLOAT,  PixelFormat::R8G8_UINT,  PixelFormat::R16_UINT,
     PixelFormat::R16_SINT,   PixelFormat::R8G8_UNORM, PixelFormat::R16_UNORM,
     PixelFormat::R8G8_SNORM, PixelFormat::R16_SNORM,  PixelFormat::R8G8_SINT,
 };
 
-constexpr std::array VIEW_CLASS_8_BITS = {
+constexpr std::array VIEW_CLASS_8_BITS{
     PixelFormat::R8_UINT,
     PixelFormat::R8_UNORM,
     PixelFormat::R8_SINT,
     PixelFormat::R8_SNORM,
 };
 
-constexpr std::array VIEW_CLASS_RGTC1_RED = {
+constexpr std::array VIEW_CLASS_RGTC1_RED{
     PixelFormat::BC4_UNORM,
     PixelFormat::BC4_SNORM,
 };
 
-constexpr std::array VIEW_CLASS_RGTC2_RG = {
+constexpr std::array VIEW_CLASS_RGTC2_RG{
     PixelFormat::BC5_UNORM,
     PixelFormat::BC5_SNORM,
 };
 
-constexpr std::array VIEW_CLASS_BPTC_UNORM = {
+constexpr std::array VIEW_CLASS_BPTC_UNORM{
     PixelFormat::BC7_UNORM,
     PixelFormat::BC7_SRGB,
 };
 
-constexpr std::array VIEW_CLASS_BPTC_FLOAT = {
+constexpr std::array VIEW_CLASS_BPTC_FLOAT{
     PixelFormat::BC6H_SFLOAT,
     PixelFormat::BC6H_UFLOAT,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_4x4_RGBA{
+    PixelFormat::ASTC_2D_4X4_UNORM,
+    PixelFormat::ASTC_2D_4X4_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_5x4_RGBA{
+    PixelFormat::ASTC_2D_5X4_UNORM,
+    PixelFormat::ASTC_2D_5X4_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_5x5_RGBA{
+    PixelFormat::ASTC_2D_5X5_UNORM,
+    PixelFormat::ASTC_2D_5X5_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_6x5_RGBA{
+    PixelFormat::ASTC_2D_6X5_UNORM,
+    PixelFormat::ASTC_2D_6X5_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_6x6_RGBA{
+    PixelFormat::ASTC_2D_6X6_UNORM,
+    PixelFormat::ASTC_2D_6X6_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_8x5_RGBA{
+    PixelFormat::ASTC_2D_8X5_UNORM,
+    PixelFormat::ASTC_2D_8X5_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_8x8_RGBA{
+    PixelFormat::ASTC_2D_8X8_UNORM,
+    PixelFormat::ASTC_2D_8X8_SRGB,
+};
+
+// Missing formats:
+// PixelFormat::ASTC_2D_10X5_UNORM
+// PixelFormat::ASTC_2D_10X5_SRGB
+
+// Missing formats:
+// PixelFormat::ASTC_2D_10X6_UNORM
+// PixelFormat::ASTC_2D_10X6_SRGB
+
+constexpr std::array VIEW_CLASS_ASTC_10x8_RGBA{
+    PixelFormat::ASTC_2D_10X8_UNORM,
+    PixelFormat::ASTC_2D_10X8_SRGB,
+};
+
+constexpr std::array VIEW_CLASS_ASTC_10x10_RGBA{
+    PixelFormat::ASTC_2D_10X10_UNORM,
+    PixelFormat::ASTC_2D_10X10_SRGB,
+};
+
+// Missing formats
+// ASTC_2D_12X10_UNORM,
+// ASTC_2D_12X10_SRGB,
+
+constexpr std::array VIEW_CLASS_ASTC_12x12_RGBA{
+    PixelFormat::ASTC_2D_12X12_UNORM,
+    PixelFormat::ASTC_2D_12X12_SRGB,
 };
 
 // Compatibility table taken from Table 4.X.1 in:
 // https://www.khronos.org/registry/OpenGL/extensions/ARB/ARB_copy_image.txt
 
-constexpr std::array COPY_CLASS_128_BITS = {
+constexpr std::array COPY_CLASS_128_BITS{
     PixelFormat::R32G32B32A32_UINT, PixelFormat::R32G32B32A32_FLOAT, PixelFormat::R32G32B32A32_SINT,
     PixelFormat::BC2_UNORM,         PixelFormat::BC2_SRGB,           PixelFormat::BC3_UNORM,
     PixelFormat::BC3_SRGB,          PixelFormat::BC5_UNORM,          PixelFormat::BC5_SNORM,
@@ -99,7 +161,7 @@ constexpr std::array COPY_CLASS_128_BITS = {
 // PixelFormat::RGBA32I
 // COMPRESSED_RG_RGTC2
 
-constexpr std::array COPY_CLASS_64_BITS = {
+constexpr std::array COPY_CLASS_64_BITS{
     PixelFormat::R16G16B16A16_FLOAT, PixelFormat::R16G16B16A16_UINT,
     PixelFormat::R16G16B16A16_UNORM, PixelFormat::R16G16B16A16_SNORM,
     PixelFormat::R16G16B16A16_SINT,  PixelFormat::R32G32_UINT,
@@ -152,6 +214,16 @@ constexpr Table MakeViewTable() {
     EnableRange(view, VIEW_CLASS_RGTC2_RG);
     EnableRange(view, VIEW_CLASS_BPTC_UNORM);
     EnableRange(view, VIEW_CLASS_BPTC_FLOAT);
+    EnableRange(view, VIEW_CLASS_ASTC_4x4_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_5x4_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_5x5_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_6x5_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_6x6_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_8x5_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_8x8_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_10x8_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_10x10_RGBA);
+    EnableRange(view, VIEW_CLASS_ASTC_12x12_RGBA);
     return view;
 }
 

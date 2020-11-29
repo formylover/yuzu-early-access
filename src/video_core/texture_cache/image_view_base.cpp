@@ -31,6 +31,9 @@ ImageViewBase::ImageViewBase(const ImageViewInfo& info, const ImageInfo& image_i
     if (image_info.type == ImageType::Linear && is_async) {
         flags |= ImageViewFlagBits::PreemtiveDownload;
     }
+    if (image_info.type == ImageType::e3D && info.type != ImageViewType::e3D) {
+        flags |= ImageViewFlagBits::Slice;
+    }
 }
 
 ImageViewBase::ImageViewBase(const NullImageParams&) {}

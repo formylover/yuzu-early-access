@@ -14,6 +14,10 @@
 #include "common/common_types.h"
 #include "input_common/settings.h"
 
+namespace Core {
+class System;
+}
+
 namespace Settings {
 
 enum class RendererBackend {
@@ -174,9 +178,7 @@ struct Values {
 
     Setting<bool> motion_enabled;
     std::string motion_device;
-    std::string udp_input_address;
-    u16 udp_input_port;
-    u8 udp_pad_index;
+    std::string udp_input_servers;
 
     bool mouse_enabled;
     std::string mouse_device;
@@ -247,11 +249,11 @@ float Volume();
 
 std::string GetTimeZoneString();
 
-void Apply();
+void Apply(Core::System& system);
 void LogSettings();
 
 // Restore the global state of all applicable settings in the Values struct
-void RestoreGlobalState();
+void RestoreGlobalState(bool is_powered_on);
 
 // Fixes settings that are known to cause issues with the emulator
 void Sanitize();

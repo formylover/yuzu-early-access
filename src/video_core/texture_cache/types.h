@@ -26,7 +26,6 @@ enum class ImageType : u32 {
     e2D,
     e3D,
     Linear,
-    Rect,
     Buffer,
 };
 

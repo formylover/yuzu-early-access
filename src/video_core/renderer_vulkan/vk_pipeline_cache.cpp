@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 
+#include "common/bit_cast.h"
 #include "common/cityhash.h"
 #include "common/microprofile.h"
 #include "core/core.h"
@@ -345,12 +346,12 @@ VKPipelineCache::DecompileShaders(const FixedPipelineState& fixed_state) {
         specialization.attribute_types[i] = attribute.Type();
     }
     specialization.ndc_minus_one_to_one = fixed_state.ndc_minus_one_to_one;
+    specialization.early_fragment_tests = fixed_state.early_z;
 
     // Alpha test
     specialization.alpha_test_func =
         FixedPipelineState::UnpackComparisonOp(fixed_state.alpha_test_func.Value());
-    // memcpy from u32 to float TODO: C++20 std::bit_cast
-    std::memcpy(&specialization.alpha_test_ref, &fixed_state.alpha_test_ref, sizeof(float));
+    specialization.alpha_test_ref = Common::BitCast<float>(fixed_state.alpha_test_ref);
 
     SPIRVProgram program;
     std::vector<VkDescriptorSetLayoutBinding> bindings;

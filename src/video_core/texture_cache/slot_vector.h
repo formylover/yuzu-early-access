@@ -37,7 +37,7 @@ public:
         for (u64 bits : stored_bitset) {
             for (size_t bit = 0; bits; ++bit, bits >>= 1) {
                 if ((bits & 1) != 0) {
-                    reinterpret_cast<T*>(values[index + bit].storage.data())->~T();
+                    values[index + bit].object.~T();
                 }
             }
             index += 64;
@@ -47,35 +47,40 @@ public:
 
     [[nodiscard]] T& operator[](SlotId id) noexcept {
         ValidateIndex(id);
-        return *reinterpret_cast<T*>(values[id.index].storage.data());
+        return values[id.index].object;
     }
 
     [[nodiscard]] const T& operator[](SlotId id) const noexcept {
         ValidateIndex(id);
-        return *reinterpret_cast<T*>(values[id.index].storage.data());
+        return values[id.index].object;
     }
 
     template <typename... Args>
     [[nodiscard]] SlotId insert(Args&&... args) noexcept {
         const u32 index = FreeValueIndex();
-        new (values[index].storage.data()) T(std::forward<Args>(args)...);
+        new (&values[index].object) T(std::forward<Args>(args)...);
         SetStorageBit(index);
 
         return SlotId{index};
     }
 
     void erase(SlotId id) noexcept {
-        // Delete and pollute bits to avoid read after free situations
-        reinterpret_cast<T*>(values[id.index].storage.data())->~T();
-        values[id.index].storage.fill(0xcc);
-
+        values[id.index].object.~T();
         free_list.push_back(id.index);
         ResetStorageBit(id.index);
     }
 
 private:
-    struct Entry {
-        std::array<unsigned char, sizeof(T)> storage;
+    struct NonTrivialDummy {
+        NonTrivialDummy() noexcept {}
+    };
+
+    union Entry {
+        Entry() noexcept : dummy{} {}
+        ~Entry() noexcept {}
+
+        NonTrivialDummy dummy;
+        T object;
     };
 
     void SetStorageBit(u32 index) noexcept {
@@ -114,9 +119,9 @@ private:
                 if ((bits & 1) == 0) {
                     continue;
                 }
-                T* const old_value = reinterpret_cast<T*>(values[i].storage.data());
-                new (new_values[i].storage.data()) T(std::move(*old_value));
-                old_value->~T();
+                T& old_value = values[i].object;
+                new (&new_values[i].object) T(std::move(old_value));
+                old_value.~T();
             }
             index += 64;
         }

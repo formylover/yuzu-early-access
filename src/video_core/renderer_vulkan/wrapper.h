@@ -9,6 +9,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <span>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -184,6 +185,7 @@ struct DeviceDispatch : public InstanceDispatch {
     PFN_vkCmdBeginQuery vkCmdBeginQuery;
     PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
     PFN_vkCmdBeginTransformFeedbackEXT vkCmdBeginTransformFeedbackEXT;
+    PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabelEXT;
     PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets;
     PFN_vkCmdBindIndexBuffer vkCmdBindIndexBuffer;
     PFN_vkCmdBindPipeline vkCmdBindPipeline;
@@ -201,6 +203,7 @@ struct DeviceDispatch : public InstanceDispatch {
     PFN_vkCmdEndQuery vkCmdEndQuery;
     PFN_vkCmdEndRenderPass vkCmdEndRenderPass;
     PFN_vkCmdEndTransformFeedbackEXT vkCmdEndTransformFeedbackEXT;
+    PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabelEXT;
     PFN_vkCmdFillBuffer vkCmdFillBuffer;
     PFN_vkCmdPipelineBarrier vkCmdPipelineBarrier;
     PFN_vkCmdPushConstants vkCmdPushConstants;
@@ -280,6 +283,8 @@ struct DeviceDispatch : public InstanceDispatch {
     PFN_vkQueueSubmit vkQueueSubmit;
     PFN_vkResetFences vkResetFences;
     PFN_vkResetQueryPoolEXT vkResetQueryPoolEXT;
+    PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
+    PFN_vkSetDebugUtilsObjectTagEXT vkSetDebugUtilsObjectTagEXT;
     PFN_vkUnmapMemory vkUnmapMemory;
     PFN_vkUpdateDescriptorSetWithTemplateKHR vkUpdateDescriptorSetWithTemplateKHR;
     PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets;
@@ -549,18 +554,14 @@ private:
     const DeviceDispatch* dld = nullptr;
 };
 
-using BufferView = Handle<VkBufferView, VkDevice, DeviceDispatch>;
 using DebugCallback = Handle<VkDebugUtilsMessengerEXT, VkInstance, InstanceDispatch>;
 using DescriptorSetLayout = Handle<VkDescriptorSetLayout, VkDevice, DeviceDispatch>;
 using DescriptorUpdateTemplateKHR = Handle<VkDescriptorUpdateTemplateKHR, VkDevice, DeviceDispatch>;
-using Framebuffer = Handle<VkFramebuffer, VkDevice, DeviceDispatch>;
-using ImageView = Handle<VkImageView, VkDevice, DeviceDispatch>;
 using Pipeline = Handle<VkPipeline, VkDevice, DeviceDispatch>;
 using PipelineLayout = Handle<VkPipelineLayout, VkDevice, DeviceDispatch>;
 using QueryPool = Handle<VkQueryPool, VkDevice, DeviceDispatch>;
 using RenderPass = Handle<VkRenderPass, VkDevice, DeviceDispatch>;
 using Sampler = Handle<VkSampler, VkDevice, DeviceDispatch>;
-using ShaderModule = Handle<VkShaderModule, VkDevice, DeviceDispatch>;
 using SurfaceKHR = Handle<VkSurfaceKHR, VkInstance, InstanceDispatch>;
 
 using DescriptorSets = PoolAllocations<VkDescriptorSet, VkDescriptorPool>;
@@ -611,6 +612,17 @@ class Buffer : public Handle<VkBuffer, VkDevice, DeviceDispatch> {
 public:
     /// Attaches a memory allocation.
     void BindMemory(VkDeviceMemory memory, VkDeviceSize offset) const;
+
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+};
+
+class BufferView : public Handle<VkBufferView, VkDevice, DeviceDispatch> {
+    using Handle<VkBufferView, VkDevice, DeviceDispatch>::Handle;
+
+public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
 };
 
 class Image : public Handle<VkImage, VkDevice, DeviceDispatch> {
@@ -619,12 +631,26 @@ class Image : public Handle<VkImage, VkDevice, DeviceDispatch> {
 public:
     /// Attaches a memory allocation.
     void BindMemory(VkDeviceMemory memory, VkDeviceSize offset) const;
+
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+};
+
+class ImageView : public Handle<VkImageView, VkDevice, DeviceDispatch> {
+    using Handle<VkImageView, VkDevice, DeviceDispatch>::Handle;
+
+public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
 };
 
 class DeviceMemory : public Handle<VkDeviceMemory, VkDevice, DeviceDispatch> {
     using Handle<VkDeviceMemory, VkDevice, DeviceDispatch>::Handle;
 
 public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+
     u8* Map(VkDeviceSize offset, VkDeviceSize size) const {
         void* data;
         Check(dld->vkMapMemory(owner, handle, offset, size, 0, &data));
@@ -640,6 +666,9 @@ class Fence : public Handle<VkFence, VkDevice, DeviceDispatch> {
     using Handle<VkFence, VkDevice, DeviceDispatch>::Handle;
 
 public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+
     VkResult Wait(u64 timeout = std::numeric_limits<u64>::max()) const noexcept {
         return dld->vkWaitForFences(owner, 1, &handle, true, timeout);
     }
@@ -653,11 +682,22 @@ public:
     }
 };
 
+class Framebuffer : public Handle<VkFramebuffer, VkDevice, DeviceDispatch> {
+    using Handle<VkFramebuffer, VkDevice, DeviceDispatch>::Handle;
+
+public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+};
+
 class DescriptorPool : public Handle<VkDescriptorPool, VkDevice, DeviceDispatch> {
     using Handle<VkDescriptorPool, VkDevice, DeviceDispatch>::Handle;
 
 public:
     DescriptorSets Allocate(const VkDescriptorSetAllocateInfo& ai) const;
+
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
 };
 
 class CommandPool : public Handle<VkCommandPool, VkDevice, DeviceDispatch> {
@@ -666,6 +706,9 @@ class CommandPool : public Handle<VkCommandPool, VkDevice, DeviceDispatch> {
 public:
     CommandBuffers Allocate(std::size_t num_buffers,
                             VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
+
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
 };
 
 class SwapchainKHR : public Handle<VkSwapchainKHR, VkDevice, DeviceDispatch> {
@@ -679,15 +722,29 @@ class Event : public Handle<VkEvent, VkDevice, DeviceDispatch> {
     using Handle<VkEvent, VkDevice, DeviceDispatch>::Handle;
 
 public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+
     VkResult GetStatus() const noexcept {
         return dld->vkGetEventStatus(owner, handle);
     }
+};
+
+class ShaderModule : public Handle<VkShaderModule, VkDevice, DeviceDispatch> {
+    using Handle<VkShaderModule, VkDevice, DeviceDispatch>::Handle;
+
+public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
 };
 
 class Semaphore : public Handle<VkSemaphore, VkDevice, DeviceDispatch> {
     using Handle<VkSemaphore, VkDevice, DeviceDispatch>::Handle;
 
 public:
+    /// Set object name.
+    void SetObjectNameEXT(const char* name) const;
+
     [[nodiscard]] u64 GetCounter() const {
         u64 value;
         Check(dld->vkGetSemaphoreCounterValueKHR(owner, handle, &value));
@@ -1121,6 +1178,20 @@ public:
                                  const VkDeviceSize* counter_buffer_offsets) const noexcept {
         dld->vkCmdEndTransformFeedbackEXT(handle, first_counter_buffer, counter_buffers_count,
                                           counter_buffers, counter_buffer_offsets);
+    }
+
+    void BeginDebugUtilsLabelEXT(const char* label, std::span<float, 4> color) const noexcept {
+        const VkDebugUtilsLabelEXT label_info{
+            .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT,
+            .pNext = nullptr,
+            .pLabelName = label,
+            .color{color[0], color[1], color[2], color[3]},
+        };
+        dld->vkCmdBeginDebugUtilsLabelEXT(handle, &label_info);
+    }
+
+    void EndDebugUtilsLabelEXT() const noexcept {
+        dld->vkCmdEndDebugUtilsLabelEXT(handle);
     }
 
 private:

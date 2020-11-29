@@ -27,6 +27,7 @@ TextureCache<P>::TextureCache(Runtime& runtime_, VideoCore::RasterizerInterface&
                               Tegra::MemoryManager& gpu_memory_)
     : runtime{runtime_}, rasterizer{rasterizer_}, maxwell3d{maxwell3d_},
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_} {
+    // Configure null sampler
     TSCEntry sampler_descriptor{};
     sampler_descriptor.min_filter.Assign(Tegra::Texture::TextureFilter::Linear);
     sampler_descriptor.mag_filter.Assign(Tegra::Texture::TextureFilter::Linear);
@@ -46,6 +47,21 @@ void TextureCache<P>::TickFrame() {
     sentenced_framebuffers.Tick();
     sentenced_image_view.Tick();
     ++frame_tick;
+}
+
+template <class P>
+std::unique_lock<std::mutex> TextureCache<P>::AcquireLock() {
+    return std::unique_lock{mutex};
+}
+
+template <class P>
+const typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) const noexcept {
+    return slot_image_views[id];
+}
+
+template <class P>
+typename P::ImageView& TextureCache<P>::GetImageView(ImageViewId id) noexcept {
+    return slot_image_views[id];
 }
 
 template <class P>
@@ -203,8 +219,7 @@ FramebufferId TextureCache<P>::GetFramebufferId(const RenderTargets& key) {
                            [this](ImageViewId id) { return id ? &slot_image_views[id] : nullptr; });
     ImageView* const depth_buffer =
         key.depth_buffer_id ? &slot_image_views[key.depth_buffer_id] : nullptr;
-    framebuffer_id = slot_framebuffers.insert(runtime, slot_images, color_buffers, depth_buffer,
-                                              key.draw_buffers, key.size);
+    framebuffer_id = slot_framebuffers.insert(runtime, color_buffers, depth_buffer, key);
     return framebuffer_id;
 }
 
@@ -238,7 +253,6 @@ void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
     if (images.empty()) {
         return;
     }
-    LOG_INFO(HW_GPU, "Download");
     std::ranges::sort(images, [this](ImageId lhs, ImageId rhs) {
         return slot_images[lhs].modification_tick < slot_images[rhs].modification_tick;
     });
@@ -257,7 +271,6 @@ void TextureCache<P>::UnmapMemory(VAddr cpu_addr, size_t size) {
     std::vector<ImageId> deleted_images;
     ForEachImageInRegion(cpu_addr, size, [&](ImageId id, Image&) { deleted_images.push_back(id); });
     for (const ImageId id : deleted_images) {
-        LOG_INFO(HW_GPU, "Deleting image: {}", id.index);
         Image& image = slot_images[id];
         if (True(image.flags & ImageFlagBits::Tracked)) {
             UntrackImage(image);
@@ -440,18 +453,8 @@ bool TextureCache<P>::IsRegionGpuModified(VAddr addr, size_t size) {
     return is_modified;
 }
 
-inline u32 MapSizeBytes(const ImageBase& image) {
-    if (True(image.flags & ImageFlagBits::AcceleratedUpload)) {
-        return image.guest_size_bytes;
-    } else if (True(image.flags & ImageFlagBits::Converted)) {
-        return image.converted_size_bytes;
-    } else {
-        return image.unswizzled_size_bytes;
-    }
-}
-
 template <class P>
-void TextureCache<P>::UpdateImageContents(Image& image) {
+void TextureCache<P>::RefreshContents(Image& image) {
     if (False(image.flags & ImageFlagBits::CpuModified)) {
         // Only upload modified images
         return;
@@ -494,8 +497,6 @@ void TextureCache<P>::UploadImageContents(Image& image, MapBuffer& map, size_t b
 
 template <class P>
 ImageViewId TextureCache<P>::FindImageView(const TICEntry& config) {
-    // TODO: Add fast path here comparing to previous TIC
-
     if (!IsValidAddress(gpu_memory, config)) {
         return NULL_IMAGE_VIEW_ID;
     }
@@ -570,7 +571,7 @@ ImageId TextureCache<P>::InsertImage(const ImageInfo& info, GPUVAddr gpu_addr,
                                      RelaxedOptions options) {
     const std::optional<VAddr> cpu_addr = gpu_memory.GpuToCpuAddress(gpu_addr);
     ASSERT_MSG(cpu_addr, "Tried to insert an image to an invalid gpu_addr=0x{:x}", gpu_addr);
-    const ImageId image_id = ResolveImageOverlaps(info, gpu_addr, *cpu_addr);
+    const ImageId image_id = JoinImages(info, gpu_addr, *cpu_addr);
     const Image& image = slot_images[image_id];
     // Using "image.gpu_addr" instead of "gpu_addr" is important because it might be different
     const auto [it, is_new] = image_allocs_table.try_emplace(image.gpu_addr);
@@ -582,8 +583,7 @@ ImageId TextureCache<P>::InsertImage(const ImageInfo& info, GPUVAddr gpu_addr,
 }
 
 template <class P>
-ImageId TextureCache<P>::ResolveImageOverlaps(const ImageInfo& info, GPUVAddr gpu_addr,
-                                              VAddr cpu_addr) {
+ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr) {
     ImageInfo new_info = info;
     const size_t size_bytes = CalculateGuestSizeInBytes(new_info);
     std::vector<ImageId> overlap_ids;
@@ -616,7 +616,7 @@ ImageId TextureCache<P>::ResolveImageOverlaps(const ImageInfo& info, GPUVAddr gp
     Image& new_image = slot_images[new_image_id];
 
     // TODO: Only upload what we need
-    UpdateImageContents(new_image);
+    RefreshContents(new_image);
 
     for (const ImageId overlap_id : overlap_ids) {
         Image& overlap = slot_images[overlap_id];
@@ -981,7 +981,7 @@ void TextureCache<P>::PrepareImage(ImageId image_id, bool is_modification, bool 
             TrackImage(image);
         }
     } else {
-        UpdateImageContents(image);
+        RefreshContents(image);
         SynchronizeAliases(image_id);
     }
     if (is_modification) {

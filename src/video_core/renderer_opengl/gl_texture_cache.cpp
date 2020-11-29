@@ -187,9 +187,6 @@ GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
         return GL_TEXTURE_3D;
     case ImageType::Linear:
         return GL_TEXTURE_2D_ARRAY;
-    case ImageType::Rect:
-        ASSERT(info.num_samples == 1);
-        return GL_TEXTURE_RECTANGLE;
     case ImageType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
@@ -280,47 +277,6 @@ GLenum AttachmentType(PixelFormat format) {
         break;
     }
     return false;
-}
-
-constexpr std::string_view DepthStencilDebugName(GLenum attachment) {
-    switch (attachment) {
-    case GL_DEPTH_ATTACHMENT:
-        return "D";
-    case GL_DEPTH_STENCIL_ATTACHMENT:
-        return "DS";
-    case GL_STENCIL_ATTACHMENT:
-        return "S";
-    }
-    return "X";
-}
-
-std::string NameView(const VideoCommon::ImageViewBase& image_view) {
-    const auto size = image_view.size;
-    const u32 num_levels = image_view.range.extent.levels;
-    const u32 num_layers = image_view.range.extent.layers;
-
-    const std::string level = num_levels > 1 ? fmt::format(":{}", num_levels) : "";
-    switch (image_view.type) {
-    case ImageViewType::e1D:
-        return fmt::format("1D {}{}", size.width, level);
-    case ImageViewType::e2D:
-        return fmt::format("2D {}x{}{}", size.width, size.height, level);
-    case ImageViewType::Cube:
-        return fmt::format("Cube {}x{}{}", size.width, size.height, level);
-    case ImageViewType::e3D:
-        return fmt::format("3D {}x{}x{}{}", size.width, size.height, size.depth, level);
-    case ImageViewType::e1DArray:
-        return fmt::format("1DArray {}{}|{}", size.width, level, num_layers);
-    case ImageViewType::e2DArray:
-        return fmt::format("2DArray {}x{}{}|{}", size.width, size.height, level, num_layers);
-    case ImageViewType::CubeArray:
-        return fmt::format("CubeArray {}x{}{}|{}", size.width, size.height, level, num_layers);
-    case ImageViewType::Rect:
-        return fmt::format("Rect {}x{}{}", size.width, size.height, level);
-    case ImageViewType::Buffer:
-        return fmt::format("Buffer {}", size.width);
-    }
-    return "Invalid";
 }
 
 [[nodiscard]] constexpr SwizzleSource ConvertGreenRed(SwizzleSource value) {
@@ -426,7 +382,7 @@ void ApplySwizzle(GLuint handle, PixelFormat format, std::array<SwizzleSource, 4
 }
 
 void AttachTexture(GLuint fbo, GLenum attachment, const ImageView* image_view) {
-    if (!image_view->Is3D()) {
+    if (False(image_view->flags & VideoCommon::ImageViewFlagBits::Slice)) {
         const GLuint texture = image_view->DefaultHandle();
         glNamedFramebufferTexture(fbo, attachment, texture, 0);
         return;
@@ -620,7 +576,6 @@ FormatProperties TextureCacheRuntime::FormatInfo(ImageType type, GLenum internal
     case ImageType::e1D:
         return format_properties[0].at(internal_format);
     case ImageType::e2D:
-    case ImageType::Rect:
     case ImageType::Linear:
         return format_properties[1].at(internal_format);
     case ImageType::e3D:
@@ -748,13 +703,9 @@ Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info, G
         break;
     }
     if (runtime.device.HasDebuggingToolAttached()) {
-        if (target != GL_TEXTURE_BUFFER) {
-            const std::string name = fmt::format("Image 0x{:x}", gpu_addr);
-            glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
-        } else {
-            const std::string name = fmt::format("Buffer 0x{:x}", gpu_addr);
-            glObjectLabel(GL_BUFFER, buffer.handle, static_cast<GLsizei>(name.size()), name.data());
-        }
+        const std::string name = VideoCommon::Name(*this);
+        glObjectLabel(target == GL_TEXTURE_BUFFER ? GL_BUFFER : GL_TEXTURE, handle,
+                      static_cast<GLsizei>(name.size()), name.data());
     }
 }
 
@@ -938,7 +889,7 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         flatten_range.extent.layers = 1;
         [[fallthrough]];
     case ImageViewType::e2D:
-        if (image.info.type == ImageType::e3D) {
+        if (True(flags & VideoCommon::ImageViewFlagBits::Slice)) {
             // 2D and 2D array views on a 3D textures are used exclusively for render targets
             ASSERT(info.range.extent.levels == 1);
             const VideoCommon::SubresourceRange slice_range{
@@ -947,7 +898,6 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
             };
             glGenTextures(1, handles.data());
             SetupView(device, image, ImageViewType::e3D, handles[0], info, slice_range);
-            is_slice_view = true;
             break;
         }
         glGenTextures(2, handles.data());
@@ -984,25 +934,21 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageP
 void ImageView::SetupView(const Device& device, Image& image, ImageViewType type, GLuint handle,
                           const VideoCommon::ImageViewInfo& info,
                           VideoCommon::SubresourceRange range) {
-    std::string name;
     if (info.type == ImageViewType::Buffer) {
         // TODO: Take offset from buffer cache
         glTextureBufferRange(handle, internal_format, image.buffer.handle, 0,
                              image.guest_size_bytes);
-        if (device.HasDebuggingToolAttached()) {
-            name = fmt::format("BufferView {} ({})", NameView(*this), handle);
-        }
     } else {
         const GLuint parent = image.texture.handle;
         const GLenum target = ImageTarget(type, image.info.num_samples);
         glTextureView(handle, target, parent, internal_format, range.base.level,
                       range.extent.levels, range.base.layer, range.extent.layers);
-        ApplySwizzle(handle, format, info.Swizzle());
-        if (device.HasDebuggingToolAttached()) {
-            name = fmt::format("ImageView {} ({})", NameView(*this), handle);
+        if (!info.IsRenderTarget()) {
+            ApplySwizzle(handle, format, info.Swizzle());
         }
     }
     if (device.HasDebuggingToolAttached()) {
+        const std::string name = VideoCommon::Name(*this, type);
         glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
     }
     stored_views.emplace_back().handle = handle;
@@ -1050,15 +996,10 @@ Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {
         // We default to false because it's more common
         LOG_WARNING(Render_OpenGL, "GL_ARB_seamless_cubemap_per_texture is required");
     }
-    if (runtime.device.HasDebuggingToolAttached()) {
-        const std::string name = fmt::format("Sampler 0x{:x}", std::hash<TSCEntry>{}(config));
-        glObjectLabel(GL_SAMPLER, handle, static_cast<GLsizei>(name.size()), name.data());
-    }
 }
 
-Framebuffer::Framebuffer(TextureCacheRuntime& runtime, const VideoCommon::SlotVector<Image>&,
-                         std::span<ImageView*, NUM_RT> color_buffers, ImageView* depth_buffer,
-                         std::array<u8, NUM_RT> draw_buffers, VideoCommon::Extent2D size) {
+Framebuffer::Framebuffer(TextureCacheRuntime& runtime, std::span<ImageView*, NUM_RT> color_buffers,
+                         ImageView* depth_buffer, const VideoCommon::RenderTargets& key) {
     // Bind to READ_FRAMEBUFFER to stop Nvidia's driver from creating an EXT_framebuffer instead of
     // a core framebuffer. EXT framebuffer attachments have to match in size and can be shared
     // across contexts. yuzu doesn't share framebuffers across contexts and we need attachments with
@@ -1077,14 +1018,12 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, const VideoCommon::SlotVe
             continue;
         }
         buffer_bits |= GL_COLOR_BUFFER_BIT;
-        gl_draw_buffers[index] = GL_COLOR_ATTACHMENT0 + draw_buffers[index];
+        gl_draw_buffers[index] = GL_COLOR_ATTACHMENT0 + key.draw_buffers[index];
         num_buffers = static_cast<GLsizei>(index + 1);
 
         const GLenum attachment = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + index);
         AttachTexture(handle, attachment, image_view);
     }
-
-    std::string_view debug_prefix = "C";
 
     if (const ImageView* const image_view = depth_buffer; image_view) {
         if (GetFormatType(image_view->format) == SurfaceType::DepthStencil) {
@@ -1093,7 +1032,6 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, const VideoCommon::SlotVe
             buffer_bits |= GL_DEPTH_BUFFER_BIT;
         }
         const GLenum attachment = AttachmentType(image_view->format);
-        debug_prefix = DepthStencilDebugName(attachment);
         AttachTexture(handle, attachment, image_view);
     }
 
@@ -1105,16 +1043,15 @@ Framebuffer::Framebuffer(TextureCacheRuntime& runtime, const VideoCommon::SlotVe
         glNamedFramebufferDrawBuffer(handle, GL_NONE);
     }
 
-    glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_WIDTH, size.width);
-    glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_HEIGHT, size.height);
+    glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_WIDTH, key.size.width);
+    glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_HEIGHT, key.size.height);
     // TODO
     // glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_LAYERS, ...);
     // glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_SAMPLES, ...);
     // glNamedFramebufferParameteri(handle, GL_FRAMEBUFFER_DEFAULT_FIXED_SAMPLE_LOCATIONS, ...);
 
     if (runtime.device.HasDebuggingToolAttached()) {
-        const std::string name =
-            fmt::format("Framebuffer {}{} ({})", debug_prefix, num_buffers, handle);
+        const std::string name = VideoCommon::Name(key);
         glObjectLabel(GL_FRAMEBUFFER, handle, static_cast<GLsizei>(name.size()), name.data());
     }
     framebuffer.handle = handle;

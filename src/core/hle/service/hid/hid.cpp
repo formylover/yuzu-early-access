@@ -44,8 +44,8 @@ constexpr auto pad_update_ns = std::chrono::nanoseconds{1000 * 1000};         //
 constexpr auto motion_update_ns = std::chrono::nanoseconds{15 * 1000 * 1000}; // (15ms, 66.666Hz)
 constexpr std::size_t SHARED_MEMORY_SIZE = 0x40000;
 
-IAppletResource::IAppletResource(Core::System& system)
-    : ServiceFramework("IAppletResource"), system(system) {
+IAppletResource::IAppletResource(Core::System& system_)
+    : ServiceFramework{system_, "IAppletResource"} {
     static const FunctionInfo functions[] = {
         {0, &IAppletResource::GetSharedMemoryHandle, "GetSharedMemoryHandle"},
     };
@@ -139,8 +139,10 @@ void IAppletResource::UpdateMotion(std::uintptr_t user_data, std::chrono::nanose
 
 class IActiveVibrationDeviceList final : public ServiceFramework<IActiveVibrationDeviceList> {
 public:
-    explicit IActiveVibrationDeviceList(std::shared_ptr<IAppletResource> applet_resource_)
-        : ServiceFramework("IActiveVibrationDeviceList"), applet_resource(applet_resource_) {
+    explicit IActiveVibrationDeviceList(Core::System& system_,
+                                        std::shared_ptr<IAppletResource> applet_resource_)
+        : ServiceFramework{system_, "IActiveVibrationDeviceList"},
+          applet_resource(applet_resource_) {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, &IActiveVibrationDeviceList::InitializeVibrationDevice, "InitializeVibrationDevice"},
@@ -155,8 +157,10 @@ private:
         IPC::RequestParser rp{ctx};
         const auto vibration_device_handle{rp.PopRaw<Controller_NPad::DeviceHandle>()};
 
-        applet_resource->GetController<Controller_NPad>(HidController::NPad)
-            .InitializeVibrationDevice(vibration_device_handle);
+        if (applet_resource != nullptr) {
+            applet_resource->GetController<Controller_NPad>(HidController::NPad)
+                .InitializeVibrationDevice(vibration_device_handle);
+        }
 
         LOG_DEBUG(Service_HID, "called, npad_type={}, npad_id={}, device_index={}",
                   vibration_device_handle.npad_type, vibration_device_handle.npad_id,
@@ -177,7 +181,7 @@ std::shared_ptr<IAppletResource> Hid::GetAppletResource() {
     return applet_resource;
 }
 
-Hid::Hid(Core::System& system) : ServiceFramework("hid"), system(system) {
+Hid::Hid(Core::System& system_) : ServiceFramework{system_, "hid"} {
     // clang-format off
     static const FunctionInfo functions[] = {
         {0, &Hid::CreateAppletResource, "CreateAppletResource"},
@@ -306,8 +310,8 @@ Hid::Hid(Core::System& system) : ServiceFramework("hid"), system(system) {
         {527, nullptr, "EnablePalmaBoostMode"},
         {528, nullptr, "GetPalmaBluetoothAddress"},
         {529, nullptr, "SetDisallowedPalmaConnection"},
-        {1000, nullptr, "SetNpadCommunicationMode"},
-        {1001, nullptr, "GetNpadCommunicationMode"},
+        {1000, &Hid::SetNpadCommunicationMode, "SetNpadCommunicationMode"},
+        {1001, &Hid::GetNpadCommunicationMode, "GetNpadCommunicationMode"},
         {1002, nullptr, "SetTouchScreenConfiguration"},
         {1003, nullptr, "IsFirmwareUpdateNeededForNotification"},
         {2000, nullptr, "ActivateDigitizer"},
@@ -1068,7 +1072,7 @@ void Hid::CreateActiveVibrationDeviceList(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 0, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushIpcInterface<IActiveVibrationDeviceList>(applet_resource);
+    rb.PushIpcInterface<IActiveVibrationDeviceList>(system, applet_resource);
 }
 
 void Hid::PermitVibration(Kernel::HLERequestContext& ctx) {
@@ -1296,9 +1300,37 @@ void Hid::SetPalmaBoostMode(Kernel::HLERequestContext& ctx) {
     rb.Push(RESULT_SUCCESS);
 }
 
+void Hid::SetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+    const auto communication_mode{rp.PopEnum<Controller_NPad::NpadCommunicationMode>()};
+
+    applet_resource->GetController<Controller_NPad>(HidController::NPad)
+        .SetNpadCommunicationMode(communication_mode);
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, applet_resource_user_id={}, communication_mode={}",
+                applet_resource_user_id, communication_mode);
+
+    IPC::ResponseBuilder rb{ctx, 2};
+    rb.Push(RESULT_SUCCESS);
+}
+
+void Hid::GetNpadCommunicationMode(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp{ctx};
+    const auto applet_resource_user_id{rp.Pop<u64>()};
+
+    LOG_WARNING(Service_HID, "(STUBBED) called, applet_resource_user_id={}",
+                applet_resource_user_id);
+
+    IPC::ResponseBuilder rb{ctx, 4};
+    rb.Push(RESULT_SUCCESS);
+    rb.PushEnum(applet_resource->GetController<Controller_NPad>(HidController::NPad)
+                    .GetNpadCommunicationMode());
+}
+
 class HidDbg final : public ServiceFramework<HidDbg> {
 public:
-    explicit HidDbg() : ServiceFramework{"hid:dbg"} {
+    explicit HidDbg(Core::System& system_) : ServiceFramework{system_, "hid:dbg"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "DeactivateDebugPad"},
@@ -1425,7 +1457,7 @@ public:
 
 class HidSys final : public ServiceFramework<HidSys> {
 public:
-    explicit HidSys() : ServiceFramework{"hid:sys"} {
+    explicit HidSys(Core::System& system_) : ServiceFramework{system_, "hid:sys"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {31, nullptr, "SendKeyboardLockKeyEvent"},
@@ -1559,7 +1591,7 @@ public:
 
 class HidTmp final : public ServiceFramework<HidTmp> {
 public:
-    explicit HidTmp() : ServiceFramework{"hid:tmp"} {
+    explicit HidTmp(Core::System& system_) : ServiceFramework{system_, "hid:tmp"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {0, nullptr, "GetConsoleSixAxisSensorCalibrationValues"},
@@ -1572,7 +1604,7 @@ public:
 
 class HidBus final : public ServiceFramework<HidBus> {
 public:
-    explicit HidBus() : ServiceFramework{"hidbus"} {
+    explicit HidBus(Core::System& system_) : ServiceFramework{system_, "hidbus"} {
         // clang-format off
         static const FunctionInfo functions[] = {
             {1, nullptr, "GetBusHandle"},
@@ -1602,15 +1634,15 @@ void ReloadInputDevices() {
 
 void InstallInterfaces(SM::ServiceManager& service_manager, Core::System& system) {
     std::make_shared<Hid>(system)->InstallAsService(service_manager);
-    std::make_shared<HidBus>()->InstallAsService(service_manager);
-    std::make_shared<HidDbg>()->InstallAsService(service_manager);
-    std::make_shared<HidSys>()->InstallAsService(service_manager);
-    std::make_shared<HidTmp>()->InstallAsService(service_manager);
+    std::make_shared<HidBus>(system)->InstallAsService(service_manager);
+    std::make_shared<HidDbg>(system)->InstallAsService(service_manager);
+    std::make_shared<HidSys>(system)->InstallAsService(service_manager);
+    std::make_shared<HidTmp>(system)->InstallAsService(service_manager);
 
     std::make_shared<IRS>(system)->InstallAsService(service_manager);
-    std::make_shared<IRS_SYS>()->InstallAsService(service_manager);
+    std::make_shared<IRS_SYS>(system)->InstallAsService(service_manager);
 
-    std::make_shared<XCD_SYS>()->InstallAsService(service_manager);
+    std::make_shared<XCD_SYS>(system)->InstallAsService(service_manager);
 }
 
 } // namespace Service::HID
