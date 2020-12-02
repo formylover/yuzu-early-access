@@ -59,7 +59,7 @@ public:
     void Shutdown();
 
     bool IsInitialized() const {
-        return !!arm_interface;
+        return arm_interface != nullptr;
     }
 
     Core::ARM_Interface& ArmInterface() {

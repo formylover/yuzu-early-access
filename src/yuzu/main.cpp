@@ -32,8 +32,6 @@
 #include "core/hle/service/am/applet_ae.h"
 #include "core/hle/service/am/applet_oe.h"
 #include "core/hle/service/am/applets/applets.h"
-#include "core/hle/service/hid/controllers/npad.h"
-#include "core/hle/service/hid/hid.h"
 
 // These are wrappers to avoid the calls to CreateDirectory and CreateFile because of the Windows
 // defines.
@@ -128,14 +126,6 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "yuzu/discord_impl.h"
 #endif
 
-#ifdef YUZU_USE_QT_WEB_ENGINE
-#include <QWebEngineProfile>
-#include <QWebEngineScript>
-#include <QWebEngineScriptCollection>
-#include <QWebEngineSettings>
-#include <QWebEngineView>
-#endif
-
 #ifdef QT_STATICPLUGIN
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
 #endif
@@ -193,6 +183,30 @@ static void InitializeLogging() {
 #ifdef _WIN32
     Log::AddBackend(std::make_unique<Log::DebuggerBackend>());
 #endif
+}
+
+static void RemoveCachedContents() {
+    const auto offline_fonts = Common::FS::SanitizePath(
+        fmt::format("{}/fonts", Common::FS::GetUserPath(Common::FS::UserPath::CacheDir)),
+        Common::FS::DirectorySeparator::PlatformDefault);
+
+    const auto offline_manual = Common::FS::SanitizePath(
+        fmt::format("{}/offline_web_applet_manual",
+                    Common::FS::GetUserPath(Common::FS::UserPath::CacheDir)),
+        Common::FS::DirectorySeparator::PlatformDefault);
+    const auto offline_legal_information = Common::FS::SanitizePath(
+        fmt::format("{}/offline_web_applet_legal_information",
+                    Common::FS::GetUserPath(Common::FS::UserPath::CacheDir)),
+        Common::FS::DirectorySeparator::PlatformDefault);
+    const auto offline_system_data = Common::FS::SanitizePath(
+        fmt::format("{}/offline_web_applet_system_data",
+                    Common::FS::GetUserPath(Common::FS::UserPath::CacheDir)),
+        Common::FS::DirectorySeparator::PlatformDefault);
+
+    Common::FS::DeleteDirRecursively(offline_fonts);
+    Common::FS::DeleteDirRecursively(offline_manual);
+    Common::FS::DeleteDirRecursively(offline_legal_information);
+    Common::FS::DeleteDirRecursively(offline_system_data);
 }
 
 GMainWindow::GMainWindow()
@@ -262,6 +276,9 @@ GMainWindow::GMainWindow()
     Core::System::GetInstance().RegisterContentProvider(
         FileSys::ContentProviderUnionSlot::FrontendManual, provider.get());
     Core::System::GetInstance().GetFileSystemController().CreateFactories(*vfs);
+
+    // Remove cached contents generated during the previous session
+    RemoveCachedContents();
 
     // Gen keys if necessary
     OnReinitializeKeys(ReinitializeKeyBehavior::NoWarning);
@@ -354,148 +371,137 @@ void GMainWindow::SoftwareKeyboardInvokeCheckDialog(std::u16string error_message
     emit SoftwareKeyboardFinishedCheckDialog();
 }
 
+void GMainWindow::WebBrowserOpenLocalWebPage(std::string_view main_url,
+                                             std::string_view additional_args) {
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
-void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view additional_args) {
-    NXInputWebEngineView web_browser_view(this);
+    if (disable_web_applet) {
+        emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
+                              "http://localhost");
+        return;
+    }
 
-    // Scope to contain the QProgressDialog for initialization
+    QtNXWebEngineView web_browser_view(this, Core::System::GetInstance(), input_subsystem.get());
+
+    ui.action_Pause->setEnabled(false);
+    ui.action_Restart->setEnabled(false);
+    ui.action_Stop->setEnabled(false);
+
     {
-        QProgressDialog progress(this);
-        progress.setMinimumDuration(200);
-        progress.setLabelText(tr("加载Web小型应用程序..."));
-        progress.setRange(0, 4);
-        progress.setValue(0);
-        progress.show();
+        QProgressDialog loading_progress(this);
+        loading_progress.setLabelText(tr("加载Web小程序..."));
+        loading_progress.setRange(0, 3);
+        loading_progress.setValue(0);
 
-        auto future = QtConcurrent::run([this] { emit WebBrowserUnpackRomFS(); });
+        if (!Common::FS::Exists(std::string(main_url))) {
+            loading_progress.show();
 
-        while (!future.isFinished())
-            QApplication::processEvents();
+            auto future = QtConcurrent::run([this] { emit WebBrowserExtractOfflineRomFS(); });
 
-        progress.setValue(1);
+            while (!future.isFinished()) {
+                QCoreApplication::processEvents();
+            }
+        }
 
-        // Load the special shim script to handle input and exit.
-        QWebEngineScript nx_shim;
-        nx_shim.setSourceCode(GetNXShimInjectionScript());
-        nx_shim.setWorldId(QWebEngineScript::MainWorld);
-        nx_shim.setName(QStringLiteral("nx_inject.js"));
-        nx_shim.setInjectionPoint(QWebEngineScript::DocumentCreation);
-        nx_shim.setRunsOnSubFrames(true);
-        web_browser_view.page()->profile()->scripts()->insert(nx_shim);
+        loading_progress.setValue(1);
 
-        web_browser_view.load(
-            QUrl(QUrl::fromLocalFile(QString::fromStdString(std::string(filename))).toString() +
-                 QString::fromStdString(std::string(additional_args))));
+        web_browser_view.LoadLocalWebPage(main_url, additional_args);
 
-        progress.setValue(2);
-
-        render_window->hide();
-        web_browser_view.setFocus();
+        if (render_window->IsLoadingComplete()) {
+            render_window->hide();
+        }
 
         const auto& layout = render_window->GetFramebufferLayout();
         web_browser_view.resize(layout.screen.GetWidth(), layout.screen.GetHeight());
         web_browser_view.move(layout.screen.left, layout.screen.top + menuBar()->height());
         web_browser_view.setZoomFactor(static_cast<qreal>(layout.screen.GetWidth()) /
-                                       Layout::ScreenUndocked::Width);
-        web_browser_view.settings()->setAttribute(
-            QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+                                       static_cast<qreal>(Layout::ScreenUndocked::Width));
 
+        web_browser_view.setFocus();
         web_browser_view.show();
 
-        progress.setValue(3);
+        loading_progress.setValue(2);
 
-        QApplication::processEvents();
+        QCoreApplication::processEvents();
 
-        progress.setValue(4);
+        loading_progress.setValue(3);
     }
 
-    bool finished = false;
-    QAction* exit_action = new QAction(tr("退出Web小型应用程序"), this);
-    connect(exit_action, &QAction::triggered, this, [&finished] { finished = true; });
+    bool exit_check = false;
+
+    // TODO (Morph): Remove this
+    QAction* exit_action = new QAction(tr("禁用Web小程序"), this);
+    connect(exit_action, &QAction::triggered, this, [this, &web_browser_view] {
+        const auto result = QMessageBox::warning(
+            this, tr("禁用Web小程序"),
+            tr("禁用Web小程序将导致该小程序的其余部分不再显示 "
+               "模拟会话。 这可能导致不确定的行为，仅应与 "
+               "超级马里奥3D全明星。 您确定要禁用Web小程序吗？"),
+            QMessageBox::Yes | QMessageBox::No);
+        if (result == QMessageBox::Yes) {
+            disable_web_applet = true;
+            web_browser_view.SetFinished(true);
+        }
+    });
     ui.menubar->addAction(exit_action);
 
-    auto& npad =
-        Core::System::GetInstance()
-            .ServiceManager()
-            .GetService<Service::HID::Hid>("hid")
-            ->GetAppletResource()
-            ->GetController<Service::HID::Controller_NPad>(Service::HID::HidController::NPad);
+    while (!web_browser_view.IsFinished()) {
+        QCoreApplication::processEvents();
 
-    const auto fire_js_keypress = [&web_browser_view](u32 key_code) {
-        web_browser_view.page()->runJavaScript(
-            QStringLiteral("document.dispatchEvent(new KeyboardEvent('keydown', {'key': %1}));")
-                .arg(key_code));
-    };
+        if (!exit_check) {
+            web_browser_view.page()->runJavaScript(
+                QStringLiteral("end_applet;"), [&](const QVariant& variant) {
+                    exit_check = false;
+                    if (variant.toBool()) {
+                        web_browser_view.SetFinished(true);
+                        web_browser_view.SetExitReason(
+                            Service::AM::Applets::WebExitReason::EndButtonPressed);
+                    }
+                });
 
-    QMessageBox::information(
-        this, tr("关闭"),
-        tr("退出Web应用程序，使用游戏提供的控件来选择退出，选择 "
-           "'退出Web小型应用程序”菜单栏中的选项, 或按 'Enter' 键."));
-
-    bool running_exit_check = false;
-    while (!finished) {
-        QApplication::processEvents();
-
-        if (!running_exit_check) {
-            web_browser_view.page()->runJavaScript(QStringLiteral("applet_done;"),
-                                                   [&](const QVariant& res) {
-                                                       running_exit_check = false;
-                                                       if (res.toBool())
-                                                           finished = true;
-                                                   });
-            running_exit_check = true;
+            exit_check = true;
         }
 
-        const auto input = npad.GetAndResetPressState();
-        for (std::size_t i = 0; i < Settings::NativeButton::NumButtons; ++i) {
-            if ((input & (1 << i)) != 0) {
-                LOG_DEBUG(Frontend, "firing input for button id={:02X}", i);
-                web_browser_view.page()->runJavaScript(
-                    QStringLiteral("yuzu_key_callbacks[%1]();").arg(i));
+        if (web_browser_view.GetCurrentURL().contains(QStringLiteral("localhost"))) {
+            if (!web_browser_view.IsFinished()) {
+                web_browser_view.SetFinished(true);
+                web_browser_view.SetExitReason(Service::AM::Applets::WebExitReason::CallbackURL);
             }
+
+            web_browser_view.SetLastURL(web_browser_view.GetCurrentURL().toStdString());
         }
 
-        if (input & 0x00888000)      // RStick Down | LStick Down | DPad Down
-            fire_js_keypress(40);    // Down Arrow Key
-        else if (input & 0x00444000) // RStick Right | LStick Right | DPad Right
-            fire_js_keypress(39);    // Right Arrow Key
-        else if (input & 0x00222000) // RStick Up | LStick Up | DPad Up
-            fire_js_keypress(38);    // Up Arrow Key
-        else if (input & 0x00111000) // RStick Left | LStick Left | DPad Left
-            fire_js_keypress(37);    // Left Arrow Key
-        else if (input & 0x00000001) // A Button
-            fire_js_keypress(13);    // Enter Key
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
+    const auto exit_reason = web_browser_view.GetExitReason();
+    const auto last_url = web_browser_view.GetLastURL();
+
     web_browser_view.hide();
-    render_window->show();
+
     render_window->setFocus();
+
+    if (render_window->IsLoadingComplete()) {
+        render_window->show();
+    }
+
+    ui.action_Pause->setEnabled(true);
+    ui.action_Restart->setEnabled(true);
+    ui.action_Stop->setEnabled(true);
+
     ui.menubar->removeAction(exit_action);
 
-    // Needed to update render window focus/show and remove menubar action
-    QApplication::processEvents();
-    emit WebBrowserFinishedBrowsing();
-}
+    QCoreApplication::processEvents();
+
+    emit WebBrowserClosed(exit_reason, last_url);
 
 #else
 
-void GMainWindow::WebBrowserOpenPage(std::string_view filename, std::string_view additional_args) {
-    QMessageBox::warning(
-        this, tr("网络小程序"),
-        tr("此版本的yuzu是在没有QtWebEngine支持的情况下构建的，这意味着yuzu无法 "
-           "正确显示所需的游戏手册或网页。"),
-        QMessageBox::Ok, QMessageBox::Ok);
-
-    LOG_INFO(Frontend,
-             "(STUBBED) called - Missing QtWebEngine dependency needed to open website page at "
-             "'{}' with arguments '{}'!",
-             filename, additional_args);
-
-    emit WebBrowserFinishedBrowsing();
-}
+    // Utilize the same fallback as the default web browser applet.
+    emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed, "http://localhost");
 
 #endif
+}
 
 void GMainWindow::InitializeWidgets() {
 #ifdef YUZU_ENABLE_COMPATIBILITY_REPORTING
@@ -996,7 +1002,6 @@ bool GMainWindow::LoadROM(const QString& filename, std::size_t program_index) {
 
     system.SetAppletFrontendSet({
         std::make_unique<QtControllerSelector>(*this), // Controller Selector
-        nullptr,                                       // E-Commerce
         std::make_unique<QtErrorDisplay>(*this),       // Error Display
         nullptr,                                       // Parental Controls
         nullptr,                                       // Photo Viewer
@@ -2105,6 +2110,7 @@ void GMainWindow::OnStartGame() {
     qRegisterMetaType<std::string>("std::string");
     qRegisterMetaType<std::optional<std::u16string>>("std::optional<std::u16string>");
     qRegisterMetaType<std::string_view>("std::string_view");
+    qRegisterMetaType<Service::AM::Applets::WebExitReason>("Service::AM::Applets::WebExitReason");
 
     connect(emu_thread.get(), &EmuThread::ErrorThrown, this, &GMainWindow::OnCoreError);
 
@@ -2467,13 +2473,13 @@ void GMainWindow::UpdateWindowTitle(const std::string& title_name,
 
     if (title_name.empty()) {
         const auto fmt = std::string(Common::g_title_bar_format_idle);
-        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1174" : fmt,
+        setWindowTitle(QString::fromStdString(fmt::format(fmt.empty() ? "yuzu Early Access 1181" : fmt,
                                                           full_name, branch_name, description,
                                                           std::string{}, date, build_id)));
     } else {
         const auto fmt = std::string(Common::g_title_bar_format_running);
         setWindowTitle(QString::fromStdString(
-            fmt::format(fmt.empty() ? "yuzu Early Access 1174 {0}| {3} {6}" : fmt, full_name, branch_name,
+            fmt::format(fmt.empty() ? "yuzu Early Access 1181 {0}| {3} {6}" : fmt, full_name, branch_name,
                         description, title_name, date, build_id, title_version)));
     }
 }

@@ -115,7 +115,7 @@ void CpuManager::MultiCoreRunGuestThread() {
     }
     auto* thread = kernel.CurrentScheduler().GetCurrentThread();
     auto& host_context = thread->GetHostContext();
-    host_context->SetRewindPoint(std::function<void(void*)>(GuestRewindFunction), this);
+    host_context->SetRewindPoint(GuestRewindFunction, this);
     MultiCoreRunGuestLoop();
 }
 
@@ -212,7 +212,7 @@ void CpuManager::SingleCoreRunGuestThread() {
     }
     auto* thread = kernel.CurrentScheduler().GetCurrentThread();
     auto& host_context = thread->GetHostContext();
-    host_context->SetRewindPoint(std::function<void(void*)>(GuestRewindFunction), this);
+    host_context->SetRewindPoint(GuestRewindFunction, this);
     SingleCoreRunGuestLoop();
 }
 

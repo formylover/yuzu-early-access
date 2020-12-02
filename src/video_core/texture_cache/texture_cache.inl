@@ -684,7 +684,7 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
 template <class P>
 SamplerId TextureCache<P>::FindSampler(const TSCEntry& config) {
     if (std::ranges::all_of(config.raw, [](u64 value) { return value == 0; })) {
-        return SamplerId{};
+        return NULL_SAMPLER_ID;
     }
     const auto [pair, is_new] = samplers.try_emplace(config);
     if (is_new) {

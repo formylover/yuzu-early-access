@@ -20,7 +20,8 @@ PhysicalCore::PhysicalCore(std::size_t core_index, Core::System& system,
 
 PhysicalCore::~PhysicalCore() = default;
 
-void PhysicalCore::Initialize(bool is_64_bit) {
+void PhysicalCore::Initialize([[maybe_unused]] bool is_64_bit) {
+#ifdef ARCHITECTURE_x86_64
     auto& kernel = system.Kernel();
     if (is_64_bit) {
         arm_interface = std::make_unique<Core::ARM_Dynarmic_64>(
@@ -29,6 +30,9 @@ void PhysicalCore::Initialize(bool is_64_bit) {
         arm_interface = std::make_unique<Core::ARM_Dynarmic_32>(
             system, interrupts, kernel.IsMulticore(), kernel.GetExclusiveMonitor(), core_index);
     }
+#else
+#error Platform not supported yet.
+#endif
 }
 
 void PhysicalCore::Run() {
