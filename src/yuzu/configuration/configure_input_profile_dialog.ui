@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>创建输入设置文件</string>
+   <string>Create Input Profile</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -37,14 +37,14 @@
      <item>
       <widget class="QPushButton" name="clear_all_button">
        <property name="text">
-        <string>清除</string>
+        <string>Clear</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="restore_defaults_button">
        <property name="text">
-        <string>默认值</string>
+        <string>Defaults</string>
        </property>
       </widget>
      </item>

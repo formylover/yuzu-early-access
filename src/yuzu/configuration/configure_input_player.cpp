@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -104,7 +100,7 @@ void SetAnalogParam(const Common::ParamPackage& input_param, Common::ParamPackag
 
 QString ButtonToText(const Common::ParamPackage& param) {
     if (!param.Has("engine")) {
-        return QObject::tr("[没有设置]");
+        return QObject::tr("[not set]");
     }
 
     if (param.Get("engine", "") == "keyboard") {
@@ -128,7 +124,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
     if (param.Get("engine", "") == "cemuhookudp") {
         if (param.Has("pad_index")) {
             const QString motion_str = QString::fromStdString(param.Get("pad_index", ""));
-            return QObject::tr("体感 %1").arg(motion_str);
+            return QObject::tr("Motion %1").arg(motion_str);
         }
         return GetKeyName(param.Get("code", 0));
     }
@@ -160,7 +156,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
     if (param.Get("engine", "") == "mouse") {
         if (param.Has("button")) {
             const QString button_str = QString::number(int(param.Get("button", 0)));
-            return QObject::tr("请点击 %1").arg(button_str);
+            return QObject::tr("Click %1").arg(button_str);
         }
         return GetKeyName(param.Get("code", 0));
     }
@@ -170,7 +166,7 @@ QString ButtonToText(const Common::ParamPackage& param) {
 
 QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) {
     if (!param.Has("engine")) {
-        return QObject::tr("[没有设置]");
+        return QObject::tr("[not set]");
     }
 
     if (param.Get("engine", "") == "analog_from_button") {
@@ -225,13 +221,13 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
         if (dir == "left" || dir == "right") {
             const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
 
-            return QObject::tr("鼠标 %1").arg(axis_x_str);
+            return QObject::tr("Mouse %1").arg(axis_x_str);
         }
 
         if (dir == "up" || dir == "down") {
             const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
 
-            return QObject::tr("鼠标 %1").arg(axis_y_str);
+            return QObject::tr("Mouse %1").arg(axis_y_str);
         }
 
         return {};
@@ -330,9 +326,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("清除"), [&] {
+                    context_menu.addAction(tr("Clear"), [&] {
                         buttons_param[button_id].Clear();
-                        button_map[button_id]->setText(tr("[没有设置]"));
+                        button_map[button_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(button_map[button_id]->mapToGlobal(menu_location));
                 });
@@ -353,9 +349,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(button, &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("清除"), [&] {
+                    context_menu.addAction(tr("Clear"), [&] {
                         motions_param[motion_id].Clear();
-                        motion_map[motion_id]->setText(tr("[没有设置]"));
+                        motion_map[motion_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(motion_map[motion_id]->mapToGlobal(menu_location));
                 });
@@ -373,10 +369,10 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                 if (!map_analog_stick_accepted) {
                     map_analog_stick_accepted =
                         QMessageBox::information(
-                            this, tr("Map 模拟摇杆"),
-                            tr("按确定后，首先水平移动游戏杆，然后 "
-                               "垂直。\n要反转轴，请先移动操纵杆 "
-                               "垂直，然后水平。"),
+                            this, tr("Map Analog Stick"),
+                            tr("After pressing OK, first move your joystick horizontally, and then "
+                               "vertically.\nTo invert the axes, first move your joystick "
+                               "vertically, and then horizontally."),
                             QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Ok;
                     if (!map_analog_stick_accepted) {
                         return;
@@ -396,9 +392,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
             connect(analog_button, &QPushButton::customContextMenuRequested,
                     [=, this](const QPoint& menu_location) {
                         QMenu context_menu;
-                        context_menu.addAction(tr("清除"), [&] {
+                        context_menu.addAction(tr("Clear"), [&] {
                             analogs_param[analog_id].Clear();
-                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[没有设置]"));
+                            analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
                         });
                         context_menu.exec(analog_map_buttons[analog_id][sub_button_id]->mapToGlobal(
                             menu_location));
@@ -420,9 +416,9 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
         connect(analog_map_modifier_button[analog_id], &QPushButton::customContextMenuRequested,
                 [=, this](const QPoint& menu_location) {
                     QMenu context_menu;
-                    context_menu.addAction(tr("清除"), [&] {
+                    context_menu.addAction(tr("Clear"), [&] {
                         analogs_param[analog_id].Set("modifier", "");
-                        analog_map_modifier_button[analog_id]->setText(tr("[没有设置]"));
+                        analog_map_modifier_button[analog_id]->setText(tr("[not set]"));
                     });
                     context_menu.exec(
                         analog_map_modifier_button[analog_id]->mapToGlobal(menu_location));
@@ -436,14 +432,14 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
 
         connect(analog_map_deadzone_slider[analog_id], &QSlider::valueChanged, [=, this] {
             const auto slider_value = analog_map_deadzone_slider[analog_id]->value();
-            analog_map_deadzone_label[analog_id]->setText(tr("摇杆死区: %1%").arg(slider_value));
+            analog_map_deadzone_label[analog_id]->setText(tr("Deadzone: %1%").arg(slider_value));
             analogs_param[analog_id].Set("deadzone", slider_value / 100.0f);
         });
 
         connect(analog_map_modifier_slider[analog_id], &QSlider::valueChanged, [=, this] {
             const auto slider_value = analog_map_modifier_slider[analog_id]->value();
             analog_map_modifier_label[analog_id]->setText(
-                tr("修改范围: %1%").arg(slider_value));
+                tr("Modifier Range: %1%").arg(slider_value));
             analogs_param[analog_id].Set("modifier_scale", slider_value / 100.0f);
         });
     }
@@ -831,7 +827,7 @@ void ConfigureInputPlayer::UpdateUI() {
                 param.Set("deadzone", 0.1f);
             }
             slider_value = static_cast<int>(param.Get("deadzone", 0.1f) * 100);
-            deadzone_label->setText(tr("摇杆死区: %1%").arg(slider_value));
+            deadzone_label->setText(tr("Deadzone: %1%").arg(slider_value));
             deadzone_slider->setValue(slider_value);
             if (!param.Has("range")) {
                 param.Set("range", 1.0f);
@@ -842,7 +838,7 @@ void ConfigureInputPlayer::UpdateUI() {
                 param.Set("modifier_scale", 0.5f);
             }
             slider_value = static_cast<int>(param.Get("modifier_scale", 0.5f) * 100);
-            modifier_label->setText(tr("修改范围: %1%").arg(slider_value));
+            modifier_label->setText(tr("Modifier Range: %1%").arg(slider_value));
             modifier_slider->setValue(slider_value);
         }
 
@@ -1109,9 +1105,9 @@ void ConfigureInputPlayer::HandleClick(
     QPushButton* button, std::function<void(const Common::ParamPackage&)> new_input_setter,
     InputCommon::Polling::DeviceType type) {
     if (button == ui->buttonMotionLeft || button == ui->buttonMotionRight) {
-        button->setText(tr("震动!"));
+        button->setText(tr("Shake!"));
     } else {
-        button->setText(tr("[等待]"));
+        button->setText(tr("[waiting]"));
     }
     button->setFocus();
 
@@ -1228,23 +1224,23 @@ void ConfigureInputPlayer::keyPressEvent(QKeyEvent* event) {
 
 void ConfigureInputPlayer::CreateProfile() {
     const auto profile_name =
-        LimitableInputDialog::GetText(this, tr("新的设置文件"), tr("输入设置文件名称:"), 1, 20);
+        LimitableInputDialog::GetText(this, tr("New Profile"), tr("Enter a profile name:"), 1, 20);
 
     if (profile_name.isEmpty()) {
         return;
     }
 
     if (!InputProfiles::IsProfileNameValid(profile_name.toStdString())) {
-        QMessageBox::critical(this, tr("创建输入设置文件"),
-                              tr("指定的个人按键设置文件名称无效！"));
+        QMessageBox::critical(this, tr("Create Input Profile"),
+                              tr("The given profile name is not valid!"));
         return;
     }
 
     ApplyConfiguration();
 
     if (!profiles->CreateProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("创建输入设置文件"),
-                              tr("无法创建输入设置文件 \"%1\"").arg(profile_name));
+        QMessageBox::critical(this, tr("Create Input Profile"),
+                              tr("Failed to create the input profile \"%1\"").arg(profile_name));
         UpdateInputProfiles();
         emit RefreshInputProfiles(player_index);
         return;
@@ -1264,8 +1260,8 @@ void ConfigureInputPlayer::DeleteProfile() {
     }
 
     if (!profiles->DeleteProfile(profile_name.toStdString())) {
-        QMessageBox::critical(this, tr("删除输入设置文件"),
-                              tr("删除输入设置文件失败 \"%1\"").arg(profile_name));
+        QMessageBox::critical(this, tr("Delete Input Profile"),
+                              tr("Failed to delete the input profile \"%1\"").arg(profile_name));
         UpdateInputProfiles();
         emit RefreshInputProfiles(player_index);
         return;
@@ -1287,8 +1283,8 @@ void ConfigureInputPlayer::LoadProfile() {
     ApplyConfiguration();
 
     if (!profiles->LoadProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("加载输入设置文件"),
-                              tr("加载输入设置文件失败 \"%1\"").arg(profile_name));
+        QMessageBox::critical(this, tr("Load Input Profile"),
+                              tr("Failed to load the input profile \"%1\"").arg(profile_name));
         UpdateInputProfiles();
         emit RefreshInputProfiles(player_index);
         return;
@@ -1307,8 +1303,8 @@ void ConfigureInputPlayer::SaveProfile() {
     ApplyConfiguration();
 
     if (!profiles->SaveProfile(profile_name.toStdString(), player_index)) {
-        QMessageBox::critical(this, tr("保存输入设置文件"),
-                              tr("保存输入设置文件失败 \"%1\"").arg(profile_name));
+        QMessageBox::critical(this, tr("Save Input Profile"),
+                              tr("Failed to save the input profile \"%1\"").arg(profile_name));
         UpdateInputProfiles();
         emit RefreshInputProfiles(player_index);
         return;

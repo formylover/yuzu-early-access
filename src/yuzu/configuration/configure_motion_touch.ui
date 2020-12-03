@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>设置 体感 / 触摸</string>
+   <string>Configure Motion / Touch</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -20,7 +20,7 @@
    <item>
     <widget class="QGroupBox" name="motion_group_box">
      <property name="title">
-      <string>鼠标 体感</string>
+      <string>Mouse Motion</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
@@ -28,7 +28,7 @@
         <item>
          <widget class="QLabel" name="motion_sensitivity_label">
           <property name="text">
-           <string>灵敏度：</string>
+           <string>Sensitivity:</string>
           </property>
          </widget>
         </item>
@@ -62,7 +62,7 @@
    <item>
     <widget class="QGroupBox" name="touch_group_box">
      <property name="title">
-      <string>触摸</string>
+      <string>Touch</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
@@ -70,7 +70,7 @@
         <item>
          <widget class="QLabel" name="touch_provider_label">
           <property name="text">
-           <string>触摸提供程序：</string>
+           <string>Touch Provider:</string>
           </property>
          </widget>
         </item>
@@ -84,7 +84,7 @@
         <item>
          <widget class="QLabel" name="touch_calibration_label">
           <property name="text">
-           <string>校准：</string>
+           <string>Calibration:</string>
           </property>
          </widget>
         </item>
@@ -107,7 +107,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>设置</string>
+           <string>Configure</string>
           </property>
          </widget>
         </item>
@@ -124,7 +124,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>使用按钮映射：</string>
+           <string>Use button mapping:</string>
           </property>
          </widget>
         </item>
@@ -140,7 +140,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>设置</string>
+           <string>Configure</string>
           </property>
          </widget>
         </item>
@@ -152,13 +152,13 @@
    <item>
     <widget class="QGroupBox" name="udp_config_group_box">
      <property name="title">
-      <string>CemuhookUDP 设置</string>
+      <string>CemuhookUDP Config</string>
      </property>
      <layout class="QVBoxLayout">
       <item>
        <widget class="QLabel" name="udp_help">
         <property name="text">
-         <string>您可以使用任何与Cemuhook兼容的UDP输入源来提供体感和触摸输入。</string>
+         <string>You may use any Cemuhook compatible UDP input source to provide motion and touch input.</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -201,7 +201,7 @@
             <item>
              <widget class="QLabel" name="udp_server_label">
               <property name="text">
-               <string>服务器：</string>
+               <string>Server:</string>
               </property>
              </widget>
             </item>
@@ -228,7 +228,7 @@
             <item>
              <widget class="QLabel" name="udp_port_label">
               <property name="text">
-               <string>端口:</string>
+               <string>Port:</string>
               </property>
              </widget>
             </item>
@@ -255,7 +255,7 @@
             <item>
              <widget class="QLabel" name="udp_learn_more">
               <property name="text">
-               <string>学习更多</string>
+               <string>Learn More</string>
               </property>
              </widget>
             </item>
@@ -268,7 +268,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>测试</string>
+               <string>Test</string>
               </property>
              </widget>
             </item>
@@ -281,7 +281,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>添加服务器</string>
+               <string>Add Server</string>
               </property>
              </widget>
             </item>
@@ -314,7 +314,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>删除服务器</string>
+               <string>Remove Server</string>
               </property>
              </widget>
             </item>

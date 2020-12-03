@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>设置震动</string>
+   <string>Configure Vibration</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -20,7 +20,7 @@
    <item>
     <widget class="QGroupBox" name="vibrationStrengthGroup">
      <property name="title">
-      <string>震动</string>
+      <string>Vibration</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,0">
       <property name="leftMargin">
@@ -53,7 +53,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer1">
            <property name="title">
-            <string>玩家 1</string>
+            <string>Player 1</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -105,7 +105,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer2">
            <property name="title">
-            <string>玩家 2</string>
+            <string>Player 2</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -157,7 +157,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer3">
            <property name="title">
-            <string>玩家 3</string>
+            <string>Player 3</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -209,7 +209,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer4">
            <property name="title">
-            <string>玩家 4</string>
+            <string>Player 4</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -279,7 +279,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer7">
            <property name="title">
-            <string>玩家 5</string>
+            <string>Player 5</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -331,7 +331,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer8">
            <property name="title">
-            <string>玩家 6</string>
+            <string>Player 6</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -383,7 +383,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer5">
            <property name="title">
-            <string>玩家 7</string>
+            <string>Player 7</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -435,7 +435,7 @@
          <item>
           <widget class="QGroupBox" name="vibrationGroupPlayer6">
            <property name="title">
-            <string>玩家 8</string>
+            <string>Player 8</string>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -493,13 +493,13 @@
    <item>
     <widget class="QGroupBox" name="vibrationSettingsGroup">
      <property name="title">
-      <string>设定</string>
+      <string>Settings</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QCheckBox" name="checkBoxAccurateVibration">
         <property name="text">
-         <string>启用精确震动</string>
+         <string>Enable Accurate Vibration</string>
         </property>
        </widget>
       </item>

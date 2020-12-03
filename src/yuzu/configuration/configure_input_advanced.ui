@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>设置输入</string>
+   <string>Configure Input</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -71,7 +71,7 @@
          <item>
           <widget class="QGroupBox" name="joyconColorsGroup">
            <property name="title">
-            <string>Joycon 颜色</string>
+            <string>Joycon Colors</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3" stretch="1,1">
             <property name="leftMargin">
@@ -122,7 +122,7 @@
                   <item>
                    <widget class="QGroupBox" name="player1Group">
                     <property name="title">
-                     <string>玩家 1</string>
+                     <string>Player 1</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_2">
                      <property name="spacing">
@@ -161,7 +161,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player1LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -216,7 +216,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player1LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -292,7 +292,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player1RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -347,7 +347,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player1RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -408,7 +408,7 @@
                   <item>
                    <widget class="QGroupBox" name="player2Group">
                     <property name="title">
-                     <string>玩家 2</string>
+                     <string>Player 2</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_14">
                      <property name="spacing">
@@ -447,7 +447,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player2LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -502,7 +502,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player2LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -578,7 +578,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player2RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -633,7 +633,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player2RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -712,7 +712,7 @@
                   <item>
                    <widget class="QGroupBox" name="player3Group">
                     <property name="title">
-                     <string>玩家 3</string>
+                     <string>Player 3</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_15">
                      <property name="spacing">
@@ -751,7 +751,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player3LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -806,7 +806,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player3LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -882,7 +882,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player3RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -937,7 +937,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player3RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -998,7 +998,7 @@
                   <item>
                    <widget class="QGroupBox" name="player4Group">
                     <property name="title">
-                     <string>玩家 4</string>
+                     <string>Player 4</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_16">
                      <property name="spacing">
@@ -1037,7 +1037,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player4LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1092,7 +1092,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player4LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1168,7 +1168,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player4RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1223,7 +1223,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player4RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1323,7 +1323,7 @@
                   <item>
                    <widget class="QGroupBox" name="player5Group">
                     <property name="title">
-                     <string>玩家 5</string>
+                     <string>Player 5</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_10">
                      <property name="spacing">
@@ -1362,7 +1362,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player5LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1417,7 +1417,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player5LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1493,7 +1493,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player5RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1548,7 +1548,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player5RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1609,7 +1609,7 @@
                   <item>
                    <widget class="QGroupBox" name="player6Group">
                     <property name="title">
-                     <string>玩家 6</string>
+                     <string>Player 6</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_11">
                      <property name="spacing">
@@ -1648,7 +1648,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player6LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1703,7 +1703,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player6LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1779,7 +1779,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player6RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1834,7 +1834,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player6RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -1913,7 +1913,7 @@
                   <item>
                    <widget class="QGroupBox" name="player7Group">
                     <property name="title">
-                     <string>玩家 7</string>
+                     <string>Player 7</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_12">
                      <property name="spacing">
@@ -1952,7 +1952,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player7LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2007,7 +2007,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player7LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2083,7 +2083,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player7RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2138,7 +2138,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player7RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2199,7 +2199,7 @@
                   <item>
                    <widget class="QGroupBox" name="player8Group">
                     <property name="title">
-                     <string>玩家 8</string>
+                     <string>Player 8</string>
                     </property>
                     <layout class="QHBoxLayout" name="horizontalLayout_13">
                      <property name="spacing">
@@ -2238,7 +2238,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player8LeftBodyGroup">
                           <property name="title">
-                           <string>左面</string>
+                           <string>L Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2293,7 +2293,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player8LeftButtonsGroup">
                           <property name="title">
-                           <string>左键</string>
+                           <string>L Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2369,7 +2369,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player8RightBodyGroup">
                           <property name="title">
-                           <string>右面</string>
+                           <string>R Body</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2424,7 +2424,7 @@
                         <item alignment="Qt::AlignHCenter">
                          <widget class="QGroupBox" name="player8RightButtonsGroup">
                           <property name="title">
-                           <string>右键</string>
+                           <string>R Button</string>
                           </property>
                           <property name="alignment">
                            <set>Qt::AlignCenter</set>
@@ -2530,7 +2530,7 @@
             <item>
              <widget class="QGroupBox" name="gridGroupBox_3">
               <property name="title">
-               <string>其他</string>
+               <string>Other</string>
               </property>
               <layout class="QGridLayout" name="gridLayout_3">
                <item row="0" column="0">
@@ -2542,7 +2542,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>键盘</string>
+                  <string>Keyboard</string>
                  </property>
                 </widget>
                </item>
@@ -2555,14 +2555,14 @@
                      </size>
                    </property>
                    <property name="text">
-                     <string>模拟操纵杆按钮</string>
+                     <string>Analog joystick button</string>
                    </property>
                  </widget>
                </item>
                <item row="5" column="2">
                 <widget class="QPushButton" name="touchscreen_advanced">
                  <property name="text">
-                  <string>高级</string>
+                  <string>Advanced</string>
                  </property>
                 </widget>
                </item>
@@ -2585,14 +2585,14 @@
                <item row="2" column="2">
                 <widget class="QPushButton" name="mouse_advanced">
                  <property name="text">
-                  <string>高级</string>
+                  <string>Advanced</string>
                  </property>
                 </widget>
                </item>
                <item row="5" column="0">
                 <widget class="QCheckBox" name="touchscreen_enabled">
                  <property name="text">
-                  <string>触摸屏</string>
+                  <string>Touchscreen</string>
                  </property>
                 </widget>
                </item>
@@ -2605,35 +2605,35 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>鼠标</string>
+                  <string>Mouse</string>
                  </property>
                 </widget>
                </item>
                <item row="7" column="0">
                 <widget class="QLabel" name="motion_touch">
                  <property name="text">
-                  <string>体感 / 触控</string>
+                  <string>Motion / Touch</string>
                  </property>
                 </widget>
                </item>
                <item row="7" column="2">
                 <widget class="QPushButton" name="buttonMotionTouch">
                  <property name="text">
-                  <string>设置</string>
+                  <string>Configure</string>
                  </property>
                 </widget>
                </item>
                <item row="6" column="0">
                 <widget class="QCheckBox" name="debug_enabled">
                  <property name="text">
-                  <string>调试控制器</string>
+                  <string>Debug Controller</string>
                  </property>
                 </widget>
                </item>
                <item row="6" column="2">
                 <widget class="QPushButton" name="debug_configure">
                  <property name="text">
-                  <string>设置</string>
+                  <string>Configure</string>
                  </property>
                 </widget>
                </item>

@@ -19,7 +19,7 @@
      <item>
       <widget class="QGroupBox" name="groupBox_2">
        <property name="title">
-        <string>API 设置</string>
+        <string>API Settings</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
@@ -64,7 +64,7 @@
            <item row="1" column="0">
             <widget class="QLabel" name="device_label">
              <property name="text">
-              <string>设备:</string>
+              <string>Device:</string>
              </property>
             </widget>
            </item>
@@ -80,27 +80,27 @@
      <item>
       <widget class="QGroupBox" name="groupBox">
        <property name="title">
-        <string>图形设置</string>
+        <string>Graphics Settings</string>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
          <widget class="QCheckBox" name="use_disk_shader_cache">
           <property name="text">
-           <string>使用磁盘高速缓存着色器</string>
+           <string>Use disk shader cache</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_asynchronous_gpu_emulation">
           <property name="text">
-           <string>使用异步GPU模拟</string>
+           <string>Use asynchronous GPU emulation</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="use_nvdec_emulation">
           <property name="text">
-           <string>使用 NVDEC 模拟</string>
+           <string>Use NVDEC emulation</string>
           </property>
          </widget>
         </item>
@@ -122,7 +122,7 @@
            <item>
             <widget class="QLabel" name="ar_label">
              <property name="text">
-              <string>长宽比:</string>
+              <string>Aspect Ratio:</string>
              </property>
             </widget>
            </item>
@@ -145,7 +145,7 @@
              </item>
              <item>
               <property name="text">
-               <string>拉伸到窗口</string>
+               <string>Stretch to Window</string>
               </property>
              </item>
             </widget>
@@ -180,7 +180,7 @@
            <item>
             <widget class="QComboBox" name="bg_combobox">
              <property name="currentText">
-              <string>使用全局背景颜色</string>
+              <string>Use global background color</string>
              </property>
              <property name="currentIndex">
               <number>0</number>
@@ -190,12 +190,12 @@
              </property>
              <item>
               <property name="text">
-               <string>使用全局背景颜色</string>
+               <string>Use global background color</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>设置背景颜色:</string>
+               <string>Set background color:</string>
               </property>
              </item>
             </widget>
@@ -203,7 +203,7 @@
            <item>
             <widget class="QLabel" name="bg_label">
              <property name="text">
-              <string>背景颜色:</string>
+              <string>Background Color:</string>
              </property>
             </widget>
            </item>

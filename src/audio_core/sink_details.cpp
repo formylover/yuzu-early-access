@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2018 yuzu Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -34,13 +30,13 @@ struct SinkDetails {
 // sink_details is ordered in terms of desirability, with the best choice at the top.
 constexpr SinkDetails sink_details[] = {
 #ifdef HAVE_CUBEB
-    SinkDetails{"立体声",
+    SinkDetails{"cubeb",
                 [](std::string_view device_id) -> std::unique_ptr<Sink> {
                     return std::make_unique<CubebSink>(device_id);
                 },
                 &ListCubebSinkDevices},
 #endif
-    SinkDetails{"无声",
+    SinkDetails{"null",
                 [](std::string_view device_id) -> std::unique_ptr<Sink> {
                     return std::make_unique<NullSink>(device_id);
                 },

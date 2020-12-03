@@ -27,7 +27,7 @@
           <item>
            <widget class="QCheckBox" name="toggle_gdbstub">
             <property name="text">
-             <string>开启 GDB 调试</string>
+             <string>Enable GDB Stub</string>
             </property>
            </widget>
           </item>
@@ -47,7 +47,7 @@
           <item>
            <widget class="QLabel" name="label_1">
             <property name="text">
-             <string>端口:</string>
+             <string>Port:</string>
             </property>
            </widget>
           </item>
@@ -68,7 +68,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>日志</string>
+      <string>Logging</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
@@ -76,7 +76,7 @@
         <item>
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>全局日志过滤器</string>
+           <string>Global Log Filter</string>
           </property>
          </widget>
         </item>
@@ -90,14 +90,14 @@
         <item>
          <widget class="QCheckBox" name="toggle_console">
           <property name="text">
-           <string>显示日志控制台</string>
+           <string>Show Log in Console</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="open_log_button">
           <property name="text">
-           <string>打开日志位置</string>
+           <string>Open Log Location</string>
           </property>
          </widget>
         </item>
@@ -109,10 +109,10 @@
          <bool>true</bool>
         </property>
         <property name="toolTip">
-         <string>选中后，日志的最大大小将从100 MB增加到1 GB</string>
+         <string>When checked, the max size of the log increases from 100 MB to 1 GB</string>
         </property>
         <property name="text">
-         <string>启用扩展日志记录</string>
+         <string>Enable Extended Logging</string>
         </property>
        </widget>
       </item>
@@ -124,7 +124,7 @@
          </font>
         </property>
         <property name="text">
-         <string>yuzu关闭时，它将自动重置。</string>
+         <string>This will be reset automatically when yuzu closes.</string>
         </property>
         <property name="indent">
          <number>20</number>
@@ -137,7 +137,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
-      <string>自制</string>
+      <string>Homebrew</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_5">
       <item>
@@ -145,7 +145,7 @@
         <item>
          <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>参数字符串</string>
+           <string>Arguments String</string>
           </property>
          </widget>
         </item>
@@ -160,7 +160,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_4">
      <property name="title">
-      <string>图形</string>
+      <string>Graphics</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_6">
       <item>
@@ -169,10 +169,10 @@
          <bool>true</bool>
         </property>
         <property name="toolTip">
-         <string>选中后，图形API进入较慢的调试模式</string>
+         <string>When checked, the graphics API enters a slower debugging mode</string>
         </property>
         <property name="text">
-         <string>启用图形调试</string>
+         <string>Enable Graphics Debugging</string>
         </property>
        </widget>
       </item>
@@ -182,10 +182,10 @@
          <bool>true</bool>
         </property>
         <property name="toolTip">
-         <string>选中后，它将禁用宏即时编译器。 启用此功能会使游戏运行速度变慢</string>
+         <string>When checked, it disables the macro Just In Time compiler. Enabling this makes games run slower</string>
         </property>
         <property name="text">
-         <string>禁用 Macro JIT</string>
+         <string>Disable Macro JIT</string>
         </property>
        </widget>
       </item>
@@ -201,7 +201,7 @@
       <item>
        <widget class="QCheckBox" name="reporting_services">
         <property name="text">
-         <string>启用详细报表服务</string>
+         <string>Enable Verbose Reporting Services</string>
         </property>
        </widget>
       </item>
@@ -213,7 +213,7 @@
          </font>
         </property>
         <property name="text">
-         <string>yuzu关闭时会自动重设.</string>
+         <string>This will be reset automatically when yuzu closes.</string>
         </property>
         <property name="indent">
          <number>20</number>
@@ -226,13 +226,13 @@
    <item>
     <widget class="QGroupBox" name="groupBox_6">
      <property name="title">
-      <string>高级</string>
+      <string>Advanced</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
        <widget class="QCheckBox" name="quest_flag">
         <property name="text">
-         <string>Kiosk (寻找) 模式</string>
+         <string>Kiosk (Quest) Mode</string>
         </property>
        </widget>
       </item>

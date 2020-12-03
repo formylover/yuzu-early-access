@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2018 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -28,8 +24,8 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
                                                                u8 pad_index, u16 client_id)
     : QDialog(parent) {
     layout = new QVBoxLayout;
-    status_label = new QLabel(tr("与服务器通讯..."));
-    cancel_button = new QPushButton(tr("取消"));
+    status_label = new QLabel(tr("Communicating with the server..."));
+    cancel_button = new QPushButton(tr("Cancel"));
     connect(cancel_button, &QPushButton::clicked, this, [this] {
         if (!completed) {
             job->Stop();
@@ -47,13 +43,13 @@ CalibrationConfigurationDialog::CalibrationConfigurationDialog(QWidget* parent,
             QString text;
             switch (status) {
             case CalibrationConfigurationJob::Status::Ready:
-                text = tr("触摸左上角 <br>您的触摸板。");
+                text = tr("Touch the top left corner <br>of your touchpad.");
                 break;
             case CalibrationConfigurationJob::Status::Stage1Completed:
-                text = tr("现在触摸右下角 <br>您的触摸板。");
+                text = tr("Now touch the bottom right corner <br>of your touchpad.");
                 break;
             case CalibrationConfigurationJob::Status::Completed:
-                text = tr("配置完成！");
+                text = tr("Configuration completed!");
                 break;
             }
             QMetaObject::invokeMethod(this, "UpdateLabelText", Q_ARG(QString, text));
@@ -197,27 +193,27 @@ void ConfigureMotionTouch::OnUDPAddServer() {
     int row = udp_server_list_model->rowCount();
 
     if (!ok) {
-        QMessageBox::warning(this, tr("yuzu"), tr("端口号包含无效字符"));
+        QMessageBox::warning(this, tr("yuzu"), tr("Port number has invalid characters"));
         return;
     }
     if (port_number < 0 || port_number > 65353) {
-        QMessageBox::warning(this, tr("yuzu"), tr("端口必须在0到65353之间"));
+        QMessageBox::warning(this, tr("yuzu"), tr("Port has to be in range 0 and 65353"));
         return;
     }
     if (!re.exactMatch(server_text)) {
-        QMessageBox::warning(this, tr("yuzu"), tr("IP地址无效"));
+        QMessageBox::warning(this, tr("yuzu"), tr("IP address is not valid"));
         return;
     }
     // Search for duplicates
     for (const auto& item : udp_server_list_model->stringList()) {
         if (item == server_string) {
-            QMessageBox::warning(this, tr("yuzu"), tr("此UDP服务器已经存在"));
+            QMessageBox::warning(this, tr("yuzu"), tr("This UDP server already exists"));
             return;
         }
     }
     // Limit server count to 8
     if (row == 8) {
-        QMessageBox::warning(this, tr("yuzu"), tr("无法添加8台以上的服务器"));
+        QMessageBox::warning(this, tr("yuzu"), tr("Unable to add more than 8 servers"));
         return;
     }
 
@@ -233,7 +229,7 @@ void ConfigureMotionTouch::OnUDPDeleteServer() {
 
 void ConfigureMotionTouch::OnCemuhookUDPTest() {
     ui->udp_test->setEnabled(false);
-    ui->udp_test->setText(tr("测试中"));
+    ui->udp_test->setText(tr("Testing"));
     udp_test_in_progress = true;
     InputCommon::CemuhookUDP::TestCommunication(
         ui->udp_server->text().toStdString(), static_cast<u16>(ui->udp_port->text().toInt()), 0,
@@ -250,7 +246,7 @@ void ConfigureMotionTouch::OnCemuhookUDPTest() {
 
 void ConfigureMotionTouch::OnConfigureTouchCalibration() {
     ui->touch_calibration_config->setEnabled(false);
-    ui->touch_calibration_config->setText(tr("设置中"));
+    ui->touch_calibration_config->setText(tr("Configuring"));
     CalibrationConfigurationDialog dialog(this, ui->udp_server->text().toStdString(),
                                           static_cast<u16>(ui->udp_port->text().toUInt()), 0,
                                           24872);
@@ -268,7 +264,7 @@ void ConfigureMotionTouch::OnConfigureTouchCalibration() {
         LOG_ERROR(Frontend, "UDP touchpad calibration config failed");
     }
     ui->touch_calibration_config->setEnabled(true);
-    ui->touch_calibration_config->setText(tr("设置"));
+    ui->touch_calibration_config->setText(tr("Configure"));
 }
 
 void ConfigureMotionTouch::closeEvent(QCloseEvent* event) {
@@ -282,16 +278,16 @@ void ConfigureMotionTouch::closeEvent(QCloseEvent* event) {
 void ConfigureMotionTouch::ShowUDPTestResult(bool result) {
     udp_test_in_progress = false;
     if (result) {
-        QMessageBox::information(this, tr("测试成功"),
-                                 tr("已成功从服务器接收数据。"));
+        QMessageBox::information(this, tr("Test Successful"),
+                                 tr("Successfully received data from the server."));
     } else {
-        QMessageBox::warning(this, tr("测试失败"),
-                             tr("无法从服务器接收有效数据。<br>请确认 "
-                                "服务器设置正确，并且 "
-                                "地址和端口正确。"));
+        QMessageBox::warning(this, tr("Test Failed"),
+                             tr("Could not receive valid data from the server.<br>Please verify "
+                                "that the server is set up correctly and "
+                                "the address and port are correct."));
     }
     ui->udp_test->setEnabled(true);
-    ui->udp_test->setText(tr("测试"));
+    ui->udp_test->setText(tr("Test"));
 }
 
 void ConfigureMotionTouch::OnConfigureTouchFromButton() {
@@ -314,8 +310,8 @@ void ConfigureMotionTouch::OnConfigureTouchFromButton() {
 bool ConfigureMotionTouch::CanCloseDialog() {
     if (udp_test_in_progress) {
         QMessageBox::warning(this, tr("yuzu"),
-                             tr("正在进行UDP测试或校准配置。<br>请 "
-                                "等待他们完成。"));
+                             tr("UDP Test or calibration configuration is in progress.<br>Please "
+                                "wait for them to finish."));
         return false;
     }
     return true;

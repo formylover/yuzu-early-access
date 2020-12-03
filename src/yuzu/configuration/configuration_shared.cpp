@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2016 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -132,7 +128,7 @@ void ConfigurationShared::SetColoredComboBox(QComboBox* combobox, QWidget* targe
 
 void ConfigurationShared::InsertGlobalItem(QComboBox* combobox, int global_index) {
     const QString use_global_text =
-        ConfigurePerGame::tr("使用全局设置 (%1)").arg(combobox->itemText(global_index));
+        ConfigurePerGame::tr("Use global configuration (%1)").arg(combobox->itemText(global_index));
     combobox->insertItem(ConfigurationShared::USE_GLOBAL_INDEX, use_global_text);
     combobox->insertSeparator(ConfigurationShared::USE_GLOBAL_SEPARATOR_INDEX);
 }

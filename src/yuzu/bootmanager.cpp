@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2014 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -595,8 +591,8 @@ bool GRenderWindow::InitializeOpenGL() {
 
     return true;
 #else
-    QMessageBox::warning(this, tr("OpenGL 不可用!"),
-                         tr("yuzu 尚未使用OpenGL支持进行编译。"));
+    QMessageBox::warning(this, tr("OpenGL not available!"),
+                         tr("yuzu has not been compiled with OpenGL support."));
     return false;
 #endif
 }
@@ -610,8 +606,8 @@ bool GRenderWindow::InitializeVulkan() {
 
     return true;
 #else
-    QMessageBox::critical(this, tr("Vulkan 不可用!"),
-                          tr("yuzu 尚未在Vulkan支持下进行编译。"));
+    QMessageBox::critical(this, tr("Vulkan not available!"),
+                          tr("yuzu has not been compiled with Vulkan support."));
     return false;
 #endif
 }
@@ -621,8 +617,8 @@ bool GRenderWindow::LoadOpenGL() {
     auto scope = context->Acquire();
     if (!gladLoadGL()) {
         QMessageBox::warning(
-            this, tr("初始化OpenGL时出错！"),
-            tr("您的GPU可能不支持OpenGL，或者您没有最新的图形驱动程序。"));
+            this, tr("Error while initializing OpenGL!"),
+            tr("Your GPU may not support OpenGL, or you do not have the latest graphics driver."));
         return false;
     }
 
@@ -631,9 +627,9 @@ bool GRenderWindow::LoadOpenGL() {
 
     if (!GLAD_GL_VERSION_4_3) {
         LOG_ERROR(Frontend, "GPU does not support OpenGL 4.3: {}", renderer.toStdString());
-        QMessageBox::warning(this, tr("初始化OpenGL 4.3时出错！"),
-                             tr("您的GPU可能不支持OpenGL 4.3，或者您没有 "
-                                "最新的图形驱动程序。<br><br>GL 渲染器:<br>%1")
+        QMessageBox::warning(this, tr("Error while initializing OpenGL 4.3!"),
+                             tr("Your GPU may not support OpenGL 4.3, or you do not have the "
+                                "latest graphics driver.<br><br>GL Renderer:<br>%1")
                                  .arg(renderer));
         return false;
     }
@@ -641,10 +637,10 @@ bool GRenderWindow::LoadOpenGL() {
     QStringList unsupported_gl_extensions = GetUnsupportedGLExtensions();
     if (!unsupported_gl_extensions.empty()) {
         QMessageBox::warning(
-            this, tr("初始化OpenGL时出错！"),
-            tr("您的GPU可能不支持一个或多个必需的OpenGL扩展。 请确保你 "
-               "拥有最新的图形驱动程序。<br><br>GL 渲染器:<br>%1<br><br>不支持 "
-               "扩展名:<br>%2")
+            this, tr("Error while initializing OpenGL!"),
+            tr("Your GPU may not support one or more required OpenGL extensions. Please ensure you "
+               "have the latest graphics driver.<br><br>GL Renderer:<br>%1<br><br>Unsupported "
+               "extensions:<br>%2")
                 .arg(renderer)
                 .arg(unsupported_gl_extensions.join(QStringLiteral("<br>"))));
         return false;

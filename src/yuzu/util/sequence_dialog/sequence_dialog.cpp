@@ -1,7 +1,3 @@
-﻿#if _MSC_VER >= 1600
-#pragma execution_character_set("utf-8")
-#endif
-
 // Copyright 2018 Citra Emulator Project
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
@@ -12,7 +8,7 @@
 #include "yuzu/util/sequence_dialog/sequence_dialog.h"
 
 SequenceDialog::SequenceDialog(QWidget* parent) : QDialog(parent) {
-    setWindowTitle(tr("输入热键"));
+    setWindowTitle(tr("Enter a hotkey"));
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
     key_sequence = new QKeySequenceEdit;
