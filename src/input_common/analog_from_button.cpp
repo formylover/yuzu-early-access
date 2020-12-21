@@ -113,7 +113,7 @@ public:
     }
 
     std::tuple<float, float> GetStatus() const override {
-        if (Settings::values.analog_joystick_button) {
+        if (Settings::values.emulate_analog_keyboard) {
             return std::make_tuple(std::cos(angle) * amplitude, std::sin(angle) * amplitude);
         }
         constexpr float SQRT_HALF = 0.707106781f;

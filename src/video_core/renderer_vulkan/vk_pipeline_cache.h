@@ -83,9 +83,9 @@ namespace Vulkan {
 
 class Shader {
 public:
-    explicit Shader(Tegra::Engines::ConstBufferEngineInterface& engine,
-                    Tegra::Engines::ShaderType stage, GPUVAddr gpu_addr, VAddr cpu_addr,
-                    VideoCommon::Shader::ProgramCode program_code, u32 main_offset);
+    explicit Shader(Tegra::Engines::ConstBufferEngineInterface& engine_,
+                    Tegra::Engines::ShaderType stage_, GPUVAddr gpu_addr, VAddr cpu_addr_,
+                    VideoCommon::Shader::ProgramCode program_code, u32 main_offset_);
     ~Shader();
 
     GPUVAddr GetGpuAddr() const {

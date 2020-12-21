@@ -100,22 +100,28 @@ std::optional<SubresourceBase> ImageBase::TryFindBase(GPUVAddr other_addr) const
     }
 }
 
-ImageViewId ImageBase::FindView(const ImageViewInfo& info) const noexcept {
-    const auto it = std::ranges::find(image_view_infos, info);
+ImageViewId ImageBase::FindView(const ImageViewInfo& view_info) const noexcept {
+    const auto it = std::ranges::find(image_view_infos, view_info);
     if (it == image_view_infos.end()) {
         return ImageViewId{};
     }
     return image_view_ids[std::distance(image_view_infos.begin(), it)];
 }
 
-void ImageBase::InsertView(const ImageViewInfo& info, ImageViewId image_view_id) {
-    image_view_infos.push_back(info);
+void ImageBase::InsertView(const ImageViewInfo& view_info, ImageViewId image_view_id) {
+    image_view_infos.push_back(view_info);
     image_view_ids.push_back(image_view_id);
 }
 
 void AddImageAlias(ImageBase& lhs, ImageBase& rhs, ImageId lhs_id, ImageId rhs_id) {
     static constexpr auto OPTIONS = RelaxedOptions::Size | RelaxedOptions::Format;
-    const std::optional base = FindSubresource(rhs.info, lhs, rhs.gpu_addr, OPTIONS);
+    ASSERT(lhs.info.type == rhs.info.type);
+    std::optional<SubresourceBase> base;
+    if (lhs.info.type == ImageType::Linear) {
+        base = SubresourceBase{.level = 0, .layer = 0};
+    } else {
+        base = FindSubresource(rhs.info, lhs, rhs.gpu_addr, OPTIONS);
+    }
     if (!base) {
         LOG_ERROR(HW_GPU, "Image alias should have been flipped");
         return;

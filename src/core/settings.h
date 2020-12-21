@@ -180,7 +180,7 @@ struct Values {
     std::string motion_device;
     std::string udp_input_servers;
 
-    bool analog_joystick_button;
+    bool emulate_analog_keyboard;
 
     bool mouse_enabled;
     std::string mouse_device;
@@ -256,8 +256,5 @@ void LogSettings();
 
 // Restore the global state of all applicable settings in the Values struct
 void RestoreGlobalState(bool is_powered_on);
-
-// Fixes settings that are known to cause issues with the emulator
-void Sanitize();
 
 } // namespace Settings

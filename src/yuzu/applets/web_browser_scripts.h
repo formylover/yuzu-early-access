@@ -91,7 +91,8 @@ var yuzu_key_callbacks = [];
 (function() {
     class WindowNX {
         constructor() {
-            yuzu_key_callbacks[2] = function() { endApplet(); };
+            yuzu_key_callbacks[1] = function() { window.history.back(); };
+            yuzu_key_callbacks[2] = function() { window.nx.endApplet(); };
         }
 
         addEventListener(type, listener, options) {

@@ -39,23 +39,23 @@ static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
     CommandDataContainer next;
     while (state.is_running) {
         next = state.queue.PopWait();
-        if (const auto submit_list = std::get_if<SubmitListCommand>(&next.data)) {
+        if (auto* submit_list = std::get_if<SubmitListCommand>(&next.data)) {
             dma_pusher.Push(std::move(submit_list->entries));
             dma_pusher.DispatchCalls();
-        } else if (const auto command_list = std::get_if<SubmitChCommandEntries>(&next.data)) {
+        } else if (auto* command_list = std::get_if<SubmitChCommandEntries>(&next.data)) {
             // NVDEC
             cdma_pusher.Push(std::move(command_list->entries));
             cdma_pusher.DispatchCalls();
-        } else if (const auto data = std::get_if<SwapBuffersCommand>(&next.data)) {
+        } else if (const auto* data = std::get_if<SwapBuffersCommand>(&next.data)) {
             renderer.SwapBuffers(data->framebuffer ? &*data->framebuffer : nullptr);
         } else if (std::holds_alternative<OnCommandListEndCommand>(next.data)) {
             renderer.Rasterizer().ReleaseFences();
         } else if (std::holds_alternative<GPUTickCommand>(next.data)) {
             system.GPU().TickWork();
-        } else if (const auto data = std::get_if<FlushRegionCommand>(&next.data)) {
-            renderer.Rasterizer().FlushRegion(data->addr, data->size);
-        } else if (const auto data = std::get_if<InvalidateRegionCommand>(&next.data)) {
-            renderer.Rasterizer().OnCPUWrite(data->addr, data->size);
+        } else if (const auto* flush = std::get_if<FlushRegionCommand>(&next.data)) {
+            renderer.Rasterizer().FlushRegion(flush->addr, flush->size);
+        } else if (const auto* invalidate = std::get_if<InvalidateRegionCommand>(&next.data)) {
+            renderer.Rasterizer().OnCPUWrite(invalidate->addr, invalidate->size);
         } else if (std::holds_alternative<EndProcessingCommand>(next.data)) {
             return;
         } else {
@@ -65,7 +65,8 @@ static void RunThread(Core::System& system, VideoCore::RendererBase& renderer,
     }
 }
 
-ThreadManager::ThreadManager(Core::System& system) : system{system} {}
+ThreadManager::ThreadManager(Core::System& system_, bool is_async_)
+    : system{system_}, is_async{is_async_} {}
 
 ThreadManager::~ThreadManager() {
     if (!thread.joinable()) {
@@ -97,19 +98,30 @@ void ThreadManager::SwapBuffers(const Tegra::FramebufferConfig* framebuffer) {
 }
 
 void ThreadManager::FlushRegion(VAddr addr, u64 size) {
-    if (!Settings::IsGPULevelHigh()) {
+    if (!is_async) {
+        // Always flush with synchronous GPU mode
         PushCommand(FlushRegionCommand(addr, size));
         return;
     }
-    if (!Settings::IsGPULevelExtreme()) {
-        return;
-    }
-    if (system.Renderer().Rasterizer().MustFlushRegion(addr, size)) {
+
+    // Asynchronous GPU mode
+    switch (Settings::values.gpu_accuracy.GetValue()) {
+    case Settings::GPUAccuracy::Normal:
+        PushCommand(FlushRegionCommand(addr, size));
+        break;
+    case Settings::GPUAccuracy::High:
+        // TODO(bunnei): Is this right? Preserving existing behavior for now
+        break;
+    case Settings::GPUAccuracy::Extreme: {
         auto& gpu = system.GPU();
         u64 fence = gpu.RequestFlush(addr, size);
         PushCommand(GPUTickCommand());
         while (fence > gpu.CurrentFlushRequestFence()) {
         }
+        break;
+    }
+    default:
+        UNIMPLEMENTED_MSG("Unsupported gpu_accuracy {}", Settings::values.gpu_accuracy.GetValue());
     }
 }
 
@@ -123,7 +135,8 @@ void ThreadManager::FlushAndInvalidateRegion(VAddr addr, u64 size) {
 }
 
 void ThreadManager::WaitIdle() const {
-    while (state.last_fence > state.signaled_fence.load(std::memory_order_relaxed)) {
+    while (state.last_fence > state.signaled_fence.load(std::memory_order_relaxed) &&
+           system.IsPoweredOn()) {
     }
 }
 
@@ -134,6 +147,12 @@ void ThreadManager::OnCommandListEnd() {
 u64 ThreadManager::PushCommand(CommandData&& command_data) {
     const u64 fence{++state.last_fence};
     state.queue.Push(CommandDataContainer(std::move(command_data), fence));
+
+    if (!is_async) {
+        // In synchronous GPU mode, block the caller until the command has executed
+        WaitIdle();
+    }
+
     return fence;
 }
 

@@ -511,8 +511,8 @@ void Config::ReadControlValues() {
     ReadTouchscreenValues();
     ReadMotionTouchValues();
 
-    Settings::values.analog_joystick_button =
-        ReadSetting(QStringLiteral("analog_joystick_button"), false).toBool();
+    Settings::values.emulate_analog_keyboard =
+        ReadSetting(QStringLiteral("emulate_analog_keyboard"), false).toBool();
 
     ReadSettingGlobal(Settings::values.use_docked_mode, QStringLiteral("use_docked_mode"), false);
     ReadSettingGlobal(Settings::values.vibration_enabled, QStringLiteral("vibration_enabled"),
@@ -637,8 +637,6 @@ void Config::ReadDebuggingValues() {
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     Settings::values.record_frame_times =
         qt_config->value(QStringLiteral("record_frame_times"), false).toBool();
-    Settings::values.use_gdbstub = ReadSetting(QStringLiteral("use_gdbstub"), false).toBool();
-    Settings::values.gdbstub_port = ReadSetting(QStringLiteral("gdbstub_port"), 24689).toInt();
     Settings::values.program_args =
         ReadSetting(QStringLiteral("program_args"), QString{}).toString().toStdString();
     Settings::values.dump_exefs = ReadSetting(QStringLiteral("dump_exefs"), false).toBool();
@@ -1189,8 +1187,8 @@ void Config::SaveControlValues() {
                  QString::fromStdString(Settings::values.touch_device),
                  QStringLiteral("engine:emu_window"));
     WriteSetting(QStringLiteral("keyboard_enabled"), Settings::values.keyboard_enabled, false);
-    WriteSetting(QStringLiteral("analog_joystick_button"), Settings::values.analog_joystick_button,
-                 false);
+    WriteSetting(QStringLiteral("emulate_analog_keyboard"),
+                 Settings::values.emulate_analog_keyboard, false);
 
     qt_config->endGroup();
 }
@@ -1236,8 +1234,6 @@ void Config::SaveDebuggingValues() {
 
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     qt_config->setValue(QStringLiteral("record_frame_times"), Settings::values.record_frame_times);
-    WriteSetting(QStringLiteral("use_gdbstub"), Settings::values.use_gdbstub, false);
-    WriteSetting(QStringLiteral("gdbstub_port"), Settings::values.gdbstub_port, 24689);
     WriteSetting(QStringLiteral("program_args"),
                  QString::fromStdString(Settings::values.program_args), QString{});
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
@@ -1593,14 +1589,12 @@ void Config::WriteSettingGlobal(const QString& name, const QVariant& value, bool
 
 void Config::Reload() {
     ReadValues();
-    Settings::Sanitize();
     // To apply default value changes
     SaveValues();
     Settings::Apply(Core::System::GetInstance());
 }
 
 void Config::Save() {
-    Settings::Sanitize();
     SaveValues();
 }
 

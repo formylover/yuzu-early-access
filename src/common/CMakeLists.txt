@@ -104,6 +104,7 @@ add_library(common STATIC
     detached_tasks.h
     bit_cast.h
     bit_field.h
+    bit_set.h
     bit_util.h
     cityhash.cpp
     cityhash.h
@@ -140,7 +141,6 @@ add_library(common STATIC
     microprofile.h
     microprofileui.h
     misc.cpp
-    multi_level_queue.h
     page_table.cpp
     page_table.h
     param_package.cpp
@@ -209,7 +209,6 @@ else()
 endif()
 
 create_target_directory_groups(common)
-find_package(Boost 1.71 COMPONENTS context headers REQUIRED)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile)
 target_link_libraries(common PRIVATE lz4::lz4 xbyak)

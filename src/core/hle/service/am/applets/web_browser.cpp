@@ -154,11 +154,6 @@ void ExtractSharedFonts(Core::System& system) {
         const auto nca = system.GetFileSystemController().GetSystemNANDContents()->GetEntry(
             font_title_id, FileSys::ContentRecordType::Data);
 
-        // Temporarily disable extraction for NintendoExtended OSS fonts
-        if (!nca && i >= 5) {
-            continue;
-        }
-
         FileSys::VirtualFile romfs;
 
         if (!nca) {
@@ -168,7 +163,7 @@ void ExtractSharedFonts(Core::System& system) {
         }
 
         if (!romfs) {
-            LOG_ERROR(Service_AM, "SharedFont RomFS with title_id={:016X} is cannot be extracted!",
+            LOG_ERROR(Service_AM, "SharedFont RomFS with title_id={:016X} cannot be extracted!",
                       font_title_id);
             continue;
         }
@@ -371,10 +366,10 @@ void WebBrowser::InitializeLogin() {}
 
 void WebBrowser::InitializeOffline() {
     const auto document_path =
-        ParseStringValue(GetInputTLVData((WebArgInputTLVType::DocumentPath)).value());
+        ParseStringValue(GetInputTLVData(WebArgInputTLVType::DocumentPath).value());
 
     const auto document_kind =
-        ParseRawValue<DocumentKind>(GetInputTLVData((WebArgInputTLVType::DocumentKind)).value());
+        ParseRawValue<DocumentKind>(GetInputTLVData(WebArgInputTLVType::DocumentKind).value());
 
     std::string additional_paths;
 
@@ -386,11 +381,11 @@ void WebBrowser::InitializeOffline() {
         additional_paths = "html-document";
         break;
     case DocumentKind::ApplicationLegalInformation:
-        title_id = ParseRawValue<u64>(GetInputTLVData((WebArgInputTLVType::ApplicationID)).value());
+        title_id = ParseRawValue<u64>(GetInputTLVData(WebArgInputTLVType::ApplicationID).value());
         nca_type = FileSys::ContentRecordType::LegalInformation;
         break;
     case DocumentKind::SystemDataPage:
-        title_id = ParseRawValue<u64>(GetInputTLVData((WebArgInputTLVType::SystemDataID)).value());
+        title_id = ParseRawValue<u64>(GetInputTLVData(WebArgInputTLVType::SystemDataID).value());
         nca_type = FileSys::ContentRecordType::Data;
         break;
     }
@@ -414,7 +409,9 @@ void WebBrowser::InitializeOffline() {
 
 void WebBrowser::InitializeShare() {}
 
-void WebBrowser::InitializeWeb() {}
+void WebBrowser::InitializeWeb() {
+    external_url = ParseStringValue(GetInputTLVData(WebArgInputTLVType::InitialURL).value());
+}
 
 void WebBrowser::InitializeWifi() {}
 
@@ -461,8 +458,12 @@ void WebBrowser::ExecuteShare() {
 }
 
 void WebBrowser::ExecuteWeb() {
-    LOG_WARNING(Service_AM, "(STUBBED) called, Web Applet is not implemented");
-    WebBrowserExit(WebExitReason::EndButtonPressed);
+    LOG_INFO(Service_AM, "Opening external URL at {}", external_url);
+
+    frontend.OpenExternalWebPage(external_url,
+                                 [this](WebExitReason exit_reason, std::string last_url) {
+                                     WebBrowserExit(exit_reason, last_url);
+                                 });
 }
 
 void WebBrowser::ExecuteWifi() {

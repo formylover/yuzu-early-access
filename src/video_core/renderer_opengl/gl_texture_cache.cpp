@@ -190,7 +190,7 @@ GLenum ImageTarget(const VideoCommon::ImageInfo& info) {
     case ImageType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image type={}", static_cast<int>(info.type));
+    UNREACHABLE_MSG("Invalid image type={}", info.type);
     return GL_NONE;
 }
 
@@ -216,7 +216,7 @@ GLenum ImageTarget(ImageViewType type, int num_samples = 1) {
     case ImageViewType::Buffer:
         return GL_TEXTURE_BUFFER;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", static_cast<int>(type));
+    UNREACHABLE_MSG("Invalid image view type={}", type);
     return GL_NONE;
 }
 
@@ -249,7 +249,7 @@ GLint Swizzle(SwizzleSource source) {
     case SwizzleSource::OneFloat:
         return GL_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle source={}", static_cast<int>(source));
+    UNREACHABLE_MSG("Invalid swizzle source={}", source);
     return GL_NONE;
 }
 
@@ -260,7 +260,7 @@ GLenum AttachmentType(PixelFormat format) {
     case SurfaceType::DepthStencil:
         return GL_DEPTH_STENCIL_ATTACHMENT;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented type={}", static_cast<int>(type));
+        UNIMPLEMENTED_MSG("Unimplemented type={}", type);
         return GL_NONE;
     }
 }
@@ -642,9 +642,9 @@ std::optional<size_t> TextureCacheRuntime::StagingBuffers::FindBuffer(size_t req
     return found;
 }
 
-Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info, GPUVAddr gpu_addr,
-             VAddr cpu_addr)
-    : VideoCommon::ImageBase(info, gpu_addr, cpu_addr) {
+Image::Image(TextureCacheRuntime& runtime, const VideoCommon::ImageInfo& info_, GPUVAddr gpu_addr_,
+             VAddr cpu_addr_)
+    : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_) {
     if (CanBeAccelerated(runtime, info)) {
         flags |= ImageFlagBits::AcceleratedUpload;
     }
@@ -864,8 +864,8 @@ void Image::CopyImageToBuffer(const VideoCommon::BufferImageCopy& copy, size_t b
 }
 
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
-                     ImageId image_id, Image& image)
-    : VideoCommon::ImageViewBase{info, image.info, image_id}, views{runtime.null_image_views} {
+                     ImageId image_id_, Image& image)
+    : VideoCommon::ImageViewBase{info, image.info, image_id_}, views{runtime.null_image_views} {
     const Device& device = runtime.device;
     if (True(image.flags & ImageFlagBits::Converted)) {
         internal_format = IsPixelFormatSRGB(info.format) ? GL_SRGB8_ALPHA8 : GL_RGBA8;
@@ -931,28 +931,28 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::NullImageParams& params)
     : VideoCommon::ImageViewBase{params}, views{runtime.null_image_views} {}
 
-void ImageView::SetupView(const Device& device, Image& image, ImageViewType type, GLuint handle,
-                          const VideoCommon::ImageViewInfo& info,
-                          VideoCommon::SubresourceRange range) {
+void ImageView::SetupView(const Device& device, Image& image, ImageViewType view_type,
+                          GLuint handle, const VideoCommon::ImageViewInfo& info,
+                          VideoCommon::SubresourceRange view_range) {
     if (info.type == ImageViewType::Buffer) {
         // TODO: Take offset from buffer cache
         glTextureBufferRange(handle, internal_format, image.buffer.handle, 0,
                              image.guest_size_bytes);
     } else {
         const GLuint parent = image.texture.handle;
-        const GLenum target = ImageTarget(type, image.info.num_samples);
-        glTextureView(handle, target, parent, internal_format, range.base.level,
-                      range.extent.levels, range.base.layer, range.extent.layers);
+        const GLenum target = ImageTarget(view_type, image.info.num_samples);
+        glTextureView(handle, target, parent, internal_format, view_range.base.level,
+                      view_range.extent.levels, view_range.base.layer, view_range.extent.layers);
         if (!info.IsRenderTarget()) {
             ApplySwizzle(handle, format, info.Swizzle());
         }
     }
     if (device.HasDebuggingToolAttached()) {
-        const std::string name = VideoCommon::Name(*this, type);
+        const std::string name = VideoCommon::Name(*this, view_type);
         glObjectLabel(GL_TEXTURE, handle, static_cast<GLsizei>(name.size()), name.data());
     }
     stored_views.emplace_back().handle = handle;
-    views[static_cast<size_t>(type)] = handle;
+    views[static_cast<size_t>(view_type)] = handle;
 }
 
 Sampler::Sampler(TextureCacheRuntime& runtime, const TSCEntry& config) {

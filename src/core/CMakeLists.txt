@@ -19,7 +19,6 @@ add_library(core STATIC
     core.h
     core_timing.cpp
     core_timing.h
-    core_timing_util.cpp
     core_timing_util.h
     cpu_manager.cpp
     cpu_manager.h
@@ -41,6 +40,7 @@ add_library(core STATIC
     file_sys/bis_factory.h
     file_sys/card_image.cpp
     file_sys/card_image.h
+    file_sys/common_funcs.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
     file_sys/control_metadata.cpp
@@ -150,10 +150,19 @@ add_library(core STATIC
     hle/kernel/code_set.cpp
     hle/kernel/code_set.h
     hle/kernel/errors.h
+    hle/kernel/global_scheduler_context.cpp
+    hle/kernel/global_scheduler_context.h
     hle/kernel/handle_table.cpp
     hle/kernel/handle_table.h
     hle/kernel/hle_ipc.cpp
     hle/kernel/hle_ipc.h
+    hle/kernel/k_affinity_mask.h
+    hle/kernel/k_priority_queue.h
+    hle/kernel/k_scheduler.cpp
+    hle/kernel/k_scheduler.h
+    hle/kernel/k_scheduler_lock.h
+    hle/kernel/k_scoped_lock.h
+    hle/kernel/k_scoped_scheduler_lock_and_sleep.h
     hle/kernel/kernel.cpp
     hle/kernel/kernel.h
     hle/kernel/memory/address_space_info.cpp
@@ -188,12 +197,12 @@ add_library(core STATIC
     hle/kernel/readable_event.h
     hle/kernel/resource_limit.cpp
     hle/kernel/resource_limit.h
-    hle/kernel/scheduler.cpp
-    hle/kernel/scheduler.h
     hle/kernel/server_port.cpp
     hle/kernel/server_port.h
     hle/kernel/server_session.cpp
     hle/kernel/server_session.h
+    hle/kernel/service_thread.cpp
+    hle/kernel/service_thread.h
     hle/kernel/session.cpp
     hle/kernel/session.h
     hle/kernel/shared_memory.cpp
@@ -492,7 +501,6 @@ add_library(core STATIC
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp
     hle/service/sm/sm.h
-    hle/service/sockets/blocking_worker.h
     hle/service/sockets/bsd.cpp
     hle/service/sockets/bsd.h
     hle/service/sockets/ethc.cpp

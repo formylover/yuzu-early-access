@@ -2547,7 +2547,7 @@
                 </widget>
                </item>
                <item row="1" column="0">
-                 <widget class="QCheckBox" name="analog_joystick_button">
+                 <widget class="QCheckBox" name="emulate_analog_keyboard">
                    <property name="minimumSize">
                      <size>
                        <width>0</width>
@@ -2555,7 +2555,7 @@
                      </size>
                    </property>
                    <property name="text">
-                     <string>Analog joystick button</string>
+                     <string>Emulate Analog with Keyboard Input</string>
                    </property>
                  </widget>
                </item>

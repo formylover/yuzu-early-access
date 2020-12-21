@@ -177,8 +177,8 @@ public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
-    [[nodiscard]] GLuint Handle(ImageViewType type) const noexcept {
-        return views[static_cast<size_t>(type)];
+    [[nodiscard]] GLuint Handle(ImageViewType query_type) const noexcept {
+        return views[static_cast<size_t>(query_type)];
     }
 
     [[nodiscard]] GLuint DefaultHandle() const noexcept {
@@ -190,8 +190,9 @@ public:
     }
 
 private:
-    void SetupView(const Device& device, Image& image, ImageViewType type, GLuint handle,
-                   const VideoCommon::ImageViewInfo& info, VideoCommon::SubresourceRange range);
+    void SetupView(const Device& device, Image& image, ImageViewType view_type, GLuint handle,
+                   const VideoCommon::ImageViewInfo& info,
+                   VideoCommon::SubresourceRange view_range);
 
     std::array<GLuint, VideoCommon::NUM_IMAGE_VIEW_TYPES> views{};
     std::vector<OGLTextureView> stored_views;

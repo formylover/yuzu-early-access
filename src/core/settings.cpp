@@ -72,8 +72,6 @@ void LogSettings() {
     log_setting("DataStorage_UseVirtualSd", values.use_virtual_sd);
     log_setting("DataStorage_NandDir", Common::FS::GetUserPath(Common::FS::UserPath::NANDDir));
     log_setting("DataStorage_SdmcDir", Common::FS::GetUserPath(Common::FS::UserPath::SDMCDir));
-    log_setting("Debugging_UseGdbstub", values.use_gdbstub);
-    log_setting("Debugging_GdbstubPort", values.gdbstub_port);
     log_setting("Debugging_ProgramArgs", values.program_args);
     log_setting("Services_BCATBackend", values.bcat_backend);
     log_setting("Services_BCATBoxcatLocal", values.bcat_boxcat_local);
@@ -148,11 +146,6 @@ void RestoreGlobalState(bool is_powered_on) {
     values.use_docked_mode.SetGlobal(true);
     values.vibration_enabled.SetGlobal(true);
     values.motion_enabled.SetGlobal(true);
-}
-
-void Sanitize() {
-    values.use_asynchronous_gpu_emulation.SetValue(
-        values.use_asynchronous_gpu_emulation.GetValue() || values.use_multi_core.GetValue());
 }
 
 } // namespace Settings

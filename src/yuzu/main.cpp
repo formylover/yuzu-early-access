@@ -81,6 +81,7 @@ static FileSys::VirtualFile VfsDirectoryCreateFileWrapper(const FileSys::Virtual
 #include "core/core.h"
 #include "core/crypto/key_manager.h"
 #include "core/file_sys/card_image.h"
+#include "core/file_sys/common_funcs.h"
 #include "core/file_sys/content_archive.h"
 #include "core/file_sys/control_metadata.h"
 #include "core/file_sys/patch_manager.h"
@@ -137,8 +138,6 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
 constexpr int default_mouse_timeout = 2500;
-
-constexpr u64 DLC_BASE_TITLE_ID_MASK = 0xFFFFFFFFFFFFE000;
 
 /**
  * "Callouts" are one-time instructional messages shown to the user. In the config settings, there
@@ -367,13 +366,13 @@ void GMainWindow::SoftwareKeyboardInvokeCheckDialog(std::u16string error_message
     emit SoftwareKeyboardFinishedCheckDialog();
 }
 
-void GMainWindow::WebBrowserOpenLocalWebPage(std::string_view main_url,
-                                             std::string_view additional_args) {
+void GMainWindow::WebBrowserOpenWebPage(std::string_view main_url, std::string_view additional_args,
+                                        bool is_local) {
 #ifdef YUZU_USE_QT_WEB_ENGINE
 
     if (disable_web_applet) {
         emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed,
-                              "http://localhost");
+                              "http://localhost/");
         return;
     }
 
@@ -389,7 +388,7 @@ void GMainWindow::WebBrowserOpenLocalWebPage(std::string_view main_url,
         loading_progress.setRange(0, 3);
         loading_progress.setValue(0);
 
-        if (!Common::FS::Exists(std::string(main_url))) {
+        if (is_local && !Common::FS::Exists(std::string(main_url))) {
             loading_progress.show();
 
             auto future = QtConcurrent::run([this] { emit WebBrowserExtractOfflineRomFS(); });
@@ -401,7 +400,11 @@ void GMainWindow::WebBrowserOpenLocalWebPage(std::string_view main_url,
 
         loading_progress.setValue(1);
 
-        web_browser_view.LoadLocalWebPage(main_url, additional_args);
+        if (is_local) {
+            web_browser_view.LoadLocalWebPage(main_url, additional_args);
+        } else {
+            web_browser_view.LoadExternalWebPage(main_url, additional_args);
+        }
 
         if (render_window->IsLoadingComplete()) {
             render_window->hide();
@@ -494,7 +497,7 @@ void GMainWindow::WebBrowserOpenLocalWebPage(std::string_view main_url,
 #else
 
     // Utilize the same fallback as the default web browser applet.
-    emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed, "http://localhost");
+    emit WebBrowserClosed(Service::AM::Applets::WebExitReason::WindowClosed, "http://localhost/");
 
 #endif
 }
@@ -577,9 +580,8 @@ void GMainWindow::InitializeWidgets() {
         if (emulation_running) {
             return;
         }
-        const bool is_async = !Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
-                              Settings::values.use_multi_core.GetValue();
-        Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
+        Settings::values.use_asynchronous_gpu_emulation.SetValue(
+            !Settings::values.use_asynchronous_gpu_emulation.GetValue());
         async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
         Settings::Apply(Core::System::GetInstance());
     });
@@ -596,16 +598,13 @@ void GMainWindow::InitializeWidgets() {
             return;
         }
         Settings::values.use_multi_core.SetValue(!Settings::values.use_multi_core.GetValue());
-        const bool is_async = Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
-                              Settings::values.use_multi_core.GetValue();
-        Settings::values.use_asynchronous_gpu_emulation.SetValue(is_async);
-        async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
         multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
         Settings::Apply(Core::System::GetInstance());
     });
     multicore_status_button->setText(tr("MULTICORE"));
     multicore_status_button->setCheckable(true);
     multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
+
     statusBar()->insertPermanentWidget(0, multicore_status_button);
     statusBar()->insertPermanentWidget(0, async_status_button);
 
@@ -936,7 +935,10 @@ void GMainWindow::ConnectMenuEvents() {
             &GMainWindow::OnDisplayTitleBars);
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
-    connect(ui.action_Reset_Window_Size, &QAction::triggered, this, &GMainWindow::ResetWindowSize);
+    connect(ui.action_Reset_Window_Size_720, &QAction::triggered, this,
+            &GMainWindow::ResetWindowSize720);
+    connect(ui.action_Reset_Window_Size_1080, &QAction::triggered, this,
+            &GMainWindow::ResetWindowSize1080);
 
     // Fullscreen
     connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
@@ -1532,7 +1534,7 @@ void GMainWindow::RemoveAddOnContent(u64 program_id, const QString& entry_type) 
         FileSys::TitleType::AOC, FileSys::ContentRecordType::Data);
 
     for (const auto& entry : dlc_entries) {
-        if ((entry.title_id & DLC_BASE_TITLE_ID_MASK) == program_id) {
+        if (FileSys::GetBaseTitleID(entry.title_id) == program_id) {
             const auto res =
                 fs_controller.GetUserNANDContents()->RemoveExistingEntry(entry.title_id) ||
                 fs_controller.GetSDMCContents()->RemoveExistingEntry(entry.title_id);
@@ -2255,7 +2257,7 @@ void GMainWindow::ToggleWindowMode() {
     }
 }
 
-void GMainWindow::ResetWindowSize() {
+void GMainWindow::ResetWindowSize720() {
     const auto aspect_ratio = Layout::EmulationAspectRatio(
         static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio.GetValue()),
         static_cast<float>(Layout::ScreenUndocked::Height) / Layout::ScreenUndocked::Width);
@@ -2265,6 +2267,20 @@ void GMainWindow::ResetWindowSize() {
     } else {
         resize(Layout::ScreenUndocked::Height / aspect_ratio,
                Layout::ScreenUndocked::Height + menuBar()->height() +
+                   (ui.action_Show_Status_Bar->isChecked() ? statusBar()->height() : 0));
+    }
+}
+
+void GMainWindow::ResetWindowSize1080() {
+    const auto aspect_ratio = Layout::EmulationAspectRatio(
+        static_cast<Layout::AspectRatio>(Settings::values.aspect_ratio.GetValue()),
+        static_cast<float>(Layout::ScreenDocked::Height) / Layout::ScreenDocked::Width);
+    if (!ui.action_Single_Window_Mode->isChecked()) {
+        render_window->resize(Layout::ScreenDocked::Height / aspect_ratio,
+                              Layout::ScreenDocked::Height);
+    } else {
+        resize(Layout::ScreenDocked::Height / aspect_ratio,
+               Layout::ScreenDocked::Height + menuBar()->height() +
                    (ui.action_Show_Status_Bar->isChecked() ? statusBar()->height() : 0));
     }
 }
@@ -2516,9 +2532,6 @@ void GMainWindow::UpdateStatusBar() {
 void GMainWindow::UpdateStatusButtons() {
     dock_status_button->setChecked(Settings::values.use_docked_mode.GetValue());
     multicore_status_button->setChecked(Settings::values.use_multi_core.GetValue());
-    Settings::values.use_asynchronous_gpu_emulation.SetValue(
-        Settings::values.use_asynchronous_gpu_emulation.GetValue() ||
-        Settings::values.use_multi_core.GetValue());
     async_status_button->setChecked(Settings::values.use_asynchronous_gpu_emulation.GetValue());
 #ifdef HAS_VULKAN
     renderer_status_button->setChecked(Settings::values.renderer_backend.GetValue() ==
@@ -2713,7 +2726,7 @@ std::optional<u64> GMainWindow::SelectRomFSDumpTarget(const FileSys::ContentProv
     dlc_match.reserve(dlc_entries.size());
     std::copy_if(dlc_entries.begin(), dlc_entries.end(), std::back_inserter(dlc_match),
                  [&program_id, &installed](const FileSys::ContentProviderEntry& entry) {
-                     return (entry.title_id & DLC_BASE_TITLE_ID_MASK) == program_id &&
+                     return FileSys::GetBaseTitleID(entry.title_id) == program_id &&
                             installed.GetEntry(entry)->GetStatus() == Loader::ResultStatus::Success;
                  });
 
