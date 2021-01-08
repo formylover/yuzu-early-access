@@ -66,7 +66,7 @@ public:
         Tegra::Engines::ShaderType shader_type;
     };
 
-    explicit AsyncShaders(Core::Frontend::EmuWindow& emu_window_);
+    explicit AsyncShaders(Core::Frontend::EmuWindow& emu_window);
     ~AsyncShaders();
 
     /// Start up shader worker threads

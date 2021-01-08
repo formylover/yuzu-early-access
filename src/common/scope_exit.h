@@ -10,7 +10,7 @@
 namespace detail {
 template <typename Func>
 struct ScopeExitHelper {
-    explicit ScopeExitHelper(Func&& func_) : func(std::move(func_)) {}
+    explicit ScopeExitHelper(Func&& func) : func(std::move(func)) {}
     ~ScopeExitHelper() {
         if (active) {
             func();

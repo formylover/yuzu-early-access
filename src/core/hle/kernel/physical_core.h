@@ -15,7 +15,7 @@ class SpinLock;
 }
 
 namespace Kernel {
-class KScheduler;
+class Scheduler;
 } // namespace Kernel
 
 namespace Core {
@@ -28,7 +28,7 @@ namespace Kernel {
 
 class PhysicalCore {
 public:
-    PhysicalCore(std::size_t core_index, Core::System& system, Kernel::KScheduler& scheduler,
+    PhysicalCore(std::size_t core_index, Core::System& system, Kernel::Scheduler& scheduler,
                  Core::CPUInterrupts& interrupts);
     ~PhysicalCore();
 
@@ -36,7 +36,7 @@ public:
     PhysicalCore& operator=(const PhysicalCore&) = delete;
 
     PhysicalCore(PhysicalCore&&) = default;
-    PhysicalCore& operator=(PhysicalCore&&) = delete;
+    PhysicalCore& operator=(PhysicalCore&&) = default;
 
     /// Initialize the core for the specified parameters.
     void Initialize(bool is_64_bit);
@@ -55,8 +55,11 @@ public:
     /// Check if this core is interrupted
     bool IsInterrupted() const;
 
+    // Shutdown this physical core.
+    void Shutdown();
+
     bool IsInitialized() const {
-        return arm_interface != nullptr;
+        return !!arm_interface;
     }
 
     Core::ARM_Interface& ArmInterface() {
@@ -79,18 +82,18 @@ public:
         return core_index;
     }
 
-    Kernel::KScheduler& Scheduler() {
+    Kernel::Scheduler& Scheduler() {
         return scheduler;
     }
 
-    const Kernel::KScheduler& Scheduler() const {
+    const Kernel::Scheduler& Scheduler() const {
         return scheduler;
     }
 
 private:
     const std::size_t core_index;
     Core::System& system;
-    Kernel::KScheduler& scheduler;
+    Kernel::Scheduler& scheduler;
     Core::CPUInterrupts& interrupts;
     std::unique_ptr<Common::SpinLock> guard;
     std::unique_ptr<Core::ARM_Interface> arm_interface;

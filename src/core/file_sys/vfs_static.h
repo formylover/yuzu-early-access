@@ -31,7 +31,7 @@ public:
         return true;
     }
 
-    VirtualDir GetContainingDirectory() const override {
+    std::shared_ptr<VfsDirectory> GetContainingDirectory() const override {
         return parent;
     }
 

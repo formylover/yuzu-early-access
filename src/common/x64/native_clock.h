@@ -14,8 +14,7 @@ namespace Common {
 namespace X64 {
 class NativeClock final : public WallClock {
 public:
-    explicit NativeClock(u64 emulated_cpu_frequency_, u64 emulated_clock_frequency_,
-                         u64 rtsc_frequency_);
+    NativeClock(u64 emulated_cpu_frequency, u64 emulated_clock_frequency, u64 rtsc_frequency);
 
     std::chrono::nanoseconds GetTimeNS() override;
 

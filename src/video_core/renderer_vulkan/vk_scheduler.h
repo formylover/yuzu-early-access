@@ -107,7 +107,7 @@ private:
     template <typename T>
     class TypedCommand final : public Command {
     public:
-        explicit TypedCommand(T&& command_) : command{std::move(command_)} {}
+        explicit TypedCommand(T&& command) : command{std::move(command)} {}
         ~TypedCommand() override = default;
 
         TypedCommand(TypedCommand&&) = delete;

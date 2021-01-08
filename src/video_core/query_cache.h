@@ -28,8 +28,8 @@ namespace VideoCommon {
 template <class QueryCache, class HostCounter>
 class CounterStreamBase {
 public:
-    explicit CounterStreamBase(QueryCache& cache_, VideoCore::QueryType type_)
-        : cache{cache_}, type{type_} {}
+    explicit CounterStreamBase(QueryCache& cache, VideoCore::QueryType type)
+        : cache{cache}, type{type} {}
 
     /// Updates the state of the stream, enabling or disabling as needed.
     void Update(bool enabled) {
@@ -334,8 +334,8 @@ private:
 template <class HostCounter>
 class CachedQueryBase {
 public:
-    explicit CachedQueryBase(VAddr cpu_addr_, u8* host_ptr_)
-        : cpu_addr{cpu_addr_}, host_ptr{host_ptr_} {}
+    explicit CachedQueryBase(VAddr cpu_addr, u8* host_ptr)
+        : cpu_addr{cpu_addr}, host_ptr{host_ptr} {}
     virtual ~CachedQueryBase() = default;
 
     CachedQueryBase(CachedQueryBase&&) noexcept = default;

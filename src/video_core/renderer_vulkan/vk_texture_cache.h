@@ -42,12 +42,12 @@ namespace std {
 template <>
 struct hash<Vulkan::RenderPassKey> {
     [[nodiscard]] constexpr size_t operator()(const Vulkan::RenderPassKey& key) const noexcept {
-        size_t value = static_cast<size_t>(key.depth_format) << 48;
-        value ^= static_cast<size_t>(key.samples) << 52;
+        size_t hash = static_cast<size_t>(key.depth_format) << 48;
+        hash ^= static_cast<size_t>(key.samples) << 52;
         for (size_t i = 0; i < key.color_formats.size(); ++i) {
-            value ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
+            hash ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
         }
-        return value;
+        return hash;
     }
 };
 } // namespace std
@@ -103,7 +103,7 @@ struct TextureCacheRuntime {
         UNREACHABLE();
     }
 
-    void InsertUploadMemoryBarrier() {}
+    void InsertUploadMemoryBarrier();
 };
 
 class Image : public VideoCommon::ImageBase {
@@ -150,8 +150,8 @@ public:
 
     [[nodiscard]] VkImageView StencilView();
 
-    [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType query_type) const noexcept {
-        return *image_views[static_cast<size_t>(query_type)];
+    [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType type) const noexcept {
+        return *image_views[static_cast<size_t>(type)];
     }
 
     [[nodiscard]] VkBufferView BufferView() const noexcept {

@@ -27,7 +27,7 @@ void Vic::VicStateWrite(u32 offset, u32 arguments) {
 }
 
 void Vic::ProcessMethod(Method method, const std::vector<u32>& arguments) {
-    LOG_DEBUG(HW_GPU, "Vic method 0x{:X}", method);
+    LOG_DEBUG(HW_GPU, "Vic method 0x{:X}", static_cast<u32>(method));
     VicStateWrite(static_cast<u32>(method), arguments[0]);
     const u64 arg = static_cast<u64>(arguments[0]) << 8;
     switch (method) {
@@ -58,7 +58,7 @@ void Vic::Execute() {
         return;
     }
     const VicConfig config{gpu.MemoryManager().Read<u64>(config_struct_address + 0x20)};
-    const AVFramePtr frame_ptr = nvdec_processor->GetFrame();
+    const AVFramePtr frame_ptr = std::move(nvdec_processor->GetFrame());
     const auto* frame = frame_ptr.get();
     if (!frame || frame->width == 0 || frame->height == 0) {
         return;

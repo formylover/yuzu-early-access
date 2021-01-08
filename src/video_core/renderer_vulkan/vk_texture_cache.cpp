@@ -71,7 +71,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case ImageType::Buffer:
         break;
     }
-    UNREACHABLE_MSG("Invalid image type={}", type);
+    UNREACHABLE_MSG("Invalid image type={}", static_cast<int>(type));
     return {};
 }
 
@@ -237,7 +237,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
     case SwizzleSource::OneInt:
         return VK_COMPONENT_SWIZZLE_ONE;
     }
-    UNREACHABLE_MSG("Invalid swizzle={}", swizzle);
+    UNREACHABLE_MSG("Invalid swizzle={}", static_cast<int>(swizzle));
     return VK_COMPONENT_SWIZZLE_ZERO;
 }
 
@@ -264,7 +264,7 @@ constexpr VkBorderColor ConvertBorderColor(const std::array<float, 4>& color) {
         UNREACHABLE_MSG("Texture buffers can't be image views");
         return VK_IMAGE_VIEW_TYPE_1D;
     }
-    UNREACHABLE_MSG("Invalid image view type={}", type);
+    UNREACHABLE_MSG("Invalid image view type={}", static_cast<int>(type));
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
@@ -664,10 +664,10 @@ void TextureCacheRuntime::BlitImage(Framebuffer* dst_framebuffer, ImageView& dst
                                 MakeImageResolve(dst_region, src_region, dst_layers, src_layers));
         } else {
             const bool is_linear = filter == Fermi2D::Filter::Bilinear;
-            const VkFilter vk_filter = is_linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-            cmdbuf.BlitImage(
-                src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                MakeImageBlit(dst_region, src_region, dst_layers, src_layers), vk_filter);
+            const VkFilter filter = is_linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+            cmdbuf.BlitImage(src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             MakeImageBlit(dst_region, src_region, dst_layers, src_layers), filter);
         }
         cmdbuf.PipelineBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                0, write_barrier);
@@ -780,9 +780,12 @@ void TextureCacheRuntime::CopyImage(Image& dst, Image& src,
     });
 }
 
-Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info_, GPUVAddr gpu_addr_,
-             VAddr cpu_addr_)
-    : VideoCommon::ImageBase(info_, gpu_addr_, cpu_addr_), scheduler{&runtime.scheduler},
+void TextureCacheRuntime::InsertUploadMemoryBarrier() {
+    // scheduler.Record([](vk::CommandBuffer cmdbuf) {});
+}
+
+Image::Image(TextureCacheRuntime& runtime, const ImageInfo& info, GPUVAddr gpu_addr, VAddr cpu_addr)
+    : VideoCommon::ImageBase(info, gpu_addr, cpu_addr), scheduler{&runtime.scheduler},
       image(MakeImage(runtime.device, info)), buffer(MakeBuffer(runtime.device, info)),
       aspect_mask(ImageAspectMask(info.format)) {
     if (image) {
@@ -841,8 +844,8 @@ void Image::DownloadMemory(const ImageBufferMap& map, size_t buffer_offset,
 }
 
 ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewInfo& info,
-                     ImageId image_id_, Image& image)
-    : VideoCommon::ImageViewBase{info, image.info, image_id_}, device{&runtime.device},
+                     ImageId image_id, Image& image)
+    : VideoCommon::ImageViewBase{info, image.info, image_id}, device{&runtime.device},
       image_handle{image.Handle()}, image_format{image.info.format}, samples{ConvertSampleCount(
                                                                          image.info.num_samples)} {
     const VkImageAspectFlags aspect_mask = ImageViewAspectMask(info);
@@ -875,17 +878,17 @@ ImageView::ImageView(TextureCacheRuntime& runtime, const VideoCommon::ImageViewI
         },
         .subresourceRange = MakeSubresourceRange(aspect_mask, info.range),
     };
-    const auto create = [&](VideoCommon::ImageViewType view_type, std::optional<u32> num_layers) {
+    const auto create = [&](VideoCommon::ImageViewType type, std::optional<u32> num_layers) {
         VkImageViewCreateInfo ci{create_info};
-        ci.viewType = ImageViewType(view_type);
+        ci.viewType = ImageViewType(type);
         if (num_layers) {
             ci.subresourceRange.layerCount = *num_layers;
         }
         vk::ImageView handle = device->GetLogical().CreateImageView(ci);
         if (device->HasDebuggingToolAttached()) {
-            handle.SetObjectNameEXT(VideoCommon::Name(*this, view_type).c_str());
+            handle.SetObjectNameEXT(VideoCommon::Name(*this, type).c_str());
         }
-        image_views[static_cast<size_t>(view_type)] = std::move(handle);
+        image_views[static_cast<size_t>(type)] = std::move(handle);
     };
     switch (info.type) {
     case VideoCommon::ImageViewType::e1D:

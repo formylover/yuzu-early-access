@@ -628,7 +628,7 @@ u32 CalculateGuestSizeInBytes(const ImageInfo& info) noexcept {
         return info.size.width * BytesPerBlock(info.format);
     }
     if (info.type == ImageType::Linear) {
-        return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
+        return info.pitch * info.size.height;
     }
     if (info.resources.layers > 1) {
         ASSERT(info.layer_stride != 0);
@@ -647,7 +647,7 @@ u32 CalculateUnswizzledSizeBytes(const ImageInfo& info) noexcept {
         return 0;
     }
     if (info.type == ImageType::Linear) {
-        return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
+        return info.pitch * info.size.height;
     }
     const Extent2D tile_size = DefaultBlockSize(info.format);
     return NumBlocksPerLayer(info, tile_size) * info.resources.layers * BytesPerBlock(info.format);
@@ -822,7 +822,7 @@ std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory, GP
         ASSERT((info.pitch >> bpp_log2) << bpp_log2 == info.pitch);
         return {{
             .buffer_offset = 0,
-            .buffer_size = guest_size_bytes,
+            .buffer_size = static_cast<size_t>(info.pitch) * size.height,
             .buffer_row_length = info.pitch >> bpp_log2,
             .buffer_image_height = size.height,
             .image_subresource =

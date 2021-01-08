@@ -129,7 +129,7 @@ private:
 
 class Expression final {
 public:
-    Expression(std::string code_, Type type_) : code{std::move(code_)}, type{type_} {
+    Expression(std::string code, Type type) : code{std::move(code)}, type{type} {
         ASSERT(type != Type::Void);
     }
     Expression() : type{Type::Void} {}
@@ -146,8 +146,8 @@ public:
         ASSERT(type == Type::Void);
     }
 
-    std::string As(Type type_) const {
-        switch (type_) {
+    std::string As(Type type) const {
+        switch (type) {
         case Type::Bool:
             return AsBool();
         case Type::Bool2:
@@ -314,7 +314,7 @@ std::pair<const char*, u32> GetPrimitiveDescription(Maxwell::PrimitiveTopology t
     case Maxwell::PrimitiveTopology::TriangleStripAdjacency:
         return {"triangles_adjacency", 6};
     default:
-        UNIMPLEMENTED_MSG("topology={}", topology);
+        UNIMPLEMENTED_MSG("topology={}", static_cast<int>(topology));
         return {"points", 1};
     }
 }
@@ -340,7 +340,7 @@ std::string GetTopologyName(Tegra::Shader::OutputTopology topology) {
     case Tegra::Shader::OutputTopology::TriangleStrip:
         return "triangle_strip";
     default:
-        UNIMPLEMENTED_MSG("Unknown output topology: {}", topology);
+        UNIMPLEMENTED_MSG("Unknown output topology: {}", static_cast<u32>(topology));
         return "points";
     }
 }
@@ -416,12 +416,11 @@ struct GenericVaryingDescription {
 
 class GLSLDecompiler final {
 public:
-    explicit GLSLDecompiler(const Device& device_, const ShaderIR& ir_, const Registry& registry_,
-                            ShaderType stage_, std::string_view identifier_,
-                            std::string_view suffix_)
-        : device{device_}, ir{ir_}, registry{registry_}, stage{stage_}, identifier{identifier_},
-          suffix{suffix_}, header{ir.GetHeader()}, use_unified_uniforms{
-                                                       UseUnifiedUniforms(device_, ir_, stage_)} {
+    explicit GLSLDecompiler(const Device& device, const ShaderIR& ir, const Registry& registry,
+                            ShaderType stage, std::string_view identifier, std::string_view suffix)
+        : device{device}, ir{ir}, registry{registry}, stage{stage}, identifier{identifier},
+          suffix{suffix}, header{ir.GetHeader()}, use_unified_uniforms{
+                                                      UseUnifiedUniforms(device, ir, stage)} {
         if (stage != ShaderType::Compute) {
             transform_feedback = BuildTransformFeedback(registry.GetGraphicsInfo());
         }
@@ -743,7 +742,7 @@ private:
         case PixelImap::Unused:
             break;
         }
-        UNIMPLEMENTED_MSG("Unknown attribute usage index={}", attribute);
+        UNIMPLEMENTED_MSG("Unknown attribute usage index={}", static_cast<int>(attribute));
         return {};
     }
 
@@ -776,16 +775,16 @@ private:
             name = "gs_" + name + "[]";
         }
 
-        std::string suffix_;
+        std::string suffix;
         if (stage == ShaderType::Fragment) {
             const auto input_mode{header.ps.GetPixelImap(location)};
             if (input_mode == PixelImap::Unused) {
                 return;
             }
-            suffix_ = GetInputFlags(input_mode);
+            suffix = GetInputFlags(input_mode);
         }
 
-        code.AddLine("layout (location = {}) {} in vec4 {};", location, suffix_, name);
+        code.AddLine("layout (location = {}) {} in vec4 {};", location, suffix, name);
     }
 
     void DeclareOutputAttributes() {
@@ -876,7 +875,7 @@ private:
         }
 
         u32 binding = device.GetBaseBindings(stage).uniform_buffer;
-        for (const auto& [index, info] : ir.GetConstantBuffers()) {
+        for (const auto [index, info] : ir.GetConstantBuffers()) {
             const u32 num_elements = Common::AlignUp(info.GetSize(), 4) / 4;
             const u32 size = info.IsIndirect() ? MAX_CONSTBUFFER_ELEMENTS : num_elements;
             code.AddLine("layout (std140, binding = {}) uniform {} {{", binding++,
@@ -1250,7 +1249,7 @@ private:
             }
             break;
         }
-        UNIMPLEMENTED_MSG("Unhandled input attribute: {}", attribute);
+        UNIMPLEMENTED_MSG("Unhandled input attribute: {}", static_cast<u32>(attribute));
         return {"0", Type::Int};
     }
 
@@ -1330,7 +1329,7 @@ private:
                                      GetSwizzle(element)),
                          Type::Float}};
             }
-            UNIMPLEMENTED_MSG("Unhandled output attribute: {}", attribute);
+            UNIMPLEMENTED_MSG("Unhandled output attribute: {}", static_cast<u32>(attribute));
             return std::nullopt;
         }
     }
@@ -2099,13 +2098,13 @@ private:
         const auto type = meta.sampler.is_shadow ? Type::Float : Type::Int;
         const bool separate_dc = meta.sampler.is_shadow;
 
-        std::vector<TextureIR> ir_;
+        std::vector<TextureIR> ir;
         if (meta.sampler.is_shadow) {
-            ir_ = {TextureOffset{}};
+            ir = {TextureOffset{}};
         } else {
-            ir_ = {TextureOffset{}, TextureArgument{type, meta.component}};
+            ir = {TextureOffset{}, TextureArgument{type, meta.component}};
         }
-        return {GenerateTexture(operation, "Gather", ir_, separate_dc) + GetSwizzle(meta.element),
+        return {GenerateTexture(operation, "Gather", ir, separate_dc) + GetSwizzle(meta.element),
                 Type::Float};
     }
 
@@ -2800,7 +2799,7 @@ std::string GetFlowVariable(u32 index) {
 
 class ExprDecompiler {
 public:
-    explicit ExprDecompiler(GLSLDecompiler& decomp_) : decomp{decomp_} {}
+    explicit ExprDecompiler(GLSLDecompiler& decomp) : decomp{decomp} {}
 
     void operator()(const ExprAnd& expr) {
         inner += '(';
@@ -2855,7 +2854,7 @@ private:
 
 class ASTDecompiler {
 public:
-    explicit ASTDecompiler(GLSLDecompiler& decomp_) : decomp{decomp_} {}
+    explicit ASTDecompiler(GLSLDecompiler& decomp) : decomp{decomp} {}
 
     void operator()(const ASTProgram& ast) {
         ASTNode current = ast.nodes.GetFirst();

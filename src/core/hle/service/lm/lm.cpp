@@ -68,7 +68,7 @@ private:
         IPC::RequestParser rp{ctx};
         const auto destination = rp.PopEnum<DestinationFlag>();
 
-        LOG_DEBUG(Service_LM, "called, destination={:08X}", destination);
+        LOG_DEBUG(Service_LM, "called, destination={:08X}", static_cast<u32>(destination));
 
         manager.SetDestination(destination);
 

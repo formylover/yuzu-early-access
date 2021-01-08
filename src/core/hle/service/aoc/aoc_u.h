@@ -27,8 +27,6 @@ private:
     void GetAddOnContentBaseId(Kernel::HLERequestContext& ctx);
     void PrepareAddOnContent(Kernel::HLERequestContext& ctx);
     void GetAddOnContentListChangedEvent(Kernel::HLERequestContext& ctx);
-    void CreateEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
-    void CreatePermanentEcPurchasedEventManager(Kernel::HLERequestContext& ctx);
 
     std::vector<u64> add_on_content;
     Kernel::EventPair aoc_change_event;

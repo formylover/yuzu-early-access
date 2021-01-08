@@ -49,9 +49,9 @@ using SPIRVProgram = std::array<std::optional<SPIRVShader>, Maxwell::MaxShaderSt
 
 class VKGraphicsPipeline final {
 public:
-    explicit VKGraphicsPipeline(const VKDevice& device_, VKScheduler& scheduler_,
+    explicit VKGraphicsPipeline(const VKDevice& device, VKScheduler& scheduler,
                                 VKDescriptorPool& descriptor_pool,
-                                VKUpdateDescriptorQueue& update_descriptor_queue_,
+                                VKUpdateDescriptorQueue& update_descriptor_queue,
                                 const GraphicsPipelineCacheKey& key,
                                 vk::Span<VkDescriptorSetLayoutBinding> bindings,
                                 const SPIRVProgram& program, u32 num_color_buffers);

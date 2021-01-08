@@ -4,14 +4,15 @@
 
 #pragma once
 
-#include <array>
+#include <algorithm>
+#include <functional>
 #include <mutex>
 #include <thread>
-
+#include <unordered_map>
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
-#include "common/vector_math.h"
 #include "core/frontend/input.h"
+#include "input_common/main.h"
 #include "input_common/motion_input.h"
 
 namespace MouseInput {
@@ -49,7 +50,7 @@ public:
      * Signals that a button is pressed.
      * @param x the x-coordinate of the cursor
      * @param y the y-coordinate of the cursor
-     * @param button_ the button pressed
+     * @param button the button pressed
      */
     void PressButton(int x, int y, int button_);
 

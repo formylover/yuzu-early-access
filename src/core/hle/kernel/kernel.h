@@ -35,14 +35,13 @@ class SlabHeap;
 
 class AddressArbiter;
 class ClientPort;
-class GlobalSchedulerContext;
+class GlobalScheduler;
 class HandleTable;
 class PhysicalCore;
 class Process;
 class ResourceLimit;
-class KScheduler;
+class Scheduler;
 class SharedMemory;
-class ServiceThread;
 class Synchronization;
 class Thread;
 class TimeManager;
@@ -103,16 +102,16 @@ public:
     const std::vector<std::shared_ptr<Process>>& GetProcessList() const;
 
     /// Gets the sole instance of the global scheduler
-    Kernel::GlobalSchedulerContext& GlobalSchedulerContext();
+    Kernel::GlobalScheduler& GlobalScheduler();
 
     /// Gets the sole instance of the global scheduler
-    const Kernel::GlobalSchedulerContext& GlobalSchedulerContext() const;
+    const Kernel::GlobalScheduler& GlobalScheduler() const;
 
     /// Gets the sole instance of the Scheduler assoviated with cpu core 'id'
-    Kernel::KScheduler& Scheduler(std::size_t id);
+    Kernel::Scheduler& Scheduler(std::size_t id);
 
     /// Gets the sole instance of the Scheduler assoviated with cpu core 'id'
-    const Kernel::KScheduler& Scheduler(std::size_t id) const;
+    const Kernel::Scheduler& Scheduler(std::size_t id) const;
 
     /// Gets the an instance of the respective physical CPU core.
     Kernel::PhysicalCore& PhysicalCore(std::size_t id);
@@ -121,7 +120,10 @@ public:
     const Kernel::PhysicalCore& PhysicalCore(std::size_t id) const;
 
     /// Gets the sole instance of the Scheduler at the current running core.
-    Kernel::KScheduler* CurrentScheduler();
+    Kernel::Scheduler& CurrentScheduler();
+
+    /// Gets the sole instance of the Scheduler at the current running core.
+    const Kernel::Scheduler& CurrentScheduler() const;
 
     /// Gets the an instance of the current physical CPU core.
     Kernel::PhysicalCore& CurrentPhysicalCore();
@@ -227,22 +229,6 @@ public:
     void EnterSVCProfile();
 
     void ExitSVCProfile();
-
-    /**
-     * Creates an HLE service thread, which are used to execute service routines asynchronously.
-     * While these are allocated per ServerSession, these need to be owned and managed outside of
-     * ServerSession to avoid a circular dependency.
-     * @param name String name for the ServerSession creating this thread, used for debug purposes.
-     * @returns The a weak pointer newly created service thread.
-     */
-    std::weak_ptr<Kernel::ServiceThread> CreateServiceThread(const std::string& name);
-
-    /**
-     * Releases a HLE service thread, instructing KernelCore to free it. This should be called when
-     * the ServerSession associated with the thread is destroyed.
-     * @param service_thread Service thread to release.
-     */
-    void ReleaseServiceThread(std::weak_ptr<Kernel::ServiceThread> service_thread);
 
 private:
     friend class Object;

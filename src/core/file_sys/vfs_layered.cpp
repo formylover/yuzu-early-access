@@ -20,10 +20,10 @@ VirtualDir LayeredVfsDirectory::MakeLayeredDirectory(std::vector<VirtualDir> dir
     if (dirs.size() == 1)
         return dirs[0];
 
-    return VirtualDir(new LayeredVfsDirectory(std::move(dirs), std::move(name)));
+    return std::shared_ptr<VfsDirectory>(new LayeredVfsDirectory(std::move(dirs), std::move(name)));
 }
 
-VirtualFile LayeredVfsDirectory::GetFileRelative(std::string_view path) const {
+std::shared_ptr<VfsFile> LayeredVfsDirectory::GetFileRelative(std::string_view path) const {
     for (const auto& layer : dirs) {
         const auto file = layer->GetFileRelative(path);
         if (file != nullptr)
@@ -33,23 +33,23 @@ VirtualFile LayeredVfsDirectory::GetFileRelative(std::string_view path) const {
     return nullptr;
 }
 
-VirtualDir LayeredVfsDirectory::GetDirectoryRelative(std::string_view path) const {
+std::shared_ptr<VfsDirectory> LayeredVfsDirectory::GetDirectoryRelative(
+    std::string_view path) const {
     std::vector<VirtualDir> out;
     for (const auto& layer : dirs) {
         auto dir = layer->GetDirectoryRelative(path);
-        if (dir != nullptr) {
+        if (dir != nullptr)
             out.push_back(std::move(dir));
-        }
     }
 
     return MakeLayeredDirectory(std::move(out));
 }
 
-VirtualFile LayeredVfsDirectory::GetFile(std::string_view name) const {
+std::shared_ptr<VfsFile> LayeredVfsDirectory::GetFile(std::string_view name) const {
     return GetFileRelative(name);
 }
 
-VirtualDir LayeredVfsDirectory::GetSubdirectory(std::string_view name) const {
+std::shared_ptr<VfsDirectory> LayeredVfsDirectory::GetSubdirectory(std::string_view name) const {
     return GetDirectoryRelative(name);
 }
 
@@ -57,7 +57,7 @@ std::string LayeredVfsDirectory::GetFullPath() const {
     return dirs[0]->GetFullPath();
 }
 
-std::vector<VirtualFile> LayeredVfsDirectory::GetFiles() const {
+std::vector<std::shared_ptr<VfsFile>> LayeredVfsDirectory::GetFiles() const {
     std::vector<VirtualFile> out;
     for (const auto& layer : dirs) {
         for (const auto& file : layer->GetFiles()) {
@@ -72,7 +72,7 @@ std::vector<VirtualFile> LayeredVfsDirectory::GetFiles() const {
     return out;
 }
 
-std::vector<VirtualDir> LayeredVfsDirectory::GetSubdirectories() const {
+std::vector<std::shared_ptr<VfsDirectory>> LayeredVfsDirectory::GetSubdirectories() const {
     std::vector<std::string> names;
     for (const auto& layer : dirs) {
         for (const auto& sd : layer->GetSubdirectories()) {
@@ -101,15 +101,15 @@ std::string LayeredVfsDirectory::GetName() const {
     return name.empty() ? dirs[0]->GetName() : name;
 }
 
-VirtualDir LayeredVfsDirectory::GetParentDirectory() const {
+std::shared_ptr<VfsDirectory> LayeredVfsDirectory::GetParentDirectory() const {
     return dirs[0]->GetParentDirectory();
 }
 
-VirtualDir LayeredVfsDirectory::CreateSubdirectory(std::string_view name) {
+std::shared_ptr<VfsDirectory> LayeredVfsDirectory::CreateSubdirectory(std::string_view name) {
     return nullptr;
 }
 
-VirtualFile LayeredVfsDirectory::CreateFile(std::string_view name) {
+std::shared_ptr<VfsFile> LayeredVfsDirectory::CreateFile(std::string_view name) {
     return nullptr;
 }
 

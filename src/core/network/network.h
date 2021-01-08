@@ -61,24 +61,18 @@ struct SockAddrIn {
 };
 
 /// Cross-platform poll fd structure
-
-enum class PollEvents : u16 {
-    // Using Pascal case because IN is a macro on Windows.
-    In = 1 << 0,
-    Pri = 1 << 1,
-    Out = 1 << 2,
-    Err = 1 << 3,
-    Hup = 1 << 4,
-    Nval = 1 << 5,
-};
-
-DECLARE_ENUM_FLAG_OPERATORS(PollEvents);
-
 struct PollFD {
     Socket* socket;
-    PollEvents events;
-    PollEvents revents;
+    u16 events;
+    u16 revents;
 };
+
+constexpr u16 POLL_IN = 1 << 0;
+constexpr u16 POLL_PRI = 1 << 1;
+constexpr u16 POLL_OUT = 1 << 2;
+constexpr u16 POLL_ERR = 1 << 3;
+constexpr u16 POLL_HUP = 1 << 4;
+constexpr u16 POLL_NVAL = 1 << 5;
 
 class NetworkInstance {
 public:

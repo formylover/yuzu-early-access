@@ -28,7 +28,8 @@ private:
 
         const auto mode = rp.PopEnum<PerformanceMode>();
         const auto config = rp.PopEnum<PerformanceConfiguration>();
-        LOG_DEBUG(Service_APM, "called mode={} config={}", mode, config);
+        LOG_DEBUG(Service_APM, "called mode={} config={}", static_cast<u32>(mode),
+                  static_cast<u32>(config));
 
         controller.SetPerformanceConfiguration(mode, config);
 
@@ -40,7 +41,7 @@ private:
         IPC::RequestParser rp{ctx};
 
         const auto mode = rp.PopEnum<PerformanceMode>();
-        LOG_DEBUG(Service_APM, "called mode={}", mode);
+        LOG_DEBUG(Service_APM, "called mode={}", static_cast<u32>(mode));
 
         IPC::ResponseBuilder rb{ctx, 3};
         rb.Push(RESULT_SUCCESS);
@@ -110,7 +111,7 @@ void APM_Sys::SetCpuBoostMode(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto mode = rp.PopEnum<CpuBoostMode>();
 
-    LOG_DEBUG(Service_APM, "called, mode={:08X}", mode);
+    LOG_DEBUG(Service_APM, "called, mode={:08X}", static_cast<u32>(mode));
 
     controller.SetFromCpuBoostMode(mode);
 

@@ -71,7 +71,7 @@ std::string_view GetInputFlags(PixelImap attribute) {
     case PixelImap::Unused:
         break;
     }
-    UNIMPLEMENTED_MSG("Unknown attribute usage index={}", attribute);
+    UNIMPLEMENTED_MSG("Unknown attribute usage index={}", static_cast<int>(attribute));
     return {};
 }
 
@@ -123,7 +123,7 @@ std::string_view PrimitiveDescription(Tegra::Engines::Maxwell3D::Regs::Primitive
     case Tegra::Engines::Maxwell3D::Regs::PrimitiveTopology::TriangleStripAdjacency:
         return "TRIANGLES_ADJACENCY";
     default:
-        UNIMPLEMENTED_MSG("topology={}", topology);
+        UNIMPLEMENTED_MSG("topology={}", static_cast<int>(topology));
         return "POINTS";
     }
 }
@@ -137,7 +137,7 @@ std::string_view TopologyName(Tegra::Shader::OutputTopology topology) {
     case Tegra::Shader::OutputTopology::TriangleStrip:
         return "TRIANGLE_STRIP";
     default:
-        UNIMPLEMENTED_MSG("Unknown output topology: {}", topology);
+        UNIMPLEMENTED_MSG("Unknown output topology: {}", static_cast<u32>(topology));
         return "points";
     }
 }
@@ -187,8 +187,8 @@ std::string TextureType(const MetaTexture& meta) {
 
 class ARBDecompiler final {
 public:
-    explicit ARBDecompiler(const Device& device_, const ShaderIR& ir_, const Registry& registry_,
-                           ShaderType stage_, std::string_view identifier);
+    explicit ARBDecompiler(const Device& device, const ShaderIR& ir, const Registry& registry,
+                           ShaderType stage, std::string_view identifier);
 
     std::string Code() const {
         return shader_source;
@@ -802,9 +802,9 @@ private:
     };
 };
 
-ARBDecompiler::ARBDecompiler(const Device& device_, const ShaderIR& ir_, const Registry& registry_,
-                             ShaderType stage_, std::string_view identifier)
-    : device{device_}, ir{ir_}, registry{registry_}, stage{stage_} {
+ARBDecompiler::ARBDecompiler(const Device& device, const ShaderIR& ir, const Registry& registry,
+                             ShaderType stage, std::string_view identifier)
+    : device{device}, ir{ir}, registry{registry}, stage{stage} {
     DefineGlobalMemory();
 
     AddLine("TEMP RC;");
@@ -1134,44 +1134,44 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
         for (ASTNode current = ast->nodes.GetFirst(); current; current = current->GetNext()) {
             VisitAST(current);
         }
-    } else if (const auto if_then = std::get_if<ASTIfThen>(&*node->GetInnerData())) {
-        const std::string condition = VisitExpression(if_then->condition);
+    } else if (const auto ast = std::get_if<ASTIfThen>(&*node->GetInnerData())) {
+        const std::string condition = VisitExpression(ast->condition);
         ResetTemporaries();
 
         AddLine("MOVC.U RC.x, {};", condition);
         AddLine("IF NE.x;");
-        for (ASTNode current = if_then->nodes.GetFirst(); current; current = current->GetNext()) {
+        for (ASTNode current = ast->nodes.GetFirst(); current; current = current->GetNext()) {
             VisitAST(current);
         }
         AddLine("ENDIF;");
-    } else if (const auto if_else = std::get_if<ASTIfElse>(&*node->GetInnerData())) {
+    } else if (const auto ast = std::get_if<ASTIfElse>(&*node->GetInnerData())) {
         AddLine("ELSE;");
-        for (ASTNode current = if_else->nodes.GetFirst(); current; current = current->GetNext()) {
+        for (ASTNode current = ast->nodes.GetFirst(); current; current = current->GetNext()) {
             VisitAST(current);
         }
-    } else if (const auto decoded = std::get_if<ASTBlockDecoded>(&*node->GetInnerData())) {
-        VisitBlock(decoded->nodes);
-    } else if (const auto var_set = std::get_if<ASTVarSet>(&*node->GetInnerData())) {
-        AddLine("MOV.U F{}, {};", var_set->index, VisitExpression(var_set->condition));
+    } else if (const auto ast = std::get_if<ASTBlockDecoded>(&*node->GetInnerData())) {
+        VisitBlock(ast->nodes);
+    } else if (const auto ast = std::get_if<ASTVarSet>(&*node->GetInnerData())) {
+        AddLine("MOV.U F{}, {};", ast->index, VisitExpression(ast->condition));
         ResetTemporaries();
-    } else if (const auto do_while = std::get_if<ASTDoWhile>(&*node->GetInnerData())) {
-        const std::string condition = VisitExpression(do_while->condition);
+    } else if (const auto ast = std::get_if<ASTDoWhile>(&*node->GetInnerData())) {
+        const std::string condition = VisitExpression(ast->condition);
         ResetTemporaries();
         AddLine("REP;");
-        for (ASTNode current = do_while->nodes.GetFirst(); current; current = current->GetNext()) {
+        for (ASTNode current = ast->nodes.GetFirst(); current; current = current->GetNext()) {
             VisitAST(current);
         }
         AddLine("MOVC.U RC.x, {};", condition);
         AddLine("BRK (NE.x);");
         AddLine("ENDREP;");
-    } else if (const auto ast_return = std::get_if<ASTReturn>(&*node->GetInnerData())) {
-        const bool is_true = ExprIsTrue(ast_return->condition);
+    } else if (const auto ast = std::get_if<ASTReturn>(&*node->GetInnerData())) {
+        const bool is_true = ExprIsTrue(ast->condition);
         if (!is_true) {
-            AddLine("MOVC.U RC.x, {};", VisitExpression(ast_return->condition));
+            AddLine("MOVC.U RC.x, {};", VisitExpression(ast->condition));
             AddLine("IF NE.x;");
             ResetTemporaries();
         }
-        if (ast_return->kills) {
+        if (ast->kills) {
             AddLine("KIL TR;");
         } else {
             Exit();
@@ -1179,11 +1179,11 @@ void ARBDecompiler::VisitAST(const ASTNode& node) {
         if (!is_true) {
             AddLine("ENDIF;");
         }
-    } else if (const auto ast_break = std::get_if<ASTBreak>(&*node->GetInnerData())) {
-        if (ExprIsTrue(ast_break->condition)) {
+    } else if (const auto ast = std::get_if<ASTBreak>(&*node->GetInnerData())) {
+        if (ExprIsTrue(ast->condition)) {
             AddLine("BRK;");
         } else {
-            AddLine("MOVC.U RC.x, {};", VisitExpression(ast_break->condition));
+            AddLine("MOVC.U RC.x, {};", VisitExpression(ast->condition));
             AddLine("BRK (NE.x);");
             ResetTemporaries();
         }
@@ -1351,7 +1351,7 @@ std::string ARBDecompiler::Visit(const Node& node) {
                                        GetGenericAttributeIndex(index), swizzle);
                 }
             }
-            UNIMPLEMENTED_MSG("Unimplemented input attribute={}", index);
+            UNIMPLEMENTED_MSG("Unimplemented input attribute={}", static_cast<int>(index));
             break;
         }
         return "{0, 0, 0, 0}.x";
@@ -1485,7 +1485,9 @@ void ARBDecompiler::Exit() {
     }
 
     const auto safe_get_register = [this](u32 reg) -> std::string {
-        if (ir.GetRegisters().contains(reg)) {
+        // TODO(Rodrigo): Replace with contains once C++20 releases
+        const auto& used_registers = ir.GetRegisters();
+        if (used_registers.find(reg) != used_registers.end()) {
             return fmt::format("R{}.x", reg);
         }
         return "{0, 0, 0, 0}.x";

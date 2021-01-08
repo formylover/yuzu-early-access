@@ -23,7 +23,7 @@ public:
 
     /**
      * Returns the type of the file
-     * @param file open file
+     * @param file std::shared_ptr<VfsFile> open file
      * @return FileType found, or FileType::Error if this loader doesn't know it
      */
     static FileType IdentifyType(const FileSys::VirtualFile& file);

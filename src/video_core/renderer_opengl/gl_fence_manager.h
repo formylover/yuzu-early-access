@@ -17,8 +17,8 @@ namespace OpenGL {
 
 class GLInnerFence : public VideoCommon::FenceBase {
 public:
-    explicit GLInnerFence(u32 payload_, bool is_stubbed_);
-    explicit GLInnerFence(GPUVAddr address_, u32 payload_, bool is_stubbed_);
+    GLInnerFence(u32 payload, bool is_stubbed);
+    GLInnerFence(GPUVAddr address, u32 payload, bool is_stubbed);
     ~GLInnerFence();
 
     void Queue();
@@ -37,9 +37,9 @@ using GenericFenceManager =
 
 class FenceManagerOpenGL final : public GenericFenceManager {
 public:
-    explicit FenceManagerOpenGL(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
-                                TextureCache& texture_cache_, OGLBufferCache& buffer_cache_,
-                                QueryCache& query_cache_);
+    explicit FenceManagerOpenGL(VideoCore::RasterizerInterface& rasterizer, Tegra::GPU& gpu,
+                                TextureCache& texture_cache, OGLBufferCache& buffer_cache,
+                                QueryCache& query_cache);
 
 protected:
     Fence CreateFence(u32 value, bool is_stubbed) override;

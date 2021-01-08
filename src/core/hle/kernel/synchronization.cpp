@@ -5,9 +5,8 @@
 #include "core/core.h"
 #include "core/hle/kernel/errors.h"
 #include "core/hle/kernel/handle_table.h"
-#include "core/hle/kernel/k_scheduler.h"
-#include "core/hle/kernel/k_scoped_scheduler_lock_and_sleep.h"
 #include "core/hle/kernel/kernel.h"
+#include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/synchronization.h"
 #include "core/hle/kernel/synchronization_object.h"
 #include "core/hle/kernel/thread.h"
@@ -19,7 +18,7 @@ Synchronization::Synchronization(Core::System& system) : system{system} {}
 
 void Synchronization::SignalObject(SynchronizationObject& obj) const {
     auto& kernel = system.Kernel();
-    KScopedSchedulerLock lock(kernel);
+    SchedulerLock lock(kernel);
     if (obj.IsSignaled()) {
         for (auto thread : obj.GetWaitingThreads()) {
             if (thread->GetSchedulingStatus() == ThreadSchedStatus::Paused) {
@@ -38,10 +37,10 @@ void Synchronization::SignalObject(SynchronizationObject& obj) const {
 std::pair<ResultCode, Handle> Synchronization::WaitFor(
     std::vector<std::shared_ptr<SynchronizationObject>>& sync_objects, s64 nano_seconds) {
     auto& kernel = system.Kernel();
-    auto* const thread = kernel.CurrentScheduler()->GetCurrentThread();
+    auto* const thread = system.CurrentScheduler().GetCurrentThread();
     Handle event_handle = InvalidHandle;
     {
-        KScopedSchedulerLockAndSleep lock(kernel, event_handle, thread, nano_seconds);
+        SchedulerLockAndSleep lock(kernel, event_handle, thread, nano_seconds);
         const auto itr =
             std::find_if(sync_objects.begin(), sync_objects.end(),
                          [thread](const std::shared_ptr<SynchronizationObject>& object) {
@@ -90,7 +89,7 @@ std::pair<ResultCode, Handle> Synchronization::WaitFor(
     }
 
     {
-        KScopedSchedulerLock lock(kernel);
+        SchedulerLock lock(kernel);
         ResultCode signaling_result = thread->GetSignalingResult();
         SynchronizationObject* signaling_object = thread->GetSignalingObject();
         thread->SetSynchronizationObjects(nullptr);

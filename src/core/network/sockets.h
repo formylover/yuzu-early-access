@@ -9,7 +9,7 @@
 
 #if defined(_WIN32)
 #include <winsock.h>
-#elif !YUZU_UNIX
+#elif !defined(__unix__)
 #error "Platform not implemented"
 #endif
 
@@ -84,7 +84,7 @@ public:
 
 #if defined(_WIN32)
     SOCKET fd = INVALID_SOCKET;
-#elif YUZU_UNIX
+#elif defined(__unix__)
     int fd = -1;
 #endif
 };

@@ -343,7 +343,7 @@ void ShaderDiskCacheOpenGL::SaveEntry(const ShaderDiskCacheEntry& entry) {
     }
 
     const u64 id = entry.unique_identifier;
-    if (stored_transferable.contains(id)) {
+    if (stored_transferable.find(id) != stored_transferable.end()) {
         // The shader already exists
         return;
     }

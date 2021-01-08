@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <array>
 #include <functional>
 #include <string>
 #include <utility>
@@ -13,7 +12,6 @@
 #include "common/common_types.h"
 #include "common/spin_lock.h"
 #include "core/arm/arm_interface.h"
-#include "core/hle/kernel/k_affinity_mask.h"
 #include "core/hle/kernel/object.h"
 #include "core/hle/kernel/synchronization_object.h"
 #include "core/hle/result.h"
@@ -29,10 +27,10 @@ class System;
 
 namespace Kernel {
 
-class GlobalSchedulerContext;
+class GlobalScheduler;
 class KernelCore;
 class Process;
-class KScheduler;
+class Scheduler;
 
 enum ThreadPriority : u32 {
     THREADPRIO_HIGHEST = 0,            ///< Highest thread priority
@@ -347,12 +345,8 @@ public:
 
     void SetStatus(ThreadStatus new_status);
 
-    s64 GetLastScheduledTick() const {
-        return this->last_scheduled_tick;
-    }
-
-    void SetLastScheduledTick(s64 tick) {
-        this->last_scheduled_tick = tick;
+    u64 GetLastRunningTicks() const {
+        return last_running_ticks;
     }
 
     u64 GetTotalCPUTimeTicks() const {
@@ -367,15 +361,7 @@ public:
         return processor_id;
     }
 
-    s32 GetActiveCore() const {
-        return GetProcessorID();
-    }
-
     void SetProcessorID(s32 new_core) {
-        processor_id = new_core;
-    }
-
-    void SetActiveCore(s32 new_core) {
         processor_id = new_core;
     }
 
@@ -483,7 +469,7 @@ public:
         return ideal_core;
     }
 
-    const KAffinityMask& GetAffinityMask() const {
+    u64 GetAffinityMask() const {
         return affinity_mask;
     }
 
@@ -492,12 +478,21 @@ public:
     /// Sleeps this thread for the given amount of nanoseconds.
     ResultCode Sleep(s64 nanoseconds);
 
-    s64 GetYieldScheduleCount() const {
-        return this->schedule_count;
+    /// Yields this thread without rebalancing loads.
+    std::pair<ResultCode, bool> YieldSimple();
+
+    /// Yields this thread and does a load rebalancing.
+    std::pair<ResultCode, bool> YieldAndBalanceLoad();
+
+    /// Yields this thread and if the core is left idle, loads are rebalanced
+    std::pair<ResultCode, bool> YieldAndWaitForLoadBalancing();
+
+    void IncrementYieldCount() {
+        yield_count++;
     }
 
-    void SetYieldScheduleCount(s64 count) {
-        this->schedule_count = count;
+    u64 GetYieldCount() const {
+        return yield_count;
     }
 
     ThreadSchedStatus GetSchedulingStatus() const {
@@ -573,59 +568,9 @@ public:
         return has_exited;
     }
 
-    class QueueEntry {
-    public:
-        constexpr QueueEntry() = default;
-
-        constexpr void Initialize() {
-            this->prev = nullptr;
-            this->next = nullptr;
-        }
-
-        constexpr Thread* GetPrev() const {
-            return this->prev;
-        }
-        constexpr Thread* GetNext() const {
-            return this->next;
-        }
-        constexpr void SetPrev(Thread* thread) {
-            this->prev = thread;
-        }
-        constexpr void SetNext(Thread* thread) {
-            this->next = thread;
-        }
-
-    private:
-        Thread* prev{};
-        Thread* next{};
-    };
-
-    QueueEntry& GetPriorityQueueEntry(s32 core) {
-        return this->per_core_priority_queue_entry[core];
-    }
-
-    const QueueEntry& GetPriorityQueueEntry(s32 core) const {
-        return this->per_core_priority_queue_entry[core];
-    }
-
-    s32 GetDisableDispatchCount() const {
-        return disable_count;
-    }
-
-    void DisableDispatch() {
-        ASSERT(GetDisableDispatchCount() >= 0);
-        disable_count++;
-    }
-
-    void EnableDispatch() {
-        ASSERT(GetDisableDispatchCount() > 0);
-        disable_count--;
-    }
-
 private:
-    friend class GlobalSchedulerContext;
-    friend class KScheduler;
-    friend class Process;
+    friend class GlobalScheduler;
+    friend class Scheduler;
 
     void SetSchedulingStatus(ThreadSchedStatus new_status);
     void AddSchedulingFlag(ThreadSchedFlags flag);
@@ -638,14 +583,12 @@ private:
     ThreadContext64 context_64{};
     std::shared_ptr<Common::Fiber> host_context{};
 
-    ThreadStatus status = ThreadStatus::Dormant;
-    u32 scheduling_state = 0;
-
     u64 thread_id = 0;
+
+    ThreadStatus status = ThreadStatus::Dormant;
 
     VAddr entry_point = 0;
     VAddr stack_top = 0;
-    std::atomic_int disable_count = 0;
 
     ThreadType type;
 
@@ -659,8 +602,9 @@ private:
     u32 current_priority = 0;
 
     u64 total_cpu_time_ticks = 0; ///< Total CPU running ticks.
-    s64 schedule_count{};
-    s64 last_scheduled_tick{};
+    u64 last_running_ticks = 0;   ///< CPU tick when thread was last running
+    u64 yield_count = 0;          ///< Number of redundant yields carried by this thread.
+                                  ///< a redundant yield is one where no scheduling is changed
 
     s32 processor_id = 0;
 
@@ -702,16 +646,16 @@ private:
     Handle hle_time_event;
     SynchronizationObject* hle_object;
 
-    KScheduler* scheduler = nullptr;
-
-    std::array<QueueEntry, Core::Hardware::NUM_CPU_CORES> per_core_priority_queue_entry{};
+    Scheduler* scheduler = nullptr;
 
     u32 ideal_core{0xFFFFFFFF};
-    KAffinityMask affinity_mask{};
+    u64 affinity_mask{0x1};
 
     s32 ideal_core_override = -1;
+    u64 affinity_mask_override = 0x1;
     u32 affinity_override_count = 0;
 
+    u32 scheduling_state = 0;
     u32 pausing_state = 0;
     bool is_running = false;
     bool is_waiting_on_sync = false;

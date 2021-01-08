@@ -77,7 +77,7 @@ ShaderType GetShaderType(Maxwell::ShaderProgram program) {
     case Maxwell::ShaderProgram::Fragment:
         return ShaderType::Fragment;
     default:
-        UNIMPLEMENTED_MSG("program={}", program);
+        UNIMPLEMENTED_MSG("program={}", static_cast<u32>(program));
         return ShaderType::Vertex;
     }
 }
@@ -138,21 +138,22 @@ bool ComputePipelineCacheKey::operator==(const ComputePipelineCacheKey& rhs) con
     return std::memcmp(&rhs, this, sizeof *this) == 0;
 }
 
-Shader::Shader(Tegra::Engines::ConstBufferEngineInterface& engine_, ShaderType stage_,
-               GPUVAddr gpu_addr_, VAddr cpu_addr_, ProgramCode program_code_, u32 main_offset_)
-    : gpu_addr(gpu_addr_), program_code(std::move(program_code_)), registry(stage_, engine_),
-      shader_ir(program_code, main_offset_, compiler_settings, registry),
+Shader::Shader(Tegra::Engines::ConstBufferEngineInterface& engine, Tegra::Engines::ShaderType stage,
+               GPUVAddr gpu_addr_, VAddr cpu_addr, VideoCommon::Shader::ProgramCode program_code_,
+               u32 main_offset)
+    : gpu_addr(gpu_addr_), program_code(std::move(program_code_)), registry(stage, engine),
+      shader_ir(program_code, main_offset, compiler_settings, registry),
       entries(GenerateShaderEntries(shader_ir)) {}
 
 Shader::~Shader() = default;
 
-VKPipelineCache::VKPipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
+VKPipelineCache::VKPipelineCache(RasterizerVulkan& rasterizer, Tegra::GPU& gpu_,
                                  Tegra::Engines::Maxwell3D& maxwell3d_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
                                  Tegra::MemoryManager& gpu_memory_, const VKDevice& device_,
                                  VKScheduler& scheduler_, VKDescriptorPool& descriptor_pool_,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_)
-    : VideoCommon::ShaderCache<Shader>{rasterizer_}, gpu{gpu_}, maxwell3d{maxwell3d_},
+    : VideoCommon::ShaderCache<Shader>{rasterizer}, gpu{gpu_}, maxwell3d{maxwell3d_},
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, device{device_},
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_}, update_descriptor_queue{
                                                                     update_descriptor_queue_} {}

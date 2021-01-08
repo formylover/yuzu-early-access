@@ -22,15 +22,15 @@ class VKScheduler;
 class Buffer final : public VideoCommon::BufferBlock {
 public:
     explicit Buffer(const VKDevice& device, VKMemoryManager& memory_manager, VKScheduler& scheduler,
-                    VKStagingBufferPool& staging_pool, VAddr cpu_addr_, std::size_t size_);
+                    VKStagingBufferPool& staging_pool, VAddr cpu_addr, std::size_t size);
     ~Buffer();
 
-    void Upload(std::size_t offset, std::size_t data_size, const u8* data);
+    void Upload(std::size_t offset, std::size_t size, const u8* data);
 
-    void Download(std::size_t offset, std::size_t data_size, u8* data);
+    void Download(std::size_t offset, std::size_t size, u8* data);
 
     void CopyFrom(const Buffer& src, std::size_t src_offset, std::size_t dst_offset,
-                  std::size_t copy_size);
+                  std::size_t size);
 
     VkBuffer Handle() const {
         return *buffer.handle;

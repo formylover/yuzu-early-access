@@ -34,13 +34,14 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
         break;
     }
     case OpCode::Id::EXIT: {
-        const ConditionCode cc = instr.flow_condition_code;
-        UNIMPLEMENTED_IF_MSG(cc != ConditionCode::T, "EXIT condition code used: {}", cc);
+        const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+        UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T, "EXIT condition code used: {}",
+                             static_cast<u32>(cc));
 
         switch (instr.flow.cond) {
         case Tegra::Shader::FlowCondition::Always:
             bb.push_back(Operation(OperationCode::Exit));
-            if (instr.pred.pred_index == static_cast<u64>(Pred::UnusedIndex)) {
+            if (instr.pred.pred_index == static_cast<u64>(Tegra::Shader::Pred::UnusedIndex)) {
                 // If this is an unconditional exit then just end processing here,
                 // otherwise we have to account for the possibility of the condition
                 // not being met, so continue processing the next instruction.
@@ -55,15 +56,17 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
             break;
 
         default:
-            UNIMPLEMENTED_MSG("Unhandled flow condition: {}", instr.flow.cond.Value());
+            UNIMPLEMENTED_MSG("Unhandled flow condition: {}",
+                              static_cast<u32>(instr.flow.cond.Value()));
         }
         break;
     }
     case OpCode::Id::KIL: {
         UNIMPLEMENTED_IF(instr.flow.cond != Tegra::Shader::FlowCondition::Always);
 
-        const ConditionCode cc = instr.flow_condition_code;
-        UNIMPLEMENTED_IF_MSG(cc != ConditionCode::T, "KIL condition code used: {}", cc);
+        const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+        UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T, "KIL condition code used: {}",
+                             static_cast<u32>(cc));
 
         bb.push_back(Operation(OperationCode::Discard));
         break;
@@ -87,11 +90,11 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
                 UNIMPLEMENTED_MSG("S2R WscaleFactorZ is not implemented");
                 return Immediate(0U);
             case SystemVariable::Tid: {
-                Node val = Immediate(0);
-                val = BitfieldInsert(val, Operation(OperationCode::LocalInvocationIdX), 0, 9);
-                val = BitfieldInsert(val, Operation(OperationCode::LocalInvocationIdY), 16, 9);
-                val = BitfieldInsert(val, Operation(OperationCode::LocalInvocationIdZ), 26, 5);
-                return val;
+                Node value = Immediate(0);
+                value = BitfieldInsert(value, Operation(OperationCode::LocalInvocationIdX), 0, 9);
+                value = BitfieldInsert(value, Operation(OperationCode::LocalInvocationIdY), 16, 9);
+                value = BitfieldInsert(value, Operation(OperationCode::LocalInvocationIdZ), 26, 5);
+                return value;
             }
             case SystemVariable::TidX:
                 return Operation(OperationCode::LocalInvocationIdX);
@@ -127,7 +130,8 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
                     return Immediate(0u);
                 }
             default:
-                UNIMPLEMENTED_MSG("Unhandled system move: {}", instr.sys20.Value());
+                UNIMPLEMENTED_MSG("Unhandled system move: {}",
+                                  static_cast<u32>(instr.sys20.Value()));
                 return Immediate(0u);
             }
         }();
@@ -177,8 +181,8 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
         }
         const Node branch = Operation(OperationCode::BranchIndirect, operand);
 
-        const ConditionCode cc = instr.flow_condition_code;
-        if (cc != ConditionCode::T) {
+        const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+        if (cc != Tegra::Shader::ConditionCode::T) {
             bb.push_back(Conditional(GetConditionCode(cc), {branch}));
         } else {
             bb.push_back(branch);
@@ -214,8 +218,9 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
         break;
     }
     case OpCode::Id::SYNC: {
-        const ConditionCode cc = instr.flow_condition_code;
-        UNIMPLEMENTED_IF_MSG(cc != ConditionCode::T, "SYNC condition code used: {}", cc);
+        const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+        UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T, "SYNC condition code used: {}",
+                             static_cast<u32>(cc));
 
         if (decompiled) {
             break;
@@ -226,8 +231,9 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
         break;
     }
     case OpCode::Id::BRK: {
-        const ConditionCode cc = instr.flow_condition_code;
-        UNIMPLEMENTED_IF_MSG(cc != ConditionCode::T, "BRK condition code used: {}", cc);
+        const Tegra::Shader::ConditionCode cc = instr.flow_condition_code;
+        UNIMPLEMENTED_IF_MSG(cc != Tegra::Shader::ConditionCode::T, "BRK condition code used: {}",
+                             static_cast<u32>(cc));
         if (decompiled) {
             break;
         }
@@ -300,7 +306,7 @@ u32 ShaderIR::DecodeOther(NodeBlock& bb, u32 pc) {
             case Tegra::Shader::MembarType::GL:
                 return OperationCode::MemoryBarrierGlobal;
             default:
-                UNIMPLEMENTED_MSG("MEMBAR type={}", instr.membar.type.Value());
+                UNIMPLEMENTED_MSG("MEMBAR type={}", static_cast<int>(instr.membar.type.Value()));
                 return OperationCode::MemoryBarrierGlobal;
             }
         }();

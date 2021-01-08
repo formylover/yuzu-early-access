@@ -94,19 +94,19 @@ VkSampleCountFlagBits ConvertMsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
 
 } // Anonymous namespace
 
-VKGraphicsPipeline::VKGraphicsPipeline(const VKDevice& device_, VKScheduler& scheduler_,
-                                       VKDescriptorPool& descriptor_pool_,
-                                       VKUpdateDescriptorQueue& update_descriptor_queue_,
+VKGraphicsPipeline::VKGraphicsPipeline(const VKDevice& device, VKScheduler& scheduler,
+                                       VKDescriptorPool& descriptor_pool,
+                                       VKUpdateDescriptorQueue& update_descriptor_queue,
                                        const GraphicsPipelineCacheKey& key,
                                        vk::Span<VkDescriptorSetLayoutBinding> bindings,
                                        const SPIRVProgram& program, u32 num_color_buffers)
-    : device{device_}, scheduler{scheduler_}, cache_key{key}, hash{cache_key.Hash()},
+    : device{device}, scheduler{scheduler}, cache_key{key}, hash{cache_key.Hash()},
       descriptor_set_layout{CreateDescriptorSetLayout(bindings)},
-      descriptor_allocator{descriptor_pool_, *descriptor_set_layout},
-      update_descriptor_queue{update_descriptor_queue_}, layout{CreatePipelineLayout()},
+      descriptor_allocator{descriptor_pool, *descriptor_set_layout},
+      update_descriptor_queue{update_descriptor_queue}, layout{CreatePipelineLayout()},
       descriptor_template{CreateDescriptorUpdateTemplate(program)},
       modules(CreateShaderModules(program)),
-      pipeline(CreatePipeline(program, cache_key.renderpass, num_color_buffers)) {}
+      pipeline(CreatePipeline(program, key.renderpass, num_color_buffers)) {}
 
 VKGraphicsPipeline::~VKGraphicsPipeline() = default;
 
@@ -183,8 +183,8 @@ std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
         .codeSize = 0,
     };
 
-    std::vector<vk::ShaderModule> shader_modules;
-    shader_modules.reserve(Maxwell::MaxShaderStage);
+    std::vector<vk::ShaderModule> modules;
+    modules.reserve(Maxwell::MaxShaderStage);
     for (std::size_t i = 0; i < Maxwell::MaxShaderStage; ++i) {
         const auto& stage = program[i];
         if (!stage) {
@@ -195,9 +195,9 @@ std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
 
         ci.codeSize = stage->code.size() * sizeof(u32);
         ci.pCode = stage->code.data();
-        shader_modules.push_back(device.GetLogical().CreateShaderModule(ci));
+        modules.push_back(device.GetLogical().CreateShaderModule(ci));
     }
-    return shader_modules;
+    return modules;
 }
 
 vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
@@ -252,7 +252,7 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         if (!attribute.enabled) {
             continue;
         }
-        if (!input_attributes.contains(static_cast<u32>(index))) {
+        if (input_attributes.find(static_cast<u32>(index)) == input_attributes.end()) {
             // Skip attributes not used by the vertex shaders.
             continue;
         }

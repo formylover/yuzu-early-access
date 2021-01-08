@@ -5,7 +5,6 @@
 #pragma once
 
 #include <array>
-#include <atomic>
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "core/frontend/input.h"
@@ -57,14 +56,12 @@ public:
         JoyconLeft = 6,
         JoyconRight = 7,
         Pokeball = 9,
-        MaxNpadType = 10,
     };
 
     enum class DeviceIndex : u8 {
         Left = 0,
         Right = 1,
         None = 2,
-        MaxDeviceIndex = 3,
     };
 
     enum class GyroscopeZeroDriftMode : u32 {
@@ -216,8 +213,6 @@ public:
     static Settings::ControllerType MapNPadToSettingsType(Controller_NPad::NPadControllerType type);
     static std::size_t NPadIdToIndex(u32 npad_id);
     static u32 IndexToNPad(std::size_t index);
-    static bool IsNpadIdValid(u32 npad_id);
-    static bool IsDeviceHandleValid(const DeviceHandle& device_handle);
 
 private:
     struct CommonHeader {
@@ -416,7 +411,7 @@ private:
     bool IsControllerSupported(NPadControllerType controller) const;
     void RequestPadStateUpdate(u32 npad_id);
 
-    std::atomic<u32> press_state{};
+    u32 press_state{};
 
     NpadStyleSet style{};
     std::array<NPadEntry, 10> shared_memory_entries{};

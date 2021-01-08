@@ -31,7 +31,7 @@ struct DescriptorUpdateEntry {
 
 class VKUpdateDescriptorQueue final {
 public:
-    explicit VKUpdateDescriptorQueue(const VKDevice& device_, VKScheduler& scheduler_);
+    explicit VKUpdateDescriptorQueue(const VKDevice& device, VKScheduler& scheduler);
     ~VKUpdateDescriptorQueue();
 
     void TickFrame();

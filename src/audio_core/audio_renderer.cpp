@@ -71,9 +71,9 @@ namespace {
 namespace AudioCore {
 AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory::Memory& memory_,
                              AudioCommon::AudioRendererParameter params,
-                             std::shared_ptr<Kernel::WritableEvent> buffer_event_,
+                             std::shared_ptr<Kernel::WritableEvent> buffer_event,
                              std::size_t instance_number)
-    : worker_params{params}, buffer_event{buffer_event_},
+    : worker_params{params}, buffer_event{buffer_event},
       memory_pool_info(params.effect_count + params.voice_count * 4),
       voice_context(params.voice_count), effect_context(params.effect_count), mix_context(),
       sink_context(params.sink_count), splitter_context(),
@@ -88,7 +88,7 @@ AudioRenderer::AudioRenderer(Core::Timing::CoreTiming& core_timing, Core::Memory
     stream =
         audio_out->OpenStream(core_timing, params.sample_rate, AudioCommon::STREAM_NUM_CHANNELS,
                               fmt::format("AudioRenderer-Instance{}", instance_number),
-                              [=]() { buffer_event_->Signal(); });
+                              [=]() { buffer_event->Signal(); });
     audio_out->StartStream(stream);
 
     QueueMixedBuffer(0);

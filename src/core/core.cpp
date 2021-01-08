@@ -27,10 +27,10 @@
 #include "core/file_sys/vfs_real.h"
 #include "core/hardware_interrupt_manager.h"
 #include "core/hle/kernel/client_port.h"
-#include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/kernel.h"
 #include "core/hle/kernel/physical_core.h"
 #include "core/hle/kernel/process.h"
+#include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/thread.h"
 #include "core/hle/service/am/applets/applets.h"
 #include "core/hle/service/apm/controller.h"
@@ -159,7 +159,7 @@ struct System::Impl {
         device_memory = std::make_unique<Core::DeviceMemory>();
 
         is_multicore = Settings::values.use_multi_core.GetValue();
-        is_async_gpu = Settings::values.use_asynchronous_gpu_emulation.GetValue();
+        is_async_gpu = is_multicore || Settings::values.use_asynchronous_gpu_emulation.GetValue();
 
         kernel.SetMulticore(is_multicore);
         cpu_manager.SetMulticore(is_multicore);
@@ -237,7 +237,7 @@ struct System::Impl {
             Kernel::Process::Create(system, "main", Kernel::Process::ProcessType::Userland);
         const auto [load_result, load_parameters] = app_loader->Load(*main_process, system);
         if (load_result != Loader::ResultStatus::Success) {
-            LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", load_result);
+            LOG_CRITICAL(Core, "Failed to load ROM (Error {})!", static_cast<int>(load_result));
             Shutdown();
 
             return static_cast<ResultStatus>(static_cast<u32>(ResultStatus::ErrorLoader) +
@@ -267,7 +267,8 @@ struct System::Impl {
 
         u64 title_id{0};
         if (app_loader->ReadProgramId(title_id) != Loader::ResultStatus::Success) {
-            LOG_ERROR(Core, "Failed to find title id for ROM (Error {})", load_result);
+            LOG_ERROR(Core, "Failed to find title id for ROM (Error {})",
+                      static_cast<u32>(load_result));
         }
         perf_stats = std::make_unique<PerfStats>(title_id);
         // Reset counters and set time origin to current frame
@@ -507,6 +508,14 @@ std::size_t System::CurrentCoreIndex() const {
     return core;
 }
 
+Kernel::Scheduler& System::CurrentScheduler() {
+    return impl->kernel.CurrentScheduler();
+}
+
+const Kernel::Scheduler& System::CurrentScheduler() const {
+    return impl->kernel.CurrentScheduler();
+}
+
 Kernel::PhysicalCore& System::CurrentPhysicalCore() {
     return impl->kernel.CurrentPhysicalCore();
 }
@@ -515,14 +524,22 @@ const Kernel::PhysicalCore& System::CurrentPhysicalCore() const {
     return impl->kernel.CurrentPhysicalCore();
 }
 
-/// Gets the global scheduler
-Kernel::GlobalSchedulerContext& System::GlobalSchedulerContext() {
-    return impl->kernel.GlobalSchedulerContext();
+Kernel::Scheduler& System::Scheduler(std::size_t core_index) {
+    return impl->kernel.Scheduler(core_index);
+}
+
+const Kernel::Scheduler& System::Scheduler(std::size_t core_index) const {
+    return impl->kernel.Scheduler(core_index);
 }
 
 /// Gets the global scheduler
-const Kernel::GlobalSchedulerContext& System::GlobalSchedulerContext() const {
-    return impl->kernel.GlobalSchedulerContext();
+Kernel::GlobalScheduler& System::GlobalScheduler() {
+    return impl->kernel.GlobalScheduler();
+}
+
+/// Gets the global scheduler
+const Kernel::GlobalScheduler& System::GlobalScheduler() const {
+    return impl->kernel.GlobalScheduler();
 }
 
 Kernel::Process* System::CurrentProcess() {

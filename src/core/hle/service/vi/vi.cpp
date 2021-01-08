@@ -282,24 +282,18 @@ public:
     void DeserializeData() override {
         [[maybe_unused]] const std::u16string token = ReadInterfaceToken();
         data = Read<Data>();
-        if (data.contains_object != 0) {
-            buffer_container = Read<BufferContainer>();
-        }
+        buffer = Read<NVFlinger::IGBPBuffer>();
     }
 
     struct Data {
         u32_le slot;
-        u32_le contains_object;
-    };
-
-    struct BufferContainer {
+        INSERT_PADDING_WORDS(1);
         u32_le graphic_buffer_length;
         INSERT_PADDING_WORDS(1);
-        NVFlinger::IGBPBuffer buffer{};
     };
 
-    Data data{};
-    BufferContainer buffer_container{};
+    Data data;
+    NVFlinger::IGBPBuffer buffer;
 };
 
 class IGBPSetPreallocatedBufferResponseParcel : public Parcel {
@@ -534,9 +528,10 @@ private:
         const u32 flags = rp.Pop<u32>();
 
         LOG_DEBUG(Service_VI, "called. id=0x{:08X} transaction={:X}, flags=0x{:08X}", id,
-                  transaction, flags);
+                  static_cast<u32>(transaction), flags);
 
-        auto& buffer_queue = *nv_flinger.FindBufferQueue(id);
+        const auto guard = nv_flinger.Lock();
+        auto& buffer_queue = nv_flinger.FindBufferQueue(id);
 
         switch (transaction) {
         case TransactionId::Connect: {
@@ -546,16 +541,13 @@ private:
                                  Settings::values.resolution_factor.GetValue()),
                 static_cast<u32>(static_cast<u32>(DisplayResolution::UndockedHeight) *
                                  Settings::values.resolution_factor.GetValue())};
-
-            buffer_queue.Connect();
-
             ctx.WriteBuffer(response.Serialize());
             break;
         }
         case TransactionId::SetPreallocatedBuffer: {
             IGBPSetPreallocatedBufferRequestParcel request{ctx.ReadBuffer()};
 
-            buffer_queue.SetPreallocatedBuffer(request.data.slot, request.buffer_container.buffer);
+            buffer_queue.SetPreallocatedBuffer(request.data.slot, request.buffer);
 
             IGBPSetPreallocatedBufferResponseParcel response{};
             ctx.WriteBuffer(response.Serialize());
@@ -565,25 +557,40 @@ private:
             IGBPDequeueBufferRequestParcel request{ctx.ReadBuffer()};
             const u32 width{request.data.width};
             const u32 height{request.data.height};
+            auto result = buffer_queue.DequeueBuffer(width, height);
 
-            do {
-                if (auto result = buffer_queue.DequeueBuffer(width, height); result) {
-                    // Buffer is available
-                    IGBPDequeueBufferResponseParcel response{result->first, *result->second};
-                    ctx.WriteBuffer(response.Serialize());
-                    break;
-                }
-            } while (buffer_queue.IsConnected());
+            if (result) {
+                // Buffer is available
+                IGBPDequeueBufferResponseParcel response{result->first, *result->second};
+                ctx.WriteBuffer(response.Serialize());
+            } else {
+                // Wait the current thread until a buffer becomes available
+                ctx.SleepClientThread(
+                    "IHOSBinderDriver::DequeueBuffer", UINT64_MAX,
+                    [=, this](std::shared_ptr<Kernel::Thread> thread,
+                              Kernel::HLERequestContext& ctx, Kernel::ThreadWakeupReason reason) {
+                        // Repeat TransactParcel DequeueBuffer when a buffer is available
+                        const auto guard = nv_flinger.Lock();
+                        auto& buffer_queue = nv_flinger.FindBufferQueue(id);
+                        auto result = buffer_queue.DequeueBuffer(width, height);
+                        ASSERT_MSG(result != std::nullopt, "Could not dequeue buffer.");
 
+                        IGBPDequeueBufferResponseParcel response{result->first, *result->second};
+                        ctx.WriteBuffer(response.Serialize());
+                        IPC::ResponseBuilder rb{ctx, 2};
+                        rb.Push(RESULT_SUCCESS);
+                    },
+                    buffer_queue.GetWritableBufferWaitEvent());
+            }
             break;
         }
         case TransactionId::RequestBuffer: {
             IGBPRequestBufferRequestParcel request{ctx.ReadBuffer()};
 
             auto& buffer = buffer_queue.RequestBuffer(request.slot);
+
             IGBPRequestBufferResponseParcel response{buffer};
             ctx.WriteBuffer(response.Serialize());
-
             break;
         }
         case TransactionId::QueueBuffer: {
@@ -669,7 +676,7 @@ private:
 
         LOG_WARNING(Service_VI, "(STUBBED) called id={}, unknown={:08X}", id, unknown);
 
-        const auto& buffer_queue = *nv_flinger.FindBufferQueue(id);
+        const auto& buffer_queue = nv_flinger.FindBufferQueue(id);
 
         // TODO(Subv): Find out what this actually is.
         IPC::ResponseBuilder rb{ctx, 2, 1};
@@ -1059,8 +1066,8 @@ private:
         const auto scaling_mode = rp.PopEnum<NintendoScaleMode>();
         const u64 unknown = rp.Pop<u64>();
 
-        LOG_DEBUG(Service_VI, "called. scaling_mode=0x{:08X}, unknown=0x{:016X}", scaling_mode,
-                  unknown);
+        LOG_DEBUG(Service_VI, "called. scaling_mode=0x{:08X}, unknown=0x{:016X}",
+                  static_cast<u32>(scaling_mode), unknown);
 
         IPC::ResponseBuilder rb{ctx, 2};
 
@@ -1203,7 +1210,7 @@ private:
     void ConvertScalingMode(Kernel::HLERequestContext& ctx) {
         IPC::RequestParser rp{ctx};
         const auto mode = rp.PopEnum<NintendoScaleMode>();
-        LOG_DEBUG(Service_VI, "called mode={}", mode);
+        LOG_DEBUG(Service_VI, "called mode={}", static_cast<u32>(mode));
 
         const auto converted_mode = ConvertScalingModeImpl(mode);
 
@@ -1223,8 +1230,8 @@ private:
         const auto height = rp.Pop<u64>();
         LOG_DEBUG(Service_VI, "called width={}, height={}", width, height);
 
-        constexpr u64 base_size = 0x20000;
-        constexpr u64 alignment = 0x1000;
+        constexpr std::size_t base_size = 0x20000;
+        constexpr std::size_t alignment = 0x1000;
         const auto texture_size = width * height * 4;
         const auto out_size = (texture_size + base_size - 1) / base_size * base_size;
 
@@ -1304,7 +1311,7 @@ void detail::GetDisplayServiceImpl(Kernel::HLERequestContext& ctx, Core::System&
     const auto policy = rp.PopEnum<Policy>();
 
     if (!IsValidServiceAccess(permission, policy)) {
-        LOG_ERROR(Service_VI, "Permission denied for policy {}", policy);
+        LOG_ERROR(Service_VI, "Permission denied for policy {}", static_cast<u32>(policy));
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(ERR_PERMISSION_DENIED);
         return;

@@ -20,7 +20,7 @@ using HLEFunction = void (*)(Engines::Maxwell3D& maxwell3d, const std::vector<u3
 
 class HLEMacro {
 public:
-    explicit HLEMacro(Engines::Maxwell3D& maxwell3d_);
+    explicit HLEMacro(Engines::Maxwell3D& maxwell3d);
     ~HLEMacro();
 
     std::optional<std::unique_ptr<CachedMacro>> GetHLEProgram(u64 hash) const;

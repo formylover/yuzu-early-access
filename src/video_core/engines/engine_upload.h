@@ -54,10 +54,10 @@ struct Registers {
 
 class State {
 public:
-    explicit State(MemoryManager& memory_manager_, Registers& regs_);
+    State(MemoryManager& memory_manager, Registers& regs);
     ~State();
 
-    void ProcessExec(bool is_linear_);
+    void ProcessExec(bool is_linear);
     void ProcessData(u32 data, bool is_last_call);
 
 private:

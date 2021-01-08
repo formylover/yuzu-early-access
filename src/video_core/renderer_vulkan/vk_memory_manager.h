@@ -22,7 +22,7 @@ using VKMemoryCommit = std::unique_ptr<VKMemoryCommitImpl>;
 
 class VKMemoryManager final {
 public:
-    explicit VKMemoryManager(const VKDevice& device_);
+    explicit VKMemoryManager(const VKDevice& device);
     VKMemoryManager(const VKMemoryManager&) = delete;
     ~VKMemoryManager();
 
@@ -59,8 +59,8 @@ class VKMemoryCommitImpl final {
     friend MemoryMap;
 
 public:
-    explicit VKMemoryCommitImpl(const VKDevice& device_, VKMemoryAllocation* allocation_,
-                                const vk::DeviceMemory& memory_, u64 begin_, u64 end_);
+    explicit VKMemoryCommitImpl(const VKDevice& device, VKMemoryAllocation* allocation,
+                                const vk::DeviceMemory& memory, u64 begin, u64 end);
     ~VKMemoryCommitImpl();
 
     /// Maps a memory region and returns a pointer to it.

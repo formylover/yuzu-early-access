@@ -21,16 +21,15 @@ namespace AudioCore {
 
 class CubebSinkStream final : public SinkStream {
 public:
-    CubebSinkStream(cubeb* ctx_, u32 sample_rate, u32 num_channels_, cubeb_devid output_device,
+    CubebSinkStream(cubeb* ctx, u32 sample_rate, u32 num_channels_, cubeb_devid output_device,
                     const std::string& name)
-        : ctx{ctx_}, num_channels{std::min(num_channels_, 6u)}, time_stretch{sample_rate,
-                                                                             num_channels} {
+        : ctx{ctx}, num_channels{std::min(num_channels_, 6u)}, time_stretch{sample_rate,
+                                                                            num_channels} {
 
         cubeb_stream_params params{};
         params.rate = sample_rate;
         params.channels = num_channels;
         params.format = CUBEB_SAMPLE_S16NE;
-        params.prefs = CUBEB_STREAM_PREF_PERSIST;
         switch (num_channels) {
         case 1:
             params.layout = CUBEB_LAYOUT_MONO;
@@ -193,9 +192,8 @@ SinkStream& CubebSink::AcquireSinkStream(u32 sample_rate, u32 num_channels,
     return *sink_streams.back();
 }
 
-long CubebSinkStream::DataCallback([[maybe_unused]] cubeb_stream* stream, void* user_data,
-                                   [[maybe_unused]] const void* input_buffer, void* output_buffer,
-                                   long num_frames) {
+long CubebSinkStream::DataCallback(cubeb_stream* stream, void* user_data, const void* input_buffer,
+                                   void* output_buffer, long num_frames) {
     auto* impl = static_cast<CubebSinkStream*>(user_data);
     auto* buffer = static_cast<u8*>(output_buffer);
 
@@ -238,9 +236,7 @@ long CubebSinkStream::DataCallback([[maybe_unused]] cubeb_stream* stream, void* 
     return num_frames;
 }
 
-void CubebSinkStream::StateCallback([[maybe_unused]] cubeb_stream* stream,
-                                    [[maybe_unused]] void* user_data,
-                                    [[maybe_unused]] cubeb_state state) {}
+void CubebSinkStream::StateCallback(cubeb_stream* stream, void* user_data, cubeb_state state) {}
 
 std::vector<std::string> ListCubebSinkDevices() {
     std::vector<std::string> device_list;

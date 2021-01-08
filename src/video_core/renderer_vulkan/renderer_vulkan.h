@@ -44,9 +44,9 @@ struct VKScreenInfo {
 class RendererVulkan final : public VideoCore::RendererBase {
 public:
     explicit RendererVulkan(Core::TelemetrySession& telemtry_session,
-                            Core::Frontend::EmuWindow& emu_window,
-                            Core::Memory::Memory& cpu_memory_, Tegra::GPU& gpu_,
-                            std::unique_ptr<Core::Frontend::GraphicsContext> context_);
+                            Core::Frontend::EmuWindow& emu_window, Core::Memory::Memory& cpu_memory,
+                            Tegra::GPU& gpu,
+                            std::unique_ptr<Core::Frontend::GraphicsContext> context);
     ~RendererVulkan() override;
 
     bool Init() override;

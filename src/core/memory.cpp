@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <mutex>
 #include <optional>
 #include <utility>
 
@@ -498,21 +497,7 @@ struct Memory::Impl {
         return CopyBlock(*system.CurrentProcess(), dest_addr, src_addr, size);
     }
 
-    struct PageEntry {
-        u8* const pointer;
-        const Common::PageType attribute;
-    };
-
-    PageEntry SafePageEntry(std::size_t base) const {
-        std::lock_guard lock{rasterizer_cache_guard};
-        return {
-            .pointer = current_page_table->pointers[base],
-            .attribute = current_page_table->attributes[base],
-        };
-    }
-
     void RasterizerMarkRegionCached(VAddr vaddr, u64 size, bool cached) {
-        std::lock_guard lock{rasterizer_cache_guard};
         if (vaddr == 0) {
             return;
         }
@@ -645,22 +630,16 @@ struct Memory::Impl {
      */
     template <typename T>
     T Read(const VAddr vaddr) {
-        // Avoid adding any extra logic to this fast-path block
-        if (const u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]) {
+        const u8* const page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
+        if (page_pointer != nullptr) {
+            // NOTE: Avoid adding any extra logic to this fast-path block
             T value;
-            std::memcpy(&value, &pointer[vaddr], sizeof(T));
+            std::memcpy(&value, &page_pointer[vaddr], sizeof(T));
             return value;
         }
 
-        // Otherwise, we need to grab the page with a lock, in case it is currently being modified
-        const auto entry = SafePageEntry(vaddr >> PAGE_BITS);
-        if (entry.pointer) {
-            T value;
-            std::memcpy(&value, &entry.pointer[vaddr], sizeof(T));
-            return value;
-        }
-
-        switch (entry.attribute) {
+        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
+        switch (type) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Read{} @ 0x{:08X}", sizeof(T) * 8, vaddr);
             return 0;
@@ -688,24 +667,20 @@ struct Memory::Impl {
      * @tparam T The data type to write to memory. This type *must* be
      *           trivially copyable, otherwise the behavior of this function
      *           is undefined.
+     *
+     * @returns The instance of T write to the specified virtual address.
      */
     template <typename T>
     void Write(const VAddr vaddr, const T data) {
-        // Avoid adding any extra logic to this fast-path block
-        if (u8* const pointer = current_page_table->pointers[vaddr >> PAGE_BITS]) {
-            std::memcpy(&pointer[vaddr], &data, sizeof(T));
+        u8* const page_pointer = current_page_table->pointers[vaddr >> PAGE_BITS];
+        if (page_pointer != nullptr) {
+            // NOTE: Avoid adding any extra logic to this fast-path block
+            std::memcpy(&page_pointer[vaddr], &data, sizeof(T));
             return;
         }
 
-        // Otherwise, we need to grab the page with a lock, in case it is currently being modified
-        const auto entry = SafePageEntry(vaddr >> PAGE_BITS);
-        if (entry.pointer) {
-            // Memory was mapped, we are done
-            std::memcpy(&entry.pointer[vaddr], &data, sizeof(T));
-            return;
-        }
-
-        switch (entry.attribute) {
+        const Common::PageType type = current_page_table->attributes[vaddr >> PAGE_BITS];
+        switch (type) {
         case Common::PageType::Unmapped:
             LOG_ERROR(HW_Memory, "Unmapped Write{} 0x{:08X} @ 0x{:016X}", sizeof(data) * 8,
                       static_cast<u32>(data), vaddr);
@@ -783,7 +758,6 @@ struct Memory::Impl {
         return true;
     }
 
-    mutable std::mutex rasterizer_cache_guard;
     Common::PageTable* current_page_table = nullptr;
     Core::System& system;
 };

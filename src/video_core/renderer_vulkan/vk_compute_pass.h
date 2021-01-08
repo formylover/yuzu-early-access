@@ -43,10 +43,10 @@ private:
 
 class QuadArrayPass final : public VKComputePass {
 public:
-    explicit QuadArrayPass(const VKDevice& device_, VKScheduler& scheduler_,
-                           VKDescriptorPool& descriptor_pool_,
-                           VKStagingBufferPool& staging_buffer_pool_,
-                           VKUpdateDescriptorQueue& update_descriptor_queue_);
+    explicit QuadArrayPass(const VKDevice& device, VKScheduler& scheduler,
+                           VKDescriptorPool& descriptor_pool,
+                           VKStagingBufferPool& staging_buffer_pool,
+                           VKUpdateDescriptorQueue& update_descriptor_queue);
     ~QuadArrayPass();
 
     std::pair<VkBuffer, VkDeviceSize> Assemble(u32 num_vertices, u32 first);
@@ -59,10 +59,9 @@ private:
 
 class Uint8Pass final : public VKComputePass {
 public:
-    explicit Uint8Pass(const VKDevice& device_, VKScheduler& scheduler_,
-                       VKDescriptorPool& descriptor_pool_,
-                       VKStagingBufferPool& staging_buffer_pool_,
-                       VKUpdateDescriptorQueue& update_descriptor_queue_);
+    explicit Uint8Pass(const VKDevice& device, VKScheduler& scheduler,
+                       VKDescriptorPool& descriptor_pool, VKStagingBufferPool& staging_buffer_pool,
+                       VKUpdateDescriptorQueue& update_descriptor_queue);
     ~Uint8Pass();
 
     std::pair<VkBuffer, u64> Assemble(u32 num_vertices, VkBuffer src_buffer, u64 src_offset);
@@ -75,10 +74,10 @@ private:
 
 class QuadIndexedPass final : public VKComputePass {
 public:
-    explicit QuadIndexedPass(const VKDevice& device_, VKScheduler& scheduler_,
-                             VKDescriptorPool& descriptor_pool_,
-                             VKStagingBufferPool& staging_buffer_pool_,
-                             VKUpdateDescriptorQueue& update_descriptor_queue_);
+    explicit QuadIndexedPass(const VKDevice& device, VKScheduler& scheduler,
+                             VKDescriptorPool& descriptor_pool,
+                             VKStagingBufferPool& staging_buffer_pool,
+                             VKUpdateDescriptorQueue& update_descriptor_queue);
     ~QuadIndexedPass();
 
     std::pair<VkBuffer, u64> Assemble(Tegra::Engines::Maxwell3D::Regs::IndexFormat index_format,

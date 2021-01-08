@@ -25,7 +25,7 @@ bool VectorVfsFile::Resize(size_t new_size) {
     return true;
 }
 
-VirtualDir VectorVfsFile::GetContainingDirectory() const {
+std::shared_ptr<VfsDirectory> VectorVfsFile::GetContainingDirectory() const {
     return parent;
 }
 
@@ -68,11 +68,11 @@ VectorVfsDirectory::VectorVfsDirectory(std::vector<VirtualFile> files_,
 
 VectorVfsDirectory::~VectorVfsDirectory() = default;
 
-std::vector<VirtualFile> VectorVfsDirectory::GetFiles() const {
+std::vector<std::shared_ptr<VfsFile>> VectorVfsDirectory::GetFiles() const {
     return files;
 }
 
-std::vector<VirtualDir> VectorVfsDirectory::GetSubdirectories() const {
+std::vector<std::shared_ptr<VfsDirectory>> VectorVfsDirectory::GetSubdirectories() const {
     return dirs;
 }
 
@@ -88,7 +88,7 @@ std::string VectorVfsDirectory::GetName() const {
     return name;
 }
 
-VirtualDir VectorVfsDirectory::GetParentDirectory() const {
+std::shared_ptr<VfsDirectory> VectorVfsDirectory::GetParentDirectory() const {
     return parent;
 }
 
@@ -116,11 +116,11 @@ bool VectorVfsDirectory::Rename(std::string_view name_) {
     return true;
 }
 
-VirtualDir VectorVfsDirectory::CreateSubdirectory(std::string_view name) {
+std::shared_ptr<VfsDirectory> VectorVfsDirectory::CreateSubdirectory(std::string_view name) {
     return nullptr;
 }
 
-VirtualFile VectorVfsDirectory::CreateFile(std::string_view name) {
+std::shared_ptr<VfsFile> VectorVfsDirectory::CreateFile(std::string_view name) {
     return nullptr;
 }
 

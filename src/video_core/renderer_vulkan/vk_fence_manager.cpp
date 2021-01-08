@@ -14,13 +14,12 @@
 
 namespace Vulkan {
 
-InnerFence::InnerFence(const VKDevice& device_, VKScheduler& scheduler_, u32 payload_,
-                       bool is_stubbed_)
-    : FenceBase{payload_, is_stubbed_}, device{device_}, scheduler{scheduler_} {}
+InnerFence::InnerFence(const VKDevice& device, VKScheduler& scheduler, u32 payload, bool is_stubbed)
+    : VideoCommon::FenceBase(payload, is_stubbed), device{device}, scheduler{scheduler} {}
 
-InnerFence::InnerFence(const VKDevice& device_, VKScheduler& scheduler_, GPUVAddr address_,
-                       u32 payload_, bool is_stubbed_)
-    : FenceBase{address_, payload_, is_stubbed_}, device{device_}, scheduler{scheduler_} {}
+InnerFence::InnerFence(const VKDevice& device, VKScheduler& scheduler, GPUVAddr address,
+                       u32 payload, bool is_stubbed)
+    : VideoCommon::FenceBase(address, payload, is_stubbed), device{device}, scheduler{scheduler} {}
 
 InnerFence::~InnerFence() = default;
 
@@ -72,11 +71,11 @@ bool InnerFence::IsEventSignalled() const {
     }
 }
 
-VKFenceManager::VKFenceManager(VideoCore::RasterizerInterface& rasterizer_, Tegra::GPU& gpu_,
-                               Tegra::MemoryManager& memory_manager_, TextureCache& texture_cache_,
-                               VKBufferCache& buffer_cache_, VKQueryCache& query_cache_,
+VKFenceManager::VKFenceManager(VideoCore::RasterizerInterface& rasterizer, Tegra::GPU& gpu,
+                               Tegra::MemoryManager& memory_manager, TextureCache& texture_cache,
+                               VKBufferCache& buffer_cache, VKQueryCache& query_cache,
                                const VKDevice& device_, VKScheduler& scheduler_)
-    : GenericFenceManager{rasterizer_, gpu_, texture_cache_, buffer_cache_, query_cache_},
+    : GenericFenceManager(rasterizer, gpu, texture_cache, buffer_cache, query_cache),
       device{device_}, scheduler{scheduler_} {}
 
 Fence VKFenceManager::CreateFence(u32 value, bool is_stubbed) {

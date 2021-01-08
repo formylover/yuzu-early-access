@@ -212,15 +212,16 @@ public:
     }
 
     void operator()(const ExprPredicate& expr) {
-        inner += fmt::format("P{}", expr.predicate);
+        inner += "P" + std::to_string(expr.predicate);
     }
 
     void operator()(const ExprCondCode& expr) {
-        inner += fmt::format("CC{}", expr.cc);
+        u32 cc = static_cast<u32>(expr.cc);
+        inner += "CC" + std::to_string(cc);
     }
 
     void operator()(const ExprVar& expr) {
-        inner += fmt::format("V{}", expr.var_index);
+        inner += "V" + std::to_string(expr.var_index);
     }
 
     void operator()(const ExprBoolean& expr) {
@@ -228,7 +229,7 @@ public:
     }
 
     void operator()(const ExprGprEqual& expr) {
-        inner += fmt::format("(gpr_{} == {})", expr.gpr, expr.value);
+        inner += "( gpr_" + std::to_string(expr.gpr) + " == " + std::to_string(expr.value) + ')';
     }
 
     const std::string& GetResult() const {
@@ -373,8 +374,8 @@ std::string ASTManager::Print() const {
     return printer.GetResult();
 }
 
-ASTManager::ASTManager(bool do_full_decompile, bool disable_else_derivation_)
-    : full_decompile{do_full_decompile}, disable_else_derivation{disable_else_derivation_} {}
+ASTManager::ASTManager(bool full_decompile, bool disable_else_derivation)
+    : full_decompile{full_decompile}, disable_else_derivation{disable_else_derivation} {};
 
 ASTManager::~ASTManager() {
     Clear();

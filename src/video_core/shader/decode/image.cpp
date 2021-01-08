@@ -358,9 +358,9 @@ u32 ShaderIR::DecodeImage(NodeBlock& bb, u32 pc) {
                              instr.suldst.GetStoreDataLayout() != StoreType::Bits64);
 
             auto descriptor = [this, instr] {
-                std::optional<Tegra::Engines::SamplerDescriptor> sampler_descriptor;
+                std::optional<Tegra::Engines::SamplerDescriptor> descriptor;
                 if (instr.suldst.is_immediate) {
-                    sampler_descriptor =
+                    descriptor =
                         registry.ObtainBoundSampler(static_cast<u32>(instr.image.index.Value()));
                 } else {
                     const Node image_register = GetRegister(instr.gpr39);
@@ -368,12 +368,12 @@ u32 ShaderIR::DecodeImage(NodeBlock& bb, u32 pc) {
                                                   static_cast<s64>(global_code.size()));
                     const auto buffer = std::get<1>(result);
                     const auto offset = std::get<2>(result);
-                    sampler_descriptor = registry.ObtainBindlessSampler(buffer, offset);
+                    descriptor = registry.ObtainBindlessSampler(buffer, offset);
                 }
-                if (!sampler_descriptor) {
+                if (!descriptor) {
                     UNREACHABLE_MSG("Failed to obtain image descriptor");
                 }
-                return *sampler_descriptor;
+                return *descriptor;
             }();
 
             const auto comp_mask = GetImageComponentMask(descriptor.format);

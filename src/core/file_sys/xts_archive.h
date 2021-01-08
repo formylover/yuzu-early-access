@@ -47,13 +47,13 @@ public:
 
     NAXContentType GetContentType() const;
 
-    std::vector<VirtualFile> GetFiles() const override;
+    std::vector<std::shared_ptr<VfsFile>> GetFiles() const override;
 
-    std::vector<VirtualDir> GetSubdirectories() const override;
+    std::vector<std::shared_ptr<VfsDirectory>> GetSubdirectories() const override;
 
     std::string GetName() const override;
 
-    VirtualDir GetParentDirectory() const override;
+    std::shared_ptr<VfsDirectory> GetParentDirectory() const override;
 
 private:
     Loader::ResultStatus Parse(std::string_view path);

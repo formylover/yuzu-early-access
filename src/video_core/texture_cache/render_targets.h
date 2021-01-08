@@ -38,13 +38,13 @@ template <>
 struct hash<VideoCommon::RenderTargets> {
     size_t operator()(const VideoCommon::RenderTargets& rt) const noexcept {
         using VideoCommon::ImageViewId;
-        size_t value = std::hash<ImageViewId>{}(rt.depth_buffer_id);
+        size_t hash = std::hash<ImageViewId>{}(rt.depth_buffer_id);
         for (const ImageViewId color_buffer_id : rt.color_buffer_ids) {
-            value ^= std::hash<ImageViewId>{}(color_buffer_id);
+            hash ^= std::hash<ImageViewId>{}(color_buffer_id);
         }
-        value ^= Common::BitCast<u64>(rt.draw_buffers);
-        value ^= Common::BitCast<u64>(rt.size);
-        return value;
+        hash ^= Common::BitCast<u64>(rt.draw_buffers);
+        hash ^= Common::BitCast<u64>(rt.size);
+        return hash;
     }
 };
 

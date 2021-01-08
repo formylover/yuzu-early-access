@@ -108,7 +108,7 @@ public:
 
 private:
     explicit Shader(std::shared_ptr<VideoCommon::Shader::Registry> registry, ShaderEntries entries,
-                    ProgramSharedPtr program, bool is_built_ = true);
+                    ProgramSharedPtr program, bool is_built = true);
 
     std::shared_ptr<VideoCommon::Shader::Registry> registry;
     ShaderEntries entries;
@@ -119,11 +119,10 @@ private:
 
 class ShaderCacheOpenGL final : public VideoCommon::ShaderCache<Shader> {
 public:
-    explicit ShaderCacheOpenGL(RasterizerOpenGL& rasterizer_,
-                               Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu,
-                               Tegra::Engines::Maxwell3D& maxwell3d_,
-                               Tegra::Engines::KeplerCompute& kepler_compute_,
-                               Tegra::MemoryManager& gpu_memory_, const Device& device_);
+    explicit ShaderCacheOpenGL(RasterizerOpenGL& rasterizer, Core::Frontend::EmuWindow& emu_window,
+                               Tegra::GPU& gpu, Tegra::Engines::Maxwell3D& maxwell3d,
+                               Tegra::Engines::KeplerCompute& kepler_compute,
+                               Tegra::MemoryManager& gpu_memory, const Device& device);
     ~ShaderCacheOpenGL() override;
 
     /// Loads disk cache for the current game

@@ -152,11 +152,11 @@ NAXContentType NAX::GetContentType() const {
     return type;
 }
 
-std::vector<VirtualFile> NAX::GetFiles() const {
+std::vector<std::shared_ptr<VfsFile>> NAX::GetFiles() const {
     return {dec_file};
 }
 
-std::vector<VirtualDir> NAX::GetSubdirectories() const {
+std::vector<std::shared_ptr<VfsDirectory>> NAX::GetSubdirectories() const {
     return {};
 }
 
@@ -164,7 +164,7 @@ std::string NAX::GetName() const {
     return file->GetName();
 }
 
-VirtualDir NAX::GetParentDirectory() const {
+std::shared_ptr<VfsDirectory> NAX::GetParentDirectory() const {
     return file->GetContainingDirectory();
 }
 

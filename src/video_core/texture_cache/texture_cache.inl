@@ -247,10 +247,6 @@ void TextureCache<P>::DownloadMemory(VAddr cpu_addr, size_t size) {
         if (True(image.flags & ImageFlagBits::CpuModified)) {
             return;
         }
-        if (image.info.num_samples > 1) {
-            LOG_WARNING(HW_GPU, "MSAA image downloads are not implemented");
-            return;
-        }
         image.flags &= ~ImageFlagBits::GpuModified;
         images.push_back(image_id);
     });
@@ -594,14 +590,10 @@ ImageId TextureCache<P>::JoinImages(const ImageInfo& info, GPUVAddr gpu_addr, VA
     std::vector<ImageId> left_aliased_ids;
     std::vector<ImageId> right_aliased_ids;
     ForEachImageInRegion(cpu_addr, size_bytes, [&](ImageId overlap_id, ImageBase& overlap) {
-        if (info.type != overlap.info.type) {
+        if (info.type == ImageType::Linear) {
             return;
         }
-        if (info.type == ImageType::Linear) {
-            if (info.pitch == overlap.info.pitch && gpu_addr == overlap.gpu_addr) {
-                // Alias linear images with the same pitch
-                left_aliased_ids.push_back(overlap_id);
-            }
+        if (overlap.info.type == ImageType::Linear) {
             return;
         }
         const auto solution = ResolveOverlap(new_info, gpu_addr, cpu_addr, overlap, true);
@@ -692,7 +684,7 @@ typename TextureCache<P>::BlitImages TextureCache<P>::GetBlitImages(
 template <class P>
 SamplerId TextureCache<P>::FindSampler(const TSCEntry& config) {
     if (std::ranges::all_of(config.raw, [](u64 value) { return value == 0; })) {
-        return NULL_SAMPLER_ID;
+        return SamplerId{};
     }
     const auto [pair, is_new] = samplers.try_emplace(config);
     if (is_new) {
@@ -939,7 +931,8 @@ template <class P>
 void TextureCache<P>::RemoveFramebuffers(std::span<const ImageViewId> removed_views) {
     auto it = framebuffers.begin();
     while (it != framebuffers.end()) {
-        if (it->first.Contains(removed_views)) {
+        const RenderTargets& render_targets = it->first;
+        if (render_targets.Contains(removed_views)) {
             it = framebuffers.erase(it);
         } else {
             ++it;

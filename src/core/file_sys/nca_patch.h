@@ -106,7 +106,7 @@ public:
 
     bool Resize(std::size_t new_size) override;
 
-    VirtualDir GetContainingDirectory() const override;
+    std::shared_ptr<VfsDirectory> GetContainingDirectory() const override;
 
     bool IsWritable() const override;
 
