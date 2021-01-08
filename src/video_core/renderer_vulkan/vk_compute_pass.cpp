@@ -10,7 +10,6 @@
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/common_types.h"
-#include "video_core/host_shaders/vulkan_quad_indexed_comp_spv.h"
 #include "video_core/host_shaders/vulkan_uint8_comp_spv.h"
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
