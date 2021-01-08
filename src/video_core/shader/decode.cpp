@@ -66,7 +66,7 @@ std::optional<u32> TryDeduceSamplerSize(const SamplerEntry& sampler_to_deduce,
 
 class ASTDecoder {
 public:
-    ASTDecoder(ShaderIR& ir) : ir(ir) {}
+    explicit ASTDecoder(ShaderIR& ir_) : ir(ir_) {}
 
     void operator()(ASTProgram& ast) {
         ASTNode current = ast.nodes.GetFirst();
@@ -153,8 +153,8 @@ void ShaderIR::Decode() {
         const auto& blocks = shader_info.blocks;
         NodeBlock current_block;
         u32 current_label = static_cast<u32>(exit_branch);
-        for (auto& block : blocks) {
-            if (shader_info.labels.count(block.start) != 0) {
+        for (const auto& block : blocks) {
+            if (shader_info.labels.contains(block.start)) {
                 insert_block(current_block, current_label);
                 current_block.clear();
                 current_label = block.start;

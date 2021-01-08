@@ -13,7 +13,7 @@
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_shader_decompiler.h"
-#include "video_core/renderer_vulkan/wrapper.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
@@ -40,8 +40,8 @@ static_assert(std::has_unique_object_representations_v<GraphicsPipelineCacheKey>
 static_assert(std::is_trivially_copyable_v<GraphicsPipelineCacheKey>);
 static_assert(std::is_trivially_constructible_v<GraphicsPipelineCacheKey>);
 
+class Device;
 class VKDescriptorPool;
-class VKDevice;
 class VKScheduler;
 class VKUpdateDescriptorQueue;
 
@@ -49,9 +49,9 @@ using SPIRVProgram = std::array<std::optional<SPIRVShader>, Maxwell::MaxShaderSt
 
 class VKGraphicsPipeline final {
 public:
-    explicit VKGraphicsPipeline(const VKDevice& device, VKScheduler& scheduler,
+    explicit VKGraphicsPipeline(const Device& device_, VKScheduler& scheduler_,
                                 VKDescriptorPool& descriptor_pool,
-                                VKUpdateDescriptorQueue& update_descriptor_queue,
+                                VKUpdateDescriptorQueue& update_descriptor_queue_,
                                 const GraphicsPipelineCacheKey& key,
                                 vk::Span<VkDescriptorSetLayoutBinding> bindings,
                                 const SPIRVProgram& program, u32 num_color_buffers);
@@ -85,7 +85,7 @@ private:
     vk::Pipeline CreatePipeline(const SPIRVProgram& program, VkRenderPass renderpass,
                                 u32 num_color_buffers) const;
 
-    const VKDevice& device;
+    const Device& device;
     VKScheduler& scheduler;
     const GraphicsPipelineCacheKey cache_key;
     const u64 hash;

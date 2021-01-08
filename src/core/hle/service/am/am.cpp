@@ -560,14 +560,14 @@ void ISelfController::GetAccumulatedSuspendedTickChangedEvent(Kernel::HLERequest
 
 AppletMessageQueue::AppletMessageQueue(Kernel::KernelCore& kernel) {
     on_new_message =
-        Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OnMessageRecieved");
+        Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OnMessageReceived");
     on_operation_mode_changed =
         Kernel::WritableEvent::CreateEventPair(kernel, "AMMessageQueue:OperationModeChanged");
 }
 
 AppletMessageQueue::~AppletMessageQueue() = default;
 
-const std::shared_ptr<Kernel::ReadableEvent>& AppletMessageQueue::GetMesssageRecieveEvent() const {
+const std::shared_ptr<Kernel::ReadableEvent>& AppletMessageQueue::GetMessageReceiveEvent() const {
     return on_new_message.readable;
 }
 
@@ -675,7 +675,7 @@ void ICommonStateGetter::GetEventHandle(Kernel::HLERequestContext& ctx) {
 
     IPC::ResponseBuilder rb{ctx, 2, 1};
     rb.Push(RESULT_SUCCESS);
-    rb.PushCopyObjects(msg_queue->GetMesssageRecieveEvent());
+    rb.PushCopyObjects(msg_queue->GetMessageReceiveEvent());
 }
 
 void ICommonStateGetter::ReceiveMessage(Kernel::HLERequestContext& ctx) {
@@ -1092,14 +1092,14 @@ void ILibraryAppletCreator::CreateLibraryApplet(Kernel::HLERequestContext& ctx) 
     const auto applet_id = rp.PopRaw<Applets::AppletId>();
     const auto applet_mode = rp.PopRaw<u32>();
 
-    LOG_DEBUG(Service_AM, "called with applet_id={:08X}, applet_mode={:08X}",
-              static_cast<u32>(applet_id), applet_mode);
+    LOG_DEBUG(Service_AM, "called with applet_id={:08X}, applet_mode={:08X}", applet_id,
+              applet_mode);
 
     const auto& applet_manager{system.GetAppletManager()};
     const auto applet = applet_manager.GetApplet(applet_id);
 
     if (applet == nullptr) {
-        LOG_ERROR(Service_AM, "Applet doesn't exist! applet_id={}", static_cast<u32>(applet_id));
+        LOG_ERROR(Service_AM, "Applet doesn't exist! applet_id={}", applet_id);
 
         IPC::ResponseBuilder rb{ctx, 2};
         rb.Push(RESULT_UNKNOWN);
@@ -1290,7 +1290,7 @@ void IApplicationFunctions::PopLaunchParameter(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto kind = rp.PopEnum<LaunchParameterKind>();
 
-    LOG_DEBUG(Service_AM, "called, kind={:08X}", static_cast<u8>(kind));
+    LOG_DEBUG(Service_AM, "called, kind={:08X}", kind);
 
     if (kind == LaunchParameterKind::ApplicationSpecific && !launch_popped_application_specific) {
         const auto backend = BCAT::CreateBackendFromSettings(system, [this](u64 tid) {
@@ -1537,8 +1537,8 @@ void IApplicationFunctions::GetSaveDataSize(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp{ctx};
     const auto [type, user_id] = rp.PopRaw<Parameters>();
 
-    LOG_DEBUG(Service_AM, "called with type={:02X}, user_id={:016X}{:016X}", static_cast<u8>(type),
-              user_id[1], user_id[0]);
+    LOG_DEBUG(Service_AM, "called with type={:02X}, user_id={:016X}{:016X}", type, user_id[1],
+              user_id[0]);
 
     const auto size = system.GetFileSystemController().ReadSaveDataSize(
         type, system.CurrentProcess()->GetTitleID(), user_id);

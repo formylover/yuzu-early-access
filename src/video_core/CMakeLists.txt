@@ -1,6 +1,7 @@
 add_subdirectory(host_shaders)
 
 add_library(video_core STATIC
+    buffer_cache/buffer_base.h
     buffer_cache/buffer_block.h
     buffer_cache/buffer_cache.h
     buffer_cache/map_interval.cpp
@@ -48,6 +49,7 @@ add_library(video_core STATIC
     engines/shader_bytecode.h
     engines/shader_header.h
     engines/shader_type.h
+    framebuffer_config.h
     macro/macro.cpp
     macro/macro.h
     macro/macro_hle.cpp
@@ -59,10 +61,6 @@ add_library(video_core STATIC
     fence_manager.h
     gpu.cpp
     gpu.h
-    gpu_asynch.cpp
-    gpu_asynch.h
-    gpu_synch.cpp
-    gpu_synch.h
     gpu_thread.cpp
     gpu_thread.h
     guest_driver.cpp
@@ -112,6 +110,58 @@ add_library(video_core STATIC
     renderer_opengl/renderer_opengl.h
     renderer_opengl/util_shaders.cpp
     renderer_opengl/util_shaders.h
+    renderer_vulkan/blit_image.cpp
+    renderer_vulkan/blit_image.h
+    renderer_vulkan/fixed_pipeline_state.cpp
+    renderer_vulkan/fixed_pipeline_state.h
+    renderer_vulkan/maxwell_to_vk.cpp
+    renderer_vulkan/maxwell_to_vk.h
+    renderer_vulkan/renderer_vulkan.h
+    renderer_vulkan/renderer_vulkan.cpp
+    renderer_vulkan/vk_blit_screen.cpp
+    renderer_vulkan/vk_blit_screen.h
+    renderer_vulkan/vk_buffer_cache.cpp
+    renderer_vulkan/vk_buffer_cache.h
+    renderer_vulkan/vk_command_pool.cpp
+    renderer_vulkan/vk_command_pool.h
+    renderer_vulkan/vk_compute_pass.cpp
+    renderer_vulkan/vk_compute_pass.h
+    renderer_vulkan/vk_compute_pipeline.cpp
+    renderer_vulkan/vk_compute_pipeline.h
+    renderer_vulkan/vk_descriptor_pool.cpp
+    renderer_vulkan/vk_descriptor_pool.h
+    renderer_vulkan/vk_fence_manager.cpp
+    renderer_vulkan/vk_fence_manager.h
+    renderer_vulkan/vk_graphics_pipeline.cpp
+    renderer_vulkan/vk_graphics_pipeline.h
+    renderer_vulkan/vk_master_semaphore.cpp
+    renderer_vulkan/vk_master_semaphore.h
+    renderer_vulkan/vk_pipeline_cache.cpp
+    renderer_vulkan/vk_pipeline_cache.h
+    renderer_vulkan/vk_query_cache.cpp
+    renderer_vulkan/vk_query_cache.h
+    renderer_vulkan/vk_rasterizer.cpp
+    renderer_vulkan/vk_rasterizer.h
+    renderer_vulkan/vk_resource_pool.cpp
+    renderer_vulkan/vk_resource_pool.h
+    renderer_vulkan/vk_scheduler.cpp
+    renderer_vulkan/vk_scheduler.h
+    renderer_vulkan/vk_shader_decompiler.cpp
+    renderer_vulkan/vk_shader_decompiler.h
+    renderer_vulkan/vk_shader_util.cpp
+    renderer_vulkan/vk_shader_util.h
+    renderer_vulkan/vk_staging_buffer_pool.cpp
+    renderer_vulkan/vk_staging_buffer_pool.h
+    renderer_vulkan/vk_state_tracker.cpp
+    renderer_vulkan/vk_state_tracker.h
+    renderer_vulkan/vk_stream_buffer.cpp
+    renderer_vulkan/vk_stream_buffer.h
+    renderer_vulkan/vk_swapchain.cpp
+    renderer_vulkan/vk_swapchain.h
+    renderer_vulkan/vk_texture_cache.cpp
+    renderer_vulkan/vk_texture_cache.h
+    renderer_vulkan/vk_update_descriptor.cpp
+    renderer_vulkan/vk_update_descriptor.h
     shader_cache.h
     shader_notify.cpp
     shader_notify.h
@@ -168,6 +218,8 @@ add_library(video_core STATIC
     shader/transform_feedback.h
     surface.cpp
     surface.h
+    texture_cache/accelerated_swizzle.cpp
+    texture_cache/accelerated_swizzle.h
     texture_cache/decode_bc4.cpp
     texture_cache/decode_bc4.h
     texture_cache/descriptor_table.h
@@ -187,7 +239,6 @@ add_library(video_core STATIC
     texture_cache/samples_helper.h
     texture_cache/slot_vector.h
     texture_cache/texture_cache.h
-    texture_cache/texture_cache.inl
     texture_cache/types.h
     texture_cache/util.cpp
     texture_cache/util.h
@@ -199,72 +250,23 @@ add_library(video_core STATIC
     textures/texture.h
     video_core.cpp
     video_core.h
+    vulkan_common/vulkan_debug_callback.cpp
+    vulkan_common/vulkan_debug_callback.h
+    vulkan_common/vulkan_device.cpp
+    vulkan_common/vulkan_device.h
+    vulkan_common/vulkan_instance.cpp
+    vulkan_common/vulkan_instance.h
+    vulkan_common/vulkan_library.cpp
+    vulkan_common/vulkan_library.h
+    vulkan_common/vulkan_memory_allocator.cpp
+    vulkan_common/vulkan_memory_allocator.h
+    vulkan_common/vulkan_surface.cpp
+    vulkan_common/vulkan_surface.h
+    vulkan_common/vulkan_wrapper.cpp
+    vulkan_common/vulkan_wrapper.h
+    vulkan_common/nsight_aftermath_tracker.cpp
+    vulkan_common/nsight_aftermath_tracker.h
 )
-
-if (ENABLE_VULKAN)
-    target_sources(video_core PRIVATE
-        renderer_vulkan/blit_image.cpp
-        renderer_vulkan/blit_image.h
-        renderer_vulkan/fixed_pipeline_state.cpp
-        renderer_vulkan/fixed_pipeline_state.h
-        renderer_vulkan/maxwell_to_vk.cpp
-        renderer_vulkan/maxwell_to_vk.h
-        renderer_vulkan/nsight_aftermath_tracker.cpp
-        renderer_vulkan/nsight_aftermath_tracker.h
-        renderer_vulkan/renderer_vulkan.h
-        renderer_vulkan/renderer_vulkan.cpp
-        renderer_vulkan/vk_blit_screen.cpp
-        renderer_vulkan/vk_blit_screen.h
-        renderer_vulkan/vk_buffer_cache.cpp
-        renderer_vulkan/vk_buffer_cache.h
-        renderer_vulkan/vk_command_pool.cpp
-        renderer_vulkan/vk_command_pool.h
-        renderer_vulkan/vk_compute_pass.cpp
-        renderer_vulkan/vk_compute_pass.h
-        renderer_vulkan/vk_compute_pipeline.cpp
-        renderer_vulkan/vk_compute_pipeline.h
-        renderer_vulkan/vk_descriptor_pool.cpp
-        renderer_vulkan/vk_descriptor_pool.h
-        renderer_vulkan/vk_device.cpp
-        renderer_vulkan/vk_device.h
-        renderer_vulkan/vk_fence_manager.cpp
-        renderer_vulkan/vk_fence_manager.h
-        renderer_vulkan/vk_graphics_pipeline.cpp
-        renderer_vulkan/vk_graphics_pipeline.h
-        renderer_vulkan/vk_master_semaphore.cpp
-        renderer_vulkan/vk_master_semaphore.h
-        renderer_vulkan/vk_memory_manager.cpp
-        renderer_vulkan/vk_memory_manager.h
-        renderer_vulkan/vk_pipeline_cache.cpp
-        renderer_vulkan/vk_pipeline_cache.h
-        renderer_vulkan/vk_query_cache.cpp
-        renderer_vulkan/vk_query_cache.h
-        renderer_vulkan/vk_rasterizer.cpp
-        renderer_vulkan/vk_rasterizer.h
-        renderer_vulkan/vk_resource_pool.cpp
-        renderer_vulkan/vk_resource_pool.h
-        renderer_vulkan/vk_scheduler.cpp
-        renderer_vulkan/vk_scheduler.h
-        renderer_vulkan/vk_shader_decompiler.cpp
-        renderer_vulkan/vk_shader_decompiler.h
-        renderer_vulkan/vk_shader_util.cpp
-        renderer_vulkan/vk_shader_util.h
-        renderer_vulkan/vk_staging_buffer_pool.cpp
-        renderer_vulkan/vk_staging_buffer_pool.h
-        renderer_vulkan/vk_state_tracker.cpp
-        renderer_vulkan/vk_state_tracker.h
-        renderer_vulkan/vk_stream_buffer.cpp
-        renderer_vulkan/vk_stream_buffer.h
-        renderer_vulkan/vk_swapchain.cpp
-        renderer_vulkan/vk_swapchain.h
-        renderer_vulkan/vk_texture_cache.cpp
-        renderer_vulkan/vk_texture_cache.h
-        renderer_vulkan/vk_update_descriptor.cpp
-        renderer_vulkan/vk_update_descriptor.h
-        renderer_vulkan/wrapper.cpp
-        renderer_vulkan/wrapper.h
-    )
-endif()
 
 create_target_directory_groups(video_core)
 
@@ -281,12 +283,8 @@ endif()
 
 add_dependencies(video_core host_shaders)
 target_include_directories(video_core PRIVATE ${HOST_SHADERS_INCLUDE})
-
-if (ENABLE_VULKAN)
-    target_include_directories(video_core PRIVATE sirit ../../externals/Vulkan-Headers/include)
-    target_compile_definitions(video_core PRIVATE HAS_VULKAN)
-    target_link_libraries(video_core PRIVATE sirit)
-endif()
+target_include_directories(video_core PRIVATE sirit ../../externals/Vulkan-Headers/include)
+target_link_libraries(video_core PRIVATE sirit)
 
 if (ENABLE_NSIGHT_AFTERMATH)
     if (NOT DEFINED ENV{NSIGHT_AFTERMATH_SDK})
@@ -300,13 +298,21 @@ if (ENABLE_NSIGHT_AFTERMATH)
 endif()
 
 if (MSVC)
-    target_compile_options(video_core PRIVATE /we4267)
+    target_compile_options(video_core PRIVATE
+        /we4267 # 'var' : conversion from 'size_t' to 'type', possible loss of data
+        /we4456 # Declaration of 'identifier' hides previous local declaration
+        /we4457 # Declaration of 'identifier' hides function parameter
+        /we4458 # Declaration of 'identifier' hides class member
+        /we4459 # Declaration of 'identifier' hides global declaration
+        /we4715 # 'function' : not all control paths return a value
+    )
 else()
     target_compile_options(video_core PRIVATE
         -Werror=conversion
         -Wno-error=sign-conversion
         -Werror=pessimizing-move
         -Werror=redundant-move
+        -Werror=shadow
         -Werror=switch
         -Werror=type-limits
         -Werror=unused-variable

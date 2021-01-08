@@ -142,7 +142,7 @@ std::pair<GLint, GLint> TransformFeedbackEnum(u8 location) {
     case 43:
         return {GL_BACK_SECONDARY_COLOR_NV, 0};
     }
-    UNIMPLEMENTED_MSG("index={}", static_cast<int>(index));
+    UNIMPLEMENTED_MSG("index={}", index);
     return {GL_POSITION, 0};
 }
 
@@ -197,21 +197,21 @@ ImageViewType ImageViewTypeFromEntry(const ImageEntry& entry) {
 
 } // Anonymous namespace
 
-RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window, Tegra::GPU& gpu_,
-                                   Core::Memory::Memory& cpu_memory, const Device& device_,
+RasterizerOpenGL::RasterizerOpenGL(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
+                                   Core::Memory::Memory& cpu_memory_, const Device& device_,
                                    ScreenInfo& screen_info_, ProgramManager& program_manager_,
                                    StateTracker& state_tracker_)
-    : RasterizerAccelerated(cpu_memory), gpu(gpu_), maxwell3d(gpu.Maxwell3D()),
+    : RasterizerAccelerated(cpu_memory_), gpu(gpu_), maxwell3d(gpu.Maxwell3D()),
       kepler_compute(gpu.KeplerCompute()), gpu_memory(gpu.MemoryManager()), device(device_),
       screen_info(screen_info_), program_manager(program_manager_), state_tracker(state_tracker_),
       stream_buffer(device, state_tracker),
       texture_cache_runtime(device, program_manager, state_tracker),
       texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
-      shader_cache(*this, emu_window, gpu, maxwell3d, kepler_compute, gpu_memory, device),
+      shader_cache(*this, emu_window_, gpu, maxwell3d, kepler_compute, gpu_memory, device),
       query_cache(*this, maxwell3d, gpu_memory),
-      buffer_cache(*this, gpu_memory, cpu_memory, device, stream_buffer, state_tracker),
+      buffer_cache(*this, gpu_memory, cpu_memory_, device, stream_buffer, state_tracker),
       fence_manager(*this, gpu, texture_cache, buffer_cache, query_cache),
-      async_shaders(emu_window) {
+      async_shaders(emu_window_) {
     unified_uniform_buffer.Create();
     glNamedBufferStorage(unified_uniform_buffer.handle, TOTAL_CONST_BUFFER_BYTES, nullptr, 0);
 

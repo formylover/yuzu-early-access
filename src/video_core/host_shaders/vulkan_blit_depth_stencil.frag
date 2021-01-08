@@ -11,6 +11,6 @@ layout(binding = 1) uniform isampler2D stencil_tex;
 layout(location = 0) in vec2 texcoord;
 
 void main() {
-    gl_FragDepth = texture(depth_tex, texcoord).r;
-    gl_FragStencilRefARB = texture(stencil_tex, texcoord).r;
+    gl_FragDepth = textureLod(depth_tex, texcoord, 0).r;
+    gl_FragStencilRefARB = textureLod(stencil_tex, texcoord, 0).r;
 }

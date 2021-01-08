@@ -96,6 +96,10 @@ public:
 
     FormatProperties FormatInfo(VideoCommon::ImageType type, GLenum internal_format) const;
 
+    bool HasBrokenTextureViewFormats() const noexcept {
+        return has_broken_texture_view_formats;
+    }
+
 private:
     struct StagingBuffers {
         explicit StagingBuffers(GLenum storage_flags_, GLenum map_flags_);
@@ -120,6 +124,7 @@ private:
     UtilShaders util_shaders;
 
     std::array<std::unordered_map<GLenum, FormatProperties>, 3> format_properties;
+    bool has_broken_texture_view_formats = false;
 
     StagingBuffers upload_buffers{GL_MAP_WRITE_BIT, GL_MAP_WRITE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT};
     StagingBuffers download_buffers{GL_MAP_READ_BIT, GL_MAP_READ_BIT};
@@ -165,7 +170,6 @@ private:
     OGLTextureView store_view;
     OGLBuffer buffer;
     GLenum gl_internal_format = GL_NONE;
-    GLenum gl_store_format = GL_NONE;
     GLenum gl_format = GL_NONE;
     GLenum gl_type = GL_NONE;
 };
@@ -177,8 +181,8 @@ public:
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::ImageViewInfo&, ImageId, Image&);
     explicit ImageView(TextureCacheRuntime&, const VideoCommon::NullImageParams&);
 
-    [[nodiscard]] GLuint Handle(ImageViewType type) const noexcept {
-        return views[static_cast<size_t>(type)];
+    [[nodiscard]] GLuint Handle(ImageViewType query_type) const noexcept {
+        return views[static_cast<size_t>(query_type)];
     }
 
     [[nodiscard]] GLuint DefaultHandle() const noexcept {
@@ -190,8 +194,9 @@ public:
     }
 
 private:
-    void SetupView(const Device& device, Image& image, ImageViewType type, GLuint handle,
-                   const VideoCommon::ImageViewInfo& info, VideoCommon::SubresourceRange range);
+    void SetupView(const Device& device, Image& image, ImageViewType view_type, GLuint handle,
+                   const VideoCommon::ImageViewInfo& info,
+                   VideoCommon::SubresourceRange view_range);
 
     std::array<GLuint, VideoCommon::NUM_IMAGE_VIEW_TYPES> views{};
     std::vector<OGLTextureView> stored_views;

@@ -12,22 +12,22 @@
 #include <utility>
 #include "common/common_types.h"
 #include "common/threadsafe_queue.h"
-#include "video_core/renderer_vulkan/wrapper.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
 class CommandPool;
+class Device;
 class Framebuffer;
 class MasterSemaphore;
 class StateTracker;
-class VKDevice;
 class VKQueryCache;
 
 /// The scheduler abstracts command buffer and fence management with an interface that's able to do
 /// OpenGL-like operations on Vulkan command buffers.
 class VKScheduler {
 public:
-    explicit VKScheduler(const VKDevice& device, StateTracker& state_tracker);
+    explicit VKScheduler(const Device& device, StateTracker& state_tracker);
     ~VKScheduler();
 
     /// Returns the current command buffer tick.
@@ -107,7 +107,7 @@ private:
     template <typename T>
     class TypedCommand final : public Command {
     public:
-        explicit TypedCommand(T&& command) : command{std::move(command)} {}
+        explicit TypedCommand(T&& command_) : command{std::move(command_)} {}
         ~TypedCommand() override = default;
 
         TypedCommand(TypedCommand&&) = delete;
@@ -179,7 +179,7 @@ private:
 
     void AcquireNewChunk();
 
-    const VKDevice& device;
+    const Device& device;
     StateTracker& state_tracker;
 
     std::unique_ptr<MasterSemaphore> master_semaphore;

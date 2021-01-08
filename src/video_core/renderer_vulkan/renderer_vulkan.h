@@ -11,7 +11,7 @@
 #include "common/dynamic_library.h"
 
 #include "video_core/renderer_base.h"
-#include "video_core/renderer_vulkan/wrapper.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Core {
 class TelemetrySession;
@@ -27,10 +27,10 @@ class GPU;
 
 namespace Vulkan {
 
+class Device;
 class StateTracker;
+class MemoryAllocator;
 class VKBlitScreen;
-class VKDevice;
-class VKMemoryManager;
 class VKSwapchain;
 class VKScheduler;
 
@@ -44,9 +44,9 @@ struct VKScreenInfo {
 class RendererVulkan final : public VideoCore::RendererBase {
 public:
     explicit RendererVulkan(Core::TelemetrySession& telemtry_session,
-                            Core::Frontend::EmuWindow& emu_window, Core::Memory::Memory& cpu_memory,
-                            Tegra::GPU& gpu,
-                            std::unique_ptr<Core::Frontend::GraphicsContext> context);
+                            Core::Frontend::EmuWindow& emu_window,
+                            Core::Memory::Memory& cpu_memory_, Tegra::GPU& gpu_,
+                            std::unique_ptr<Core::Frontend::GraphicsContext> context_);
     ~RendererVulkan() override;
 
     bool Init() override;
@@ -56,11 +56,7 @@ public:
     static std::vector<std::string> EnumerateDevices();
 
 private:
-    bool CreateDebugCallback();
-
-    bool CreateSurface();
-
-    bool PickDevices();
+    void InitializeDevice();
 
     void Report() const;
 
@@ -72,15 +68,14 @@ private:
     vk::InstanceDispatch dld;
 
     vk::Instance instance;
-    u32 instance_version{};
 
     vk::SurfaceKHR surface;
 
     VKScreenInfo screen_info;
 
-    vk::DebugCallback debug_callback;
-    std::unique_ptr<VKDevice> device;
-    std::unique_ptr<VKMemoryManager> memory_manager;
+    vk::DebugUtilsMessenger debug_callback;
+    std::unique_ptr<Device> device;
+    std::unique_ptr<MemoryAllocator> memory_allocator;
     std::unique_ptr<StateTracker> state_tracker;
     std::unique_ptr<VKScheduler> scheduler;
     std::unique_ptr<VKSwapchain> swapchain;

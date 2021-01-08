@@ -22,11 +22,11 @@
 #include "video_core/engines/shader_bytecode.h"
 #include "video_core/engines/shader_header.h"
 #include "video_core/engines/shader_type.h"
-#include "video_core/renderer_vulkan/vk_device.h"
 #include "video_core/renderer_vulkan/vk_shader_decompiler.h"
 #include "video_core/shader/node.h"
 #include "video_core/shader/shader_ir.h"
 #include "video_core/shader/transform_feedback.h"
+#include "video_core/vulkan_common/vulkan_device.h"
 
 namespace Vulkan {
 
@@ -55,8 +55,8 @@ enum class Type { Void, Bool, Bool2, Float, Int, Uint, HalfFloat };
 
 class Expression final {
 public:
-    Expression(Id id, Type type) : id{id}, type{type} {
-        ASSERT(type != Type::Void);
+    Expression(Id id_, Type type_) : id{id_}, type{type_} {
+        ASSERT(type_ != Type::Void);
     }
     Expression() : type{Type::Void} {}
 
@@ -114,7 +114,7 @@ spv::Dim GetSamplerDim(const SamplerEntry& sampler) {
     case Tegra::Shader::TextureType::TextureCube:
         return spv::Dim::Cube;
     default:
-        UNIMPLEMENTED_MSG("Unimplemented sampler type={}", static_cast<int>(sampler.type));
+        UNIMPLEMENTED_MSG("Unimplemented sampler type={}", sampler.type);
         return spv::Dim::Dim2D;
     }
 }
@@ -134,7 +134,7 @@ std::pair<spv::Dim, bool> GetImageDim(const ImageEntry& image) {
     case Tegra::Shader::ImageType::Texture3D:
         return {spv::Dim::Dim3D, false};
     default:
-        UNIMPLEMENTED_MSG("Unimplemented image type={}", static_cast<int>(image.type));
+        UNIMPLEMENTED_MSG("Unimplemented image type={}", image.type);
         return {spv::Dim::Dim2D, false};
     }
 }
@@ -272,21 +272,14 @@ bool IsPrecise(Operation operand) {
     return false;
 }
 
-u32 ShaderVersion(const VKDevice& device) {
-    if (device.InstanceApiVersion() < VK_API_VERSION_1_1) {
-        return 0x00010000;
-    }
-    return 0x00010300;
-}
-
 class SPIRVDecompiler final : public Sirit::Module {
 public:
-    explicit SPIRVDecompiler(const VKDevice& device, const ShaderIR& ir, ShaderType stage,
-                             const Registry& registry, const Specialization& specialization)
-        : Module(ShaderVersion(device)), device{device}, ir{ir}, stage{stage},
-          header{ir.GetHeader()}, registry{registry}, specialization{specialization} {
-        if (stage != ShaderType::Compute) {
-            transform_feedback = BuildTransformFeedback(registry.GetGraphicsInfo());
+    explicit SPIRVDecompiler(const Device& device_, const ShaderIR& ir_, ShaderType stage_,
+                             const Registry& registry_, const Specialization& specialization_)
+        : Module(0x00010300), device{device_}, ir{ir_}, stage{stage_}, header{ir_.GetHeader()},
+          registry{registry_}, specialization{specialization_} {
+        if (stage_ != ShaderType::Compute) {
+            transform_feedback = BuildTransformFeedback(registry_.GetGraphicsInfo());
         }
 
         AddCapability(spv::Capability::Shader);
@@ -330,7 +323,7 @@ public:
         if (device.IsFloat16Supported()) {
             AddCapability(spv::Capability::Float16);
         }
-        t_scalar_half = Name(TypeFloat(device.IsFloat16Supported() ? 16 : 32), "scalar_half");
+        t_scalar_half = Name(TypeFloat(device_.IsFloat16Supported() ? 16 : 32), "scalar_half");
         t_half = Name(TypeVector(t_scalar_half, 2), "half");
 
         const Id main = Decompile();
@@ -1088,9 +1081,9 @@ private:
             indices.point_size = AddBuiltIn(t_float, spv::BuiltIn::PointSize, "point_size");
         }
 
-        const auto& output_attributes = ir.GetOutputAttributes();
-        const bool declare_clip_distances =
-            std::any_of(output_attributes.begin(), output_attributes.end(), [](const auto& index) {
+        const auto& ir_output_attributes = ir.GetOutputAttributes();
+        const bool declare_clip_distances = std::any_of(
+            ir_output_attributes.begin(), ir_output_attributes.end(), [](const auto& index) {
                 return index == Attribute::Index::ClipDistances0123 ||
                        index == Attribute::Index::ClipDistances4567;
             });
@@ -1254,7 +1247,7 @@ private:
                 const Id pointer = ArrayPass(type_descriptor.scalar, attribute_id, elements);
                 return {OpLoad(GetTypeDefinition(type), pointer), type};
             }
-            UNIMPLEMENTED_MSG("Unhandled input attribute: {}", static_cast<u32>(attribute));
+            UNIMPLEMENTED_MSG("Unhandled input attribute: {}", attribute);
             return {v_float_zero, Type::Float};
         }
 
@@ -1890,7 +1883,7 @@ private:
             case Tegra::Shader::TextureType::Texture3D:
                 return 3;
             default:
-                UNREACHABLE_MSG("Invalid texture type={}", static_cast<int>(type));
+                UNREACHABLE_MSG("Invalid texture type={}", type);
                 return 2;
             }
         }();
@@ -2094,6 +2087,7 @@ private:
             return OpFOrdGreaterThanEqual(t_bool, operand_1, operand_2);
         default:
             UNREACHABLE();
+            return v_true;
         }
     }
 
@@ -2125,8 +2119,7 @@ private:
             OpStore(z_pointer, depth);
         }
         if (stage == ShaderType::Fragment) {
-            const auto SafeGetRegister = [&](u32 reg) {
-                // TODO(Rodrigo): Replace with contains once C++20 releases
+            const auto SafeGetRegister = [this](u32 reg) {
                 if (const auto it = registers.find(reg); it != registers.end()) {
                     return OpLoad(t_float, it->second);
                 }
@@ -2749,7 +2742,7 @@ private:
     };
     static_assert(operation_decompilers.size() == static_cast<std::size_t>(OperationCode::Amount));
 
-    const VKDevice& device;
+    const Device& device;
     const ShaderIR& ir;
     const ShaderType stage;
     const Tegra::Shader::Header header;
@@ -2891,7 +2884,7 @@ private:
 
 class ExprDecompiler {
 public:
-    explicit ExprDecompiler(SPIRVDecompiler& decomp) : decomp{decomp} {}
+    explicit ExprDecompiler(SPIRVDecompiler& decomp_) : decomp{decomp_} {}
 
     Id operator()(const ExprAnd& expr) {
         const Id type_def = decomp.GetTypeDefinition(Type::Bool);
@@ -2947,7 +2940,7 @@ private:
 
 class ASTDecompiler {
 public:
-    explicit ASTDecompiler(SPIRVDecompiler& decomp) : decomp{decomp} {}
+    explicit ASTDecompiler(SPIRVDecompiler& decomp_) : decomp{decomp_} {}
 
     void operator()(const ASTProgram& ast) {
         ASTNode current = ast.nodes.GetFirst();
@@ -3137,7 +3130,7 @@ ShaderEntries GenerateShaderEntries(const VideoCommon::Shader::ShaderIR& ir) {
     return entries;
 }
 
-std::vector<u32> Decompile(const VKDevice& device, const VideoCommon::Shader::ShaderIR& ir,
+std::vector<u32> Decompile(const Device& device, const VideoCommon::Shader::ShaderIR& ir,
                            ShaderType stage, const VideoCommon::Shader::Registry& registry,
                            const Specialization& specialization) {
     return SPIRVDecompiler(device, ir, stage, registry, specialization).Assemble();

@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <thread>
 #include <utility>
 #include <QGridLayout>
 #include <QInputDialog>
@@ -173,61 +172,31 @@ QString AnalogToText(const Common::ParamPackage& param, const std::string& dir) 
         return ButtonToText(Common::ParamPackage{param.Get(dir, "")});
     }
 
-    if (param.Get("engine", "") == "sdl") {
+    const auto engine_str = param.Get("engine", "");
+    const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
+    const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
+    const bool invert_x = param.Get("invert_x", "+") == "-";
+    const bool invert_y = param.Get("invert_y", "+") == "-";
+    if (engine_str == "sdl" || engine_str == "gcpad" || engine_str == "mouse") {
         if (dir == "modifier") {
             return QObject::tr("[unused]");
         }
 
-        if (dir == "left" || dir == "right") {
-            const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
-
-            return QObject::tr("Axis %1").arg(axis_x_str);
+        if (dir == "left") {
+            const QString invert_x_str = QString::fromStdString(invert_x ? "+" : "-");
+            return QObject::tr("Axis %1%2").arg(axis_x_str, invert_x_str);
         }
-
-        if (dir == "up" || dir == "down") {
-            const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
-
-            return QObject::tr("Axis %1").arg(axis_y_str);
+        if (dir == "right") {
+            const QString invert_x_str = QString::fromStdString(invert_x ? "-" : "+");
+            return QObject::tr("Axis %1%2").arg(axis_x_str, invert_x_str);
         }
-
-        return {};
-    }
-
-    if (param.Get("engine", "") == "gcpad") {
-        if (dir == "modifier") {
-            return QObject::tr("[unused]");
+        if (dir == "up") {
+            const QString invert_y_str = QString::fromStdString(invert_y ? "-" : "+");
+            return QObject::tr("Axis %1%2").arg(axis_y_str, invert_y_str);
         }
-
-        if (dir == "left" || dir == "right") {
-            const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
-
-            return QObject::tr("GC Axis %1").arg(axis_x_str);
-        }
-
-        if (dir == "up" || dir == "down") {
-            const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
-
-            return QObject::tr("GC Axis %1").arg(axis_y_str);
-        }
-
-        return {};
-    }
-
-    if (param.Get("engine", "") == "mouse") {
-        if (dir == "modifier") {
-            return QObject::tr("[unused]");
-        }
-
-        if (dir == "left" || dir == "right") {
-            const QString axis_x_str = QString::fromStdString(param.Get("axis_x", ""));
-
-            return QObject::tr("Mouse %1").arg(axis_x_str);
-        }
-
-        if (dir == "up" || dir == "down") {
-            const QString axis_y_str = QString::fromStdString(param.Get("axis_y", ""));
-
-            return QObject::tr("Mouse %1").arg(axis_y_str);
+        if (dir == "down") {
+            const QString invert_y_str = QString::fromStdString(invert_y ? "+" : "-");
+            return QObject::tr("Axis %1%2").arg(axis_y_str, invert_y_str);
         }
 
         return {};
@@ -395,6 +364,25 @@ ConfigureInputPlayer::ConfigureInputPlayer(QWidget* parent, std::size_t player_i
                         context_menu.addAction(tr("Clear"), [&] {
                             analogs_param[analog_id].Clear();
                             analog_map_buttons[analog_id][sub_button_id]->setText(tr("[not set]"));
+                        });
+                        context_menu.addAction(tr("Invert axis"), [&] {
+                            if (sub_button_id == 2 || sub_button_id == 3) {
+                                const bool invert_value =
+                                    analogs_param[analog_id].Get("invert_x", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                analogs_param[analog_id].Set("invert_x", invert_str);
+                            }
+                            if (sub_button_id == 0 || sub_button_id == 1) {
+                                const bool invert_value =
+                                    analogs_param[analog_id].Get("invert_y", "+") == "-";
+                                const std::string invert_str = invert_value ? "+" : "-";
+                                analogs_param[analog_id].Set("invert_y", invert_str);
+                            }
+                            for (int sub_button_id = 0; sub_button_id < ANALOG_SUB_BUTTONS_NUM;
+                                 ++sub_button_id) {
+                                analog_map_buttons[analog_id][sub_button_id]->setText(AnalogToText(
+                                    analogs_param[analog_id], analog_sub_buttons[sub_button_id]));
+                            }
                         });
                         context_menu.exec(analog_map_buttons[analog_id][sub_button_id]->mapToGlobal(
                             menu_location));
@@ -587,6 +575,10 @@ void ConfigureInputPlayer::ApplyConfiguration() {
 
     std::transform(motions_param.begin(), motions_param.end(), motions.begin(),
                    [](const Common::ParamPackage& param) { return param.Serialize(); });
+}
+
+void ConfigureInputPlayer::TryConnectSelectedController() {
+    auto& player = Settings::values.players.GetValue()[player_index];
 
     const auto controller_type =
         GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
@@ -599,15 +591,12 @@ void ConfigureInputPlayer::ApplyConfiguration() {
         return;
     }
 
-    // Disconnect the controller first.
-    UpdateController(controller_type, player_index, false);
-
     player.controller_type = controller_type;
     player.connected = player_connected;
 
     ConfigureVibration::SetVibrationDevices(player_index);
 
-    // Handheld
+    // Connect/Disconnect Handheld depending on Player 1's controller configuration.
     if (player_index == 0) {
         auto& handheld = Settings::values.players.GetValue()[HANDHELD_INDEX];
         if (controller_type == Settings::ControllerType::Handheld) {
@@ -622,12 +611,24 @@ void ConfigureInputPlayer::ApplyConfiguration() {
         return;
     }
 
-    // This emulates a delay between disconnecting and reconnecting controllers as some games
-    // do not respond to a change in controller type if it was instantaneous.
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(20ms);
-
     UpdateController(controller_type, player_index, player_connected);
+}
+
+void ConfigureInputPlayer::TryDisconnectSelectedController() {
+    const auto& player = Settings::values.players.GetValue()[player_index];
+
+    const auto controller_type =
+        GetControllerTypeFromIndex(ui->comboControllerType->currentIndex());
+    const auto player_connected = ui->groupConnectedController->isChecked() &&
+                                  controller_type != Settings::ControllerType::Handheld;
+
+    // Do not do anything if the controller configuration has not changed.
+    if (player.controller_type == controller_type && player.connected == player_connected) {
+        return;
+    }
+
+    // Disconnect the controller first.
+    UpdateController(controller_type, player_index, false);
 }
 
 void ConfigureInputPlayer::showEvent(QShowEvent* event) {

@@ -7,9 +7,9 @@
 #include <compare>
 #include <span>
 
-#include "video_core/renderer_vulkan/vk_memory_manager.h"
-#include "video_core/renderer_vulkan/wrapper.h"
 #include "video_core/texture_cache/texture_cache.h"
+#include "video_core/vulkan_common/vulkan_memory_allocator.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
@@ -19,14 +19,13 @@ using VideoCommon::Offset2D;
 using VideoCommon::RenderTargets;
 using VideoCore::Surface::PixelFormat;
 
-class VKDevice;
-class VKScheduler;
-class VKStagingBufferPool;
-
 class BlitImageHelper;
+class Device;
 class Image;
 class ImageView;
 class Framebuffer;
+class StagingBufferPool;
+class VKScheduler;
 
 struct RenderPassKey {
     constexpr auto operator<=>(const RenderPassKey&) const noexcept = default;
@@ -42,12 +41,12 @@ namespace std {
 template <>
 struct hash<Vulkan::RenderPassKey> {
     [[nodiscard]] constexpr size_t operator()(const Vulkan::RenderPassKey& key) const noexcept {
-        size_t hash = static_cast<size_t>(key.depth_format) << 48;
-        hash ^= static_cast<size_t>(key.samples) << 52;
+        size_t value = static_cast<size_t>(key.depth_format) << 48;
+        value ^= static_cast<size_t>(key.samples) << 52;
         for (size_t i = 0; i < key.color_formats.size(); ++i) {
-            hash ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
+            value ^= static_cast<size_t>(key.color_formats[i]) << (i * 6);
         }
-        return hash;
+        return value;
     }
 };
 } // namespace std
@@ -60,18 +59,18 @@ struct ImageBufferMap {
     }
 
     [[nodiscard]] std::span<u8> Span() const noexcept {
-        return map.Span();
+        return span;
     }
 
     VkBuffer handle;
-    MemoryMap map;
+    std::span<u8> span;
 };
 
 struct TextureCacheRuntime {
-    const VKDevice& device;
+    const Device& device;
     VKScheduler& scheduler;
-    VKMemoryManager& memory_manager;
-    VKStagingBufferPool& staging_buffer_pool;
+    MemoryAllocator& memory_allocator;
+    StagingBufferPool& staging_buffer_pool;
     BlitImageHelper& blit_image_helper;
     std::unordered_map<RenderPassKey, vk::RenderPass> renderpass_cache;
 
@@ -79,10 +78,7 @@ struct TextureCacheRuntime {
 
     [[nodiscard]] ImageBufferMap MapUploadBuffer(size_t size);
 
-    [[nodiscard]] ImageBufferMap MapDownloadBuffer(size_t size) {
-        // TODO: Have a special function for this
-        return MapUploadBuffer(size);
-    }
+    [[nodiscard]] ImageBufferMap MapDownloadBuffer(size_t size);
 
     void BlitImage(Framebuffer* dst_framebuffer, ImageView& dst, ImageView& src,
                    const std::array<Offset2D, 2>& dst_region,
@@ -103,7 +99,12 @@ struct TextureCacheRuntime {
         UNREACHABLE();
     }
 
-    void InsertUploadMemoryBarrier();
+    void InsertUploadMemoryBarrier() {}
+
+    bool HasBrokenTextureViewFormats() const noexcept {
+        // No known Vulkan driver has broken image views
+        return false;
+    }
 };
 
 class Image : public VideoCommon::ImageBase {
@@ -136,7 +137,7 @@ private:
     VKScheduler* scheduler;
     vk::Image image;
     vk::Buffer buffer;
-    VKMemoryCommit commit;
+    MemoryCommit commit;
     VkImageAspectFlags aspect_mask = 0;
     bool initialized = false;
 };
@@ -150,8 +151,8 @@ public:
 
     [[nodiscard]] VkImageView StencilView();
 
-    [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType type) const noexcept {
-        return *image_views[static_cast<size_t>(type)];
+    [[nodiscard]] VkImageView Handle(VideoCommon::ImageViewType query_type) const noexcept {
+        return *image_views[static_cast<size_t>(query_type)];
     }
 
     [[nodiscard]] VkBufferView BufferView() const noexcept {
@@ -177,7 +178,7 @@ public:
 private:
     [[nodiscard]] vk::ImageView MakeDepthStencilView(VkImageAspectFlags aspect_mask);
 
-    const VKDevice* device = nullptr;
+    const Device* device = nullptr;
     std::array<vk::ImageView, VideoCommon::NUM_IMAGE_VIEW_TYPES> image_views;
     vk::ImageView depth_view;
     vk::ImageView stencil_view;

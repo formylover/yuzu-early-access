@@ -19,7 +19,6 @@ add_library(core STATIC
     core.h
     core_timing.cpp
     core_timing.h
-    core_timing_util.cpp
     core_timing_util.h
     cpu_manager.cpp
     cpu_manager.h
@@ -41,6 +40,7 @@ add_library(core STATIC
     file_sys/bis_factory.h
     file_sys/card_image.cpp
     file_sys/card_image.h
+    file_sys/common_funcs.h
     file_sys/content_archive.cpp
     file_sys/content_archive.h
     file_sys/control_metadata.cpp
@@ -134,13 +134,13 @@ add_library(core STATIC
     frontend/emu_window.h
     frontend/framebuffer_layout.cpp
     frontend/framebuffer_layout.h
+    frontend/input_interpreter.cpp
+    frontend/input_interpreter.h
     frontend/input.h
     hardware_interrupt_manager.cpp
     hardware_interrupt_manager.h
     hle/ipc.h
     hle/ipc_helpers.h
-    hle/kernel/address_arbiter.cpp
-    hle/kernel/address_arbiter.h
     hle/kernel/client_port.cpp
     hle/kernel/client_port.h
     hle/kernel/client_session.cpp
@@ -148,10 +148,25 @@ add_library(core STATIC
     hle/kernel/code_set.cpp
     hle/kernel/code_set.h
     hle/kernel/errors.h
+    hle/kernel/global_scheduler_context.cpp
+    hle/kernel/global_scheduler_context.h
     hle/kernel/handle_table.cpp
     hle/kernel/handle_table.h
     hle/kernel/hle_ipc.cpp
     hle/kernel/hle_ipc.h
+    hle/kernel/k_address_arbiter.cpp
+    hle/kernel/k_address_arbiter.h
+    hle/kernel/k_affinity_mask.h
+    hle/kernel/k_condition_variable.cpp
+    hle/kernel/k_condition_variable.h
+    hle/kernel/k_priority_queue.h
+    hle/kernel/k_scheduler.cpp
+    hle/kernel/k_scheduler.h
+    hle/kernel/k_scheduler_lock.h
+    hle/kernel/k_scoped_lock.h
+    hle/kernel/k_scoped_scheduler_lock_and_sleep.h
+    hle/kernel/k_synchronization_object.cpp
+    hle/kernel/k_synchronization_object.h
     hle/kernel/kernel.cpp
     hle/kernel/kernel.h
     hle/kernel/memory/address_space_info.cpp
@@ -171,8 +186,6 @@ add_library(core STATIC
     hle/kernel/memory/slab_heap.h
     hle/kernel/memory/system_control.cpp
     hle/kernel/memory/system_control.h
-    hle/kernel/mutex.cpp
-    hle/kernel/mutex.h
     hle/kernel/object.cpp
     hle/kernel/object.h
     hle/kernel/physical_core.cpp
@@ -186,24 +199,22 @@ add_library(core STATIC
     hle/kernel/readable_event.h
     hle/kernel/resource_limit.cpp
     hle/kernel/resource_limit.h
-    hle/kernel/scheduler.cpp
-    hle/kernel/scheduler.h
     hle/kernel/server_port.cpp
     hle/kernel/server_port.h
     hle/kernel/server_session.cpp
     hle/kernel/server_session.h
+    hle/kernel/service_thread.cpp
+    hle/kernel/service_thread.h
     hle/kernel/session.cpp
     hle/kernel/session.h
     hle/kernel/shared_memory.cpp
     hle/kernel/shared_memory.h
     hle/kernel/svc.cpp
     hle/kernel/svc.h
+    hle/kernel/svc_common.h
+    hle/kernel/svc_results.h
     hle/kernel/svc_types.h
     hle/kernel/svc_wrap.h
-    hle/kernel/synchronization_object.cpp
-    hle/kernel/synchronization_object.h
-    hle/kernel/synchronization.cpp
-    hle/kernel/synchronization.h
     hle/kernel/thread.cpp
     hle/kernel/thread.h
     hle/kernel/time_manager.cpp
@@ -490,7 +501,6 @@ add_library(core STATIC
     hle/service/sm/controller.h
     hle/service/sm/sm.cpp
     hle/service/sm/sm.h
-    hle/service/sockets/blocking_worker.h
     hle/service/sockets/bsd.cpp
     hle/service/sockets/bsd.h
     hle/service/sockets/ethc.cpp
@@ -624,6 +634,8 @@ if (MSVC)
         /we4267
         # 'context' : truncation from 'type1' to 'type2'
         /we4305
+        # 'function' : not all control paths return a value
+        /we4715
     )
 else()
     target_compile_options(core PRIVATE

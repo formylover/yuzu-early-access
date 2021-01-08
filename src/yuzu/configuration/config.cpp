@@ -464,13 +464,7 @@ void Config::ReadMouseValues() {
 void Config::ReadTouchscreenValues() {
     Settings::values.touchscreen.enabled =
         ReadSetting(QStringLiteral("touchscreen_enabled"), true).toBool();
-    Settings::values.touchscreen.device =
-        ReadSetting(QStringLiteral("touchscreen_device"), QStringLiteral("engine:emu_window"))
-            .toString()
-            .toStdString();
 
-    Settings::values.touchscreen.finger =
-        ReadSetting(QStringLiteral("touchscreen_finger"), 0).toUInt();
     Settings::values.touchscreen.rotation_angle =
         ReadSetting(QStringLiteral("touchscreen_angle"), 0).toUInt();
     Settings::values.touchscreen.diameter_x =
@@ -510,6 +504,9 @@ void Config::ReadControlValues() {
     ReadMouseValues();
     ReadTouchscreenValues();
     ReadMotionTouchValues();
+
+    Settings::values.emulate_analog_keyboard =
+        ReadSetting(QStringLiteral("emulate_analog_keyboard"), false).toBool();
 
     ReadSettingGlobal(Settings::values.use_docked_mode, QStringLiteral("use_docked_mode"), false);
     ReadSettingGlobal(Settings::values.vibration_enabled, QStringLiteral("vibration_enabled"),
@@ -560,7 +557,8 @@ void Config::ReadMotionTouchValues() {
             .toString()
             .toStdString();
     Settings::values.touch_device =
-        ReadSetting(QStringLiteral("touch_device"), QStringLiteral("engine:emu_window"))
+        ReadSetting(QStringLiteral("touch_device"),
+                    QStringLiteral("min_x:100,min_y:50,max_x:1800,max_y:850"))
             .toString()
             .toStdString();
     Settings::values.use_touch_from_button =
@@ -634,8 +632,6 @@ void Config::ReadDebuggingValues() {
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     Settings::values.record_frame_times =
         qt_config->value(QStringLiteral("record_frame_times"), false).toBool();
-    Settings::values.use_gdbstub = ReadSetting(QStringLiteral("use_gdbstub"), false).toBool();
-    Settings::values.gdbstub_port = ReadSetting(QStringLiteral("gdbstub_port"), 24689).toInt();
     Settings::values.program_args =
         ReadSetting(QStringLiteral("program_args"), QString{}).toString().toStdString();
     Settings::values.dump_exefs = ReadSetting(QStringLiteral("dump_exefs"), false).toBool();
@@ -763,6 +759,8 @@ void Config::ReadCpuValues() {
             ReadSetting(QStringLiteral("cpuopt_unsafe_unfuse_fma"), true).toBool();
         Settings::values.cpuopt_unsafe_reduce_fp_error =
             ReadSetting(QStringLiteral("cpuopt_unsafe_reduce_fp_error"), true).toBool();
+        Settings::values.cpuopt_unsafe_inaccurate_nan =
+            ReadSetting(QStringLiteral("cpuopt_unsafe_inaccurate_nan"), true).toBool();
     }
 
     qt_config->endGroup();
@@ -1084,10 +1082,7 @@ void Config::SaveTouchscreenValues() {
     const auto& touchscreen = Settings::values.touchscreen;
 
     WriteSetting(QStringLiteral("touchscreen_enabled"), touchscreen.enabled, true);
-    WriteSetting(QStringLiteral("touchscreen_device"), QString::fromStdString(touchscreen.device),
-                 QStringLiteral("engine:emu_window"));
 
-    WriteSetting(QStringLiteral("touchscreen_finger"), touchscreen.finger, 0);
     WriteSetting(QStringLiteral("touchscreen_angle"), touchscreen.rotation_angle, 0);
     WriteSetting(QStringLiteral("touchscreen_diameter_x"), touchscreen.diameter_x, 15);
     WriteSetting(QStringLiteral("touchscreen_diameter_y"), touchscreen.diameter_y, 15);
@@ -1186,6 +1181,8 @@ void Config::SaveControlValues() {
                  QString::fromStdString(Settings::values.touch_device),
                  QStringLiteral("engine:emu_window"));
     WriteSetting(QStringLiteral("keyboard_enabled"), Settings::values.keyboard_enabled, false);
+    WriteSetting(QStringLiteral("emulate_analog_keyboard"),
+                 Settings::values.emulate_analog_keyboard, false);
 
     qt_config->endGroup();
 }
@@ -1231,8 +1228,6 @@ void Config::SaveDebuggingValues() {
 
     // Intentionally not using the QT default setting as this is intended to be changed in the ini
     qt_config->setValue(QStringLiteral("record_frame_times"), Settings::values.record_frame_times);
-    WriteSetting(QStringLiteral("use_gdbstub"), Settings::values.use_gdbstub, false);
-    WriteSetting(QStringLiteral("gdbstub_port"), Settings::values.gdbstub_port, 24689);
     WriteSetting(QStringLiteral("program_args"),
                  QString::fromStdString(Settings::values.program_args), QString{});
     WriteSetting(QStringLiteral("dump_exefs"), Settings::values.dump_exefs, false);
@@ -1326,6 +1321,8 @@ void Config::SaveCpuValues() {
                      Settings::values.cpuopt_unsafe_unfuse_fma, true);
         WriteSetting(QStringLiteral("cpuopt_unsafe_reduce_fp_error"),
                      Settings::values.cpuopt_unsafe_reduce_fp_error, true);
+        WriteSetting(QStringLiteral("cpuopt_unsafe_inaccurate_nan"),
+                     Settings::values.cpuopt_unsafe_inaccurate_nan, true);
     }
 
     qt_config->endGroup();
@@ -1588,14 +1585,12 @@ void Config::WriteSettingGlobal(const QString& name, const QVariant& value, bool
 
 void Config::Reload() {
     ReadValues();
-    Settings::Sanitize();
     // To apply default value changes
     SaveValues();
     Settings::Apply(Core::System::GetInstance());
 }
 
 void Config::Save() {
-    Settings::Sanitize();
     SaveValues();
 }
 

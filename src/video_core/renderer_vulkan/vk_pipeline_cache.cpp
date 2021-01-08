@@ -19,17 +19,17 @@
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
-#include "video_core/renderer_vulkan/vk_device.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
-#include "video_core/renderer_vulkan/wrapper.h"
 #include "video_core/shader/compiler_settings.h"
 #include "video_core/shader/memory_util.h"
 #include "video_core/shader_cache.h"
 #include "video_core/shader_notify.h"
+#include "video_core/vulkan_common/vulkan_device.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
@@ -77,7 +77,7 @@ ShaderType GetShaderType(Maxwell::ShaderProgram program) {
     case Maxwell::ShaderProgram::Fragment:
         return ShaderType::Fragment;
     default:
-        UNIMPLEMENTED_MSG("program={}", static_cast<u32>(program));
+        UNIMPLEMENTED_MSG("program={}", program);
         return ShaderType::Vertex;
     }
 }
@@ -138,22 +138,21 @@ bool ComputePipelineCacheKey::operator==(const ComputePipelineCacheKey& rhs) con
     return std::memcmp(&rhs, this, sizeof *this) == 0;
 }
 
-Shader::Shader(Tegra::Engines::ConstBufferEngineInterface& engine, Tegra::Engines::ShaderType stage,
-               GPUVAddr gpu_addr_, VAddr cpu_addr, VideoCommon::Shader::ProgramCode program_code_,
-               u32 main_offset)
-    : gpu_addr(gpu_addr_), program_code(std::move(program_code_)), registry(stage, engine),
-      shader_ir(program_code, main_offset, compiler_settings, registry),
+Shader::Shader(Tegra::Engines::ConstBufferEngineInterface& engine_, ShaderType stage_,
+               GPUVAddr gpu_addr_, VAddr cpu_addr_, ProgramCode program_code_, u32 main_offset_)
+    : gpu_addr(gpu_addr_), program_code(std::move(program_code_)), registry(stage_, engine_),
+      shader_ir(program_code, main_offset_, compiler_settings, registry),
       entries(GenerateShaderEntries(shader_ir)) {}
 
 Shader::~Shader() = default;
 
-VKPipelineCache::VKPipelineCache(RasterizerVulkan& rasterizer, Tegra::GPU& gpu_,
+VKPipelineCache::VKPipelineCache(RasterizerVulkan& rasterizer_, Tegra::GPU& gpu_,
                                  Tegra::Engines::Maxwell3D& maxwell3d_,
                                  Tegra::Engines::KeplerCompute& kepler_compute_,
-                                 Tegra::MemoryManager& gpu_memory_, const VKDevice& device_,
+                                 Tegra::MemoryManager& gpu_memory_, const Device& device_,
                                  VKScheduler& scheduler_, VKDescriptorPool& descriptor_pool_,
                                  VKUpdateDescriptorQueue& update_descriptor_queue_)
-    : VideoCommon::ShaderCache<Shader>{rasterizer}, gpu{gpu_}, maxwell3d{maxwell3d_},
+    : VideoCommon::ShaderCache<Shader>{rasterizer_}, gpu{gpu_}, maxwell3d{maxwell3d_},
       kepler_compute{kepler_compute_}, gpu_memory{gpu_memory_}, device{device_},
       scheduler{scheduler_}, descriptor_pool{descriptor_pool_}, update_descriptor_queue{
                                                                     update_descriptor_queue_} {}

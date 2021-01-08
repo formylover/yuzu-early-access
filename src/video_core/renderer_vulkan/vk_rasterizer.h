@@ -21,7 +21,6 @@
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
 #include "video_core/renderer_vulkan/vk_fence_manager.h"
-#include "video_core/renderer_vulkan/vk_memory_manager.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_query_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -29,8 +28,9 @@
 #include "video_core/renderer_vulkan/vk_stream_buffer.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
-#include "video_core/renderer_vulkan/wrapper.h"
 #include "video_core/shader/async_shaders.h"
+#include "video_core/vulkan_common/vulkan_memory_allocator.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Core {
 class System;
@@ -51,18 +51,13 @@ struct VKScreenInfo;
 class StateTracker;
 class BufferBindings;
 
-struct Transition {
-    ImageView* view;
-    VkImageLayout* layout;
-};
-
 class RasterizerVulkan final : public VideoCore::RasterizerAccelerated {
 public:
-    explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window, Tegra::GPU& gpu,
-                              Tegra::MemoryManager& gpu_memory, Core::Memory::Memory& cpu_memory,
-                              VKScreenInfo& screen_info, const VKDevice& device,
-                              VKMemoryManager& memory_manager, StateTracker& state_tracker,
-                              VKScheduler& scheduler);
+    explicit RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
+                              Tegra::MemoryManager& gpu_memory_, Core::Memory::Memory& cpu_memory_,
+                              VKScreenInfo& screen_info_, const Device& device_,
+                              MemoryAllocator& memory_allocator_, StateTracker& state_tracker_,
+                              VKScheduler& scheduler_);
     ~RasterizerVulkan() override;
 
     void Draw(bool is_indexed, bool is_instanced) override;
@@ -219,13 +214,13 @@ private:
     Tegra::Engines::KeplerCompute& kepler_compute;
 
     VKScreenInfo& screen_info;
-    const VKDevice& device;
-    VKMemoryManager& memory_manager;
+    const Device& device;
+    MemoryAllocator& memory_allocator;
     StateTracker& state_tracker;
     VKScheduler& scheduler;
 
     VKStreamBuffer stream_buffer;
-    VKStagingBufferPool staging_pool;
+    StagingBufferPool staging_pool;
     VKDescriptorPool descriptor_pool;
     VKUpdateDescriptorQueue update_descriptor_queue;
     BlitImageHelper blit_image;
@@ -241,7 +236,7 @@ private:
     VKFenceManager fence_manager;
 
     vk::Buffer default_buffer;
-    VKMemoryCommit default_buffer_commit;
+    MemoryCommit default_buffer_commit;
     vk::Event wfi_event;
     VideoCommon::Shader::AsyncShaders async_shaders;
 

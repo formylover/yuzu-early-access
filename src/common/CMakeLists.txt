@@ -98,12 +98,12 @@ add_library(common STATIC
     algorithm.h
     alignment.h
     assert.h
-    atomic_ops.cpp
     atomic_ops.h
     detached_tasks.cpp
     detached_tasks.h
     bit_cast.h
     bit_field.h
+    bit_set.h
     bit_util.h
     cityhash.cpp
     cityhash.h
@@ -122,6 +122,7 @@ add_library(common STATIC
     hash.h
     hex_util.cpp
     hex_util.h
+    intrusive_red_black_tree.h
     logging/backend.cpp
     logging/backend.h
     logging/filter.cpp
@@ -134,17 +135,15 @@ add_library(common STATIC
     math_util.h
     memory_detect.cpp
     memory_detect.h
-    memory_hook.cpp
-    memory_hook.h
     microprofile.cpp
     microprofile.h
     microprofileui.h
     misc.cpp
-    multi_level_queue.h
     page_table.cpp
     page_table.h
     param_package.cpp
     param_package.h
+    parent_of_member.h
     quaternion.h
     ring_buffer.h
     scm_rev.cpp
@@ -162,11 +161,14 @@ add_library(common STATIC
     thread.cpp
     thread.h
     thread_queue_list.h
+    thread_worker.cpp
+    thread_worker.h
     threadsafe_queue.h
     time_zone.cpp
     time_zone.h
     timer.cpp
     timer.h
+    tree.h
     uint128.cpp
     uint128.h
     uuid.cpp
@@ -209,7 +211,6 @@ else()
 endif()
 
 create_target_directory_groups(common)
-find_package(Boost 1.71 COMPONENTS context headers REQUIRED)
 
 target_link_libraries(common PUBLIC ${Boost_LIBRARIES} fmt::fmt microprofile)
 target_link_libraries(common PRIVATE lz4::lz4 xbyak)

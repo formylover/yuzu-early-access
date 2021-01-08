@@ -11,6 +11,7 @@
 
 #include <QImage>
 #include <QThread>
+#include <QTouchEvent>
 #include <QWidget>
 #include <QWindow>
 
@@ -21,7 +22,6 @@
 class GRenderWindow;
 class GMainWindow;
 class QKeyEvent;
-class QTouchEvent;
 class QStringList;
 
 namespace InputCommon {
@@ -162,6 +162,8 @@ public:
     /// Destroy the previous run's child_widget which should also destroy the child_window
     void ReleaseRenderTarget();
 
+    bool IsLoadingComplete() const;
+
     void CaptureScreenshot(u32 res_scale, const QString& screenshot_path);
 
     std::pair<u32, u32> ScaleTouch(const QPointF& pos) const;
@@ -182,11 +184,16 @@ signals:
     void Closed();
     void FirstFrameDisplayed();
     void ExecuteProgramSignal(std::size_t program_index);
+    void MouseActivity();
 
 private:
     void TouchBeginEvent(const QTouchEvent* event);
     void TouchUpdateEvent(const QTouchEvent* event);
     void TouchEndEvent();
+
+    bool TouchStart(const QTouchEvent::TouchPoint& touch_point);
+    bool TouchUpdate(const QTouchEvent::TouchPoint& touch_point);
+    bool TouchExist(std::size_t id, const QList<QTouchEvent::TouchPoint>& touch_points) const;
 
     void OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) override;
 
@@ -212,6 +219,9 @@ private:
 
     bool first_frame = false;
 
+    std::array<std::size_t, 16> touch_ids{};
+
 protected:
     void showEvent(QShowEvent* event) override;
+    bool eventFilter(QObject* object, QEvent* event) override;
 };

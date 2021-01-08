@@ -19,7 +19,7 @@
 #include <QOpenGLContext>
 #endif
 
-#if !defined(WIN32) && HAS_VULKAN
+#if !defined(WIN32)
 #include <qpa/qplatformnativeinterface.h>
 #endif
 
@@ -241,14 +241,12 @@ private:
     std::unique_ptr<Core::Frontend::GraphicsContext> context;
 };
 
-#ifdef HAS_VULKAN
 class VulkanRenderWidget : public RenderWidget {
 public:
     explicit VulkanRenderWidget(GRenderWindow* parent) : RenderWidget(parent) {
         windowHandle()->setSurfaceType(QWindow::VulkanSurface);
     }
 };
-#endif
 
 static Core::Frontend::WindowSystemType GetWindowSystemType() {
     // Determine WSI type based on Qt platform.
@@ -268,7 +266,6 @@ static Core::Frontend::EmuWindow::WindowSystemInfo GetWindowSystemInfo(QWindow* 
     Core::Frontend::EmuWindow::WindowSystemInfo wsi;
     wsi.type = GetWindowSystemType();
 
-#ifdef HAS_VULKAN
     // Our Win32 Qt external doesn't have the private API.
 #if defined(WIN32) || defined(__APPLE__)
     wsi.render_surface = window ? reinterpret_cast<void*>(window->winId()) : nullptr;
@@ -281,7 +278,6 @@ static Core::Frontend::EmuWindow::WindowSystemInfo GetWindowSystemInfo(QWindow* 
         wsi.render_surface = window ? reinterpret_cast<void*>(window->winId()) : nullptr;
 #endif
     wsi.render_surface_scale = window ? static_cast<float>(window->devicePixelRatio()) : 1.0f;
-#endif
 
     return wsi;
 }
@@ -398,10 +394,10 @@ void GRenderWindow::mousePressEvent(QMouseEvent* event) {
     input_subsystem->GetMouse()->PressButton(x, y, event->button());
 
     if (event->button() == Qt::LeftButton) {
-        this->TouchPressed(x, y);
+        this->TouchPressed(x, y, 0);
     }
 
-    QWidget::mousePressEvent(event);
+    emit MouseActivity();
 }
 
 void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
@@ -413,9 +409,9 @@ void GRenderWindow::mouseMoveEvent(QMouseEvent* event) {
     auto pos = event->pos();
     const auto [x, y] = ScaleTouch(pos);
     input_subsystem->GetMouse()->MouseMove(x, y);
-    this->TouchMoved(x, y);
+    this->TouchMoved(x, y, 0);
 
-    QWidget::mouseMoveEvent(event);
+    emit MouseActivity();
 }
 
 void GRenderWindow::mouseReleaseEvent(QMouseEvent* event) {
@@ -427,36 +423,71 @@ void GRenderWindow::mouseReleaseEvent(QMouseEvent* event) {
     input_subsystem->GetMouse()->ReleaseButton(event->button());
 
     if (event->button() == Qt::LeftButton) {
-        this->TouchReleased();
+        this->TouchReleased(0);
     }
 }
 
 void GRenderWindow::TouchBeginEvent(const QTouchEvent* event) {
-    // TouchBegin always has exactly one touch point, so take the .first()
-    const auto [x, y] = ScaleTouch(event->touchPoints().first().pos());
-    this->TouchPressed(x, y);
+    QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
+    for (const auto& touch_point : touch_points) {
+        if (!TouchUpdate(touch_point)) {
+            TouchStart(touch_point);
+        }
+    }
 }
 
 void GRenderWindow::TouchUpdateEvent(const QTouchEvent* event) {
-    QPointF pos;
-    int active_points = 0;
-
-    // average all active touch points
-    for (const auto& tp : event->touchPoints()) {
-        if (tp.state() & (Qt::TouchPointPressed | Qt::TouchPointMoved | Qt::TouchPointStationary)) {
-            active_points++;
-            pos += tp.pos();
+    QList<QTouchEvent::TouchPoint> touch_points = event->touchPoints();
+    for (const auto& touch_point : touch_points) {
+        if (!TouchUpdate(touch_point)) {
+            TouchStart(touch_point);
         }
     }
-
-    pos /= active_points;
-
-    const auto [x, y] = ScaleTouch(pos);
-    this->TouchMoved(x, y);
+    // Release all inactive points
+    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
+        if (!TouchExist(touch_ids[id], touch_points)) {
+            touch_ids[id] = 0;
+            this->TouchReleased(id + 1);
+        }
+    }
 }
 
 void GRenderWindow::TouchEndEvent() {
-    this->TouchReleased();
+    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
+        if (touch_ids[id] != 0) {
+            touch_ids[id] = 0;
+            this->TouchReleased(id + 1);
+        }
+    }
+}
+
+bool GRenderWindow::TouchStart(const QTouchEvent::TouchPoint& touch_point) {
+    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
+        if (touch_ids[id] == 0) {
+            touch_ids[id] = touch_point.id() + 1;
+            const auto [x, y] = ScaleTouch(touch_point.pos());
+            this->TouchPressed(x, y, id + 1);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GRenderWindow::TouchUpdate(const QTouchEvent::TouchPoint& touch_point) {
+    for (std::size_t id = 0; id < touch_ids.size(); ++id) {
+        if (touch_ids[id] == touch_point.id() + 1) {
+            const auto [x, y] = ScaleTouch(touch_point.pos());
+            this->TouchMoved(x, y, id + 1);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GRenderWindow::TouchExist(std::size_t id,
+                               const QList<QTouchEvent::TouchPoint>& touch_points) const {
+    return std::any_of(touch_points.begin(), touch_points.end(),
+                       [id](const auto& point) { return id == point.id() + 1; });
 }
 
 bool GRenderWindow::event(QEvent* event) {
@@ -569,6 +600,10 @@ void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_p
         layout);
 }
 
+bool GRenderWindow::IsLoadingComplete() const {
+    return first_frame;
+}
+
 void GRenderWindow::OnMinimalClientAreaChangeRequest(std::pair<u32, u32> minimal_size) {
     setMinimumSize(minimal_size.first, minimal_size.second);
 }
@@ -594,18 +629,12 @@ bool GRenderWindow::InitializeOpenGL() {
 }
 
 bool GRenderWindow::InitializeVulkan() {
-#ifdef HAS_VULKAN
     auto child = new VulkanRenderWidget(this);
     child_widget = child;
     child_widget->windowHandle()->create();
     main_context = std::make_unique<DummyContext>();
 
     return true;
-#else
-    QMessageBox::critical(this, tr("Vulkan not available!"),
-                          tr("yuzu has not been compiled with Vulkan support."));
-    return false;
-#endif
 }
 
 bool GRenderWindow::LoadOpenGL() {
@@ -693,4 +722,11 @@ void GRenderWindow::showEvent(QShowEvent* event) {
     // windowHandle() is not initialized until the Window is shown, so we connect it here.
     connect(windowHandle(), &QWindow::screenChanged, this, &GRenderWindow::OnFramebufferSizeChanged,
             Qt::UniqueConnection);
+}
+
+bool GRenderWindow::eventFilter(QObject* object, QEvent* event) {
+    if (event->type() == QEvent::HoverMove) {
+        emit MouseActivity();
+    }
+    return false;
 }

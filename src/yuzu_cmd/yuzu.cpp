@@ -35,9 +35,7 @@
 #include "yuzu_cmd/config.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2.h"
 #include "yuzu_cmd/emu_window/emu_window_sdl2_gl.h"
-#ifdef HAS_VULKAN
 #include "yuzu_cmd/emu_window/emu_window_sdl2_vk.h"
-#endif
 
 #ifdef _WIN32
 // windows.h needs to be included before shellapi.h
@@ -64,7 +62,6 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 static void PrintHelp(const char* argv0) {
     std::cout << "Usage: " << argv0
               << " [options] <filename>\n"
-                 "-g, --gdbport=NUMBER  Enable gdb stub on port NUMBER\n"
                  "-f, --fullscreen      Start in fullscreen mode\n"
                  "-h, --help            Display this help and exit\n"
                  "-v, --version         Output version information and exit\n"
@@ -96,8 +93,6 @@ int main(int argc, char** argv) {
     Config config;
 
     int option_index = 0;
-    bool use_gdbstub = Settings::values.use_gdbstub;
-    u32 gdb_port = static_cast<u32>(Settings::values.gdbstub_port);
 
     InitializeLogging();
 
@@ -116,26 +111,17 @@ int main(int argc, char** argv) {
     bool fullscreen = false;
 
     static struct option long_options[] = {
-        {"gdbport", required_argument, 0, 'g'}, {"fullscreen", no_argument, 0, 'f'},
-        {"help", no_argument, 0, 'h'},          {"version", no_argument, 0, 'v'},
-        {"program", optional_argument, 0, 'p'}, {0, 0, 0, 0},
+        {"fullscreen", no_argument, 0, 'f'},
+        {"help", no_argument, 0, 'h'},
+        {"version", no_argument, 0, 'v'},
+        {"program", optional_argument, 0, 'p'},
+        {0, 0, 0, 0},
     };
 
     while (optind < argc) {
         int arg = getopt_long(argc, argv, "g:fhvp::", long_options, &option_index);
         if (arg != -1) {
             switch (static_cast<char>(arg)) {
-            case 'g':
-                errno = 0;
-                gdb_port = strtoul(optarg, &endarg, 0);
-                use_gdbstub = true;
-                if (endarg == optarg)
-                    errno = EINVAL;
-                if (errno != 0) {
-                    perror("--gdbport");
-                    exit(1);
-                }
-                break;
             case 'f':
                 fullscreen = true;
                 LOG_INFO(Frontend, "Starting in fullscreen mode...");
@@ -177,8 +163,6 @@ int main(int argc, char** argv) {
     InputCommon::InputSubsystem input_subsystem;
 
     // Apply the command line arguments
-    Settings::values.gdbstub_port = gdb_port;
-    Settings::values.use_gdbstub = use_gdbstub;
     Settings::Apply(system);
 
     std::unique_ptr<EmuWindow_SDL2> emu_window;
@@ -187,13 +171,8 @@ int main(int argc, char** argv) {
         emu_window = std::make_unique<EmuWindow_SDL2_GL>(&input_subsystem, fullscreen);
         break;
     case Settings::RendererBackend::Vulkan:
-#ifdef HAS_VULKAN
         emu_window = std::make_unique<EmuWindow_SDL2_VK>(&input_subsystem);
         break;
-#else
-        LOG_CRITICAL(Frontend, "Vulkan backend has not been compiled!");
-        return 1;
-#endif
     }
 
     system.SetContentProvider(std::make_unique<FileSys::ContentProviderUnion>());
@@ -223,7 +202,7 @@ int main(int argc, char** argv) {
             const u16 loader_id = static_cast<u16>(Core::System::ResultStatus::ErrorLoader);
             const u16 error_id = static_cast<u16>(load_result) - loader_id;
             LOG_CRITICAL(Frontend,
-                         "While attempting to load the ROM requested, an error occured. Please "
+                         "While attempting to load the ROM requested, an error occurred. Please "
                          "refer to the yuzu wiki for more information or the yuzu discord for "
                          "additional help.\n\nError Code: {:04X}-{:04X}\nError Description: {}",
                          loader_id, error_id, static_cast<Loader::ResultStatus>(error_id));

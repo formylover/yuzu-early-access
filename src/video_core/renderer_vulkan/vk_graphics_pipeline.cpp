@@ -12,12 +12,12 @@
 #include "video_core/renderer_vulkan/fixed_pipeline_state.h"
 #include "video_core/renderer_vulkan/maxwell_to_vk.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
-#include "video_core/renderer_vulkan/vk_device.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
-#include "video_core/renderer_vulkan/wrapper.h"
+#include "video_core/vulkan_common/vulkan_device.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
@@ -94,19 +94,19 @@ VkSampleCountFlagBits ConvertMsaaMode(Tegra::Texture::MsaaMode msaa_mode) {
 
 } // Anonymous namespace
 
-VKGraphicsPipeline::VKGraphicsPipeline(const VKDevice& device, VKScheduler& scheduler,
-                                       VKDescriptorPool& descriptor_pool,
-                                       VKUpdateDescriptorQueue& update_descriptor_queue,
+VKGraphicsPipeline::VKGraphicsPipeline(const Device& device_, VKScheduler& scheduler_,
+                                       VKDescriptorPool& descriptor_pool_,
+                                       VKUpdateDescriptorQueue& update_descriptor_queue_,
                                        const GraphicsPipelineCacheKey& key,
                                        vk::Span<VkDescriptorSetLayoutBinding> bindings,
                                        const SPIRVProgram& program, u32 num_color_buffers)
-    : device{device}, scheduler{scheduler}, cache_key{key}, hash{cache_key.Hash()},
+    : device{device_}, scheduler{scheduler_}, cache_key{key}, hash{cache_key.Hash()},
       descriptor_set_layout{CreateDescriptorSetLayout(bindings)},
-      descriptor_allocator{descriptor_pool, *descriptor_set_layout},
-      update_descriptor_queue{update_descriptor_queue}, layout{CreatePipelineLayout()},
+      descriptor_allocator{descriptor_pool_, *descriptor_set_layout},
+      update_descriptor_queue{update_descriptor_queue_}, layout{CreatePipelineLayout()},
       descriptor_template{CreateDescriptorUpdateTemplate(program)},
       modules(CreateShaderModules(program)),
-      pipeline(CreatePipeline(program, key.renderpass, num_color_buffers)) {}
+      pipeline(CreatePipeline(program, cache_key.renderpass, num_color_buffers)) {}
 
 VKGraphicsPipeline::~VKGraphicsPipeline() = default;
 
@@ -183,8 +183,8 @@ std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
         .codeSize = 0,
     };
 
-    std::vector<vk::ShaderModule> modules;
-    modules.reserve(Maxwell::MaxShaderStage);
+    std::vector<vk::ShaderModule> shader_modules;
+    shader_modules.reserve(Maxwell::MaxShaderStage);
     for (std::size_t i = 0; i < Maxwell::MaxShaderStage; ++i) {
         const auto& stage = program[i];
         if (!stage) {
@@ -195,9 +195,9 @@ std::vector<vk::ShaderModule> VKGraphicsPipeline::CreateShaderModules(
 
         ci.codeSize = stage->code.size() * sizeof(u32);
         ci.pCode = stage->code.data();
-        modules.push_back(device.GetLogical().CreateShaderModule(ci));
+        shader_modules.push_back(device.GetLogical().CreateShaderModule(ci));
     }
-    return modules;
+    return shader_modules;
 }
 
 vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
@@ -212,11 +212,7 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         // state is ignored
         dynamic.raw1 = 0;
         dynamic.raw2 = 0;
-        for (FixedPipelineState::VertexBinding& binding : dynamic.vertex_bindings) {
-            // Enable all vertex bindings
-            binding.raw = 0;
-            binding.enabled.Assign(1);
-        }
+        dynamic.vertex_strides.fill(0);
     } else {
         dynamic = state.dynamic_state;
     }
@@ -224,19 +220,16 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
     std::vector<VkVertexInputBindingDescription> vertex_bindings;
     std::vector<VkVertexInputBindingDivisorDescriptionEXT> vertex_binding_divisors;
     for (std::size_t index = 0; index < Maxwell::NumVertexArrays; ++index) {
-        const auto& binding = dynamic.vertex_bindings[index];
-        if (!binding.enabled) {
+        if (state.attributes[index].binding_index_enabled == 0) {
             continue;
         }
         const bool instanced = state.binding_divisors[index] != 0;
         const auto rate = instanced ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-
         vertex_bindings.push_back({
             .binding = static_cast<u32>(index),
-            .stride = binding.stride,
+            .stride = dynamic.vertex_strides[index],
             .inputRate = rate,
         });
-
         if (instanced) {
             vertex_binding_divisors.push_back({
                 .binding = static_cast<u32>(index),
@@ -252,7 +245,7 @@ vk::Pipeline VKGraphicsPipeline::CreatePipeline(const SPIRVProgram& program,
         if (!attribute.enabled) {
             continue;
         }
-        if (input_attributes.find(static_cast<u32>(index)) == input_attributes.end()) {
+        if (!input_attributes.contains(static_cast<u32>(index))) {
             // Skip attributes not used by the vertex shaders.
             continue;
         }

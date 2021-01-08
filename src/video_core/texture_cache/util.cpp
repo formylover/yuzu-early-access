@@ -40,10 +40,12 @@
 #include "common/div_ceil.h"
 #include "video_core/compatible_formats.h"
 #include "video_core/engines/maxwell_3d.h"
+#include "video_core/memory_manager.h"
 #include "video_core/surface.h"
 #include "video_core/texture_cache/decode_bc4.h"
 #include "video_core/texture_cache/format_lookup_table.h"
 #include "video_core/texture_cache/formatter.h"
+#include "video_core/texture_cache/samples_helper.h"
 #include "video_core/texture_cache/util.h"
 #include "video_core/textures/astc.h"
 #include "video_core/textures/decoders.h"
@@ -628,7 +630,7 @@ u32 CalculateGuestSizeInBytes(const ImageInfo& info) noexcept {
         return info.size.width * BytesPerBlock(info.format);
     }
     if (info.type == ImageType::Linear) {
-        return info.pitch * info.size.height;
+        return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
     }
     if (info.resources.layers > 1) {
         ASSERT(info.layer_stride != 0);
@@ -647,7 +649,7 @@ u32 CalculateUnswizzledSizeBytes(const ImageInfo& info) noexcept {
         return 0;
     }
     if (info.type == ImageType::Linear) {
-        return info.pitch * info.size.height;
+        return info.pitch * Common::DivCeil(info.size.height, DefaultBlockHeight(info.format));
     }
     const Extent2D tile_size = DefaultBlockSize(info.format);
     return NumBlocksPerLayer(info, tile_size) * info.resources.layers * BytesPerBlock(info.format);
@@ -822,7 +824,7 @@ std::vector<BufferImageCopy> UnswizzleImage(Tegra::MemoryManager& gpu_memory, GP
         ASSERT((info.pitch >> bpp_log2) << bpp_log2 == info.pitch);
         return {{
             .buffer_offset = 0,
-            .buffer_size = static_cast<size_t>(info.pitch) * size.height,
+            .buffer_size = guest_size_bytes,
             .buffer_row_length = info.pitch >> bpp_log2,
             .buffer_image_height = size.height,
             .image_subresource =
@@ -1067,13 +1069,13 @@ bool IsPitchLinearSameSize(const ImageInfo& lhs, const ImageInfo& rhs, bool stri
 
 std::optional<OverlapResult> ResolveOverlap(const ImageInfo& new_info, GPUVAddr gpu_addr,
                                             VAddr cpu_addr, const ImageBase& overlap,
-                                            bool strict_size) {
+                                            bool strict_size, bool broken_views) {
     ASSERT(new_info.type != ImageType::Linear);
     ASSERT(overlap.info.type != ImageType::Linear);
     if (!IsLayerStrideCompatible(new_info, overlap.info)) {
         return std::nullopt;
     }
-    if (!IsViewCompatible(overlap.info.format, new_info.format)) {
+    if (!IsViewCompatible(overlap.info.format, new_info.format, broken_views)) {
         return std::nullopt;
     }
     if (gpu_addr == overlap.gpu_addr) {
@@ -1116,14 +1118,15 @@ bool IsLayerStrideCompatible(const ImageInfo& lhs, const ImageInfo& rhs) {
 }
 
 std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const ImageBase& image,
-                                               GPUVAddr candidate_addr, RelaxedOptions options) {
+                                               GPUVAddr candidate_addr, RelaxedOptions options,
+                                               bool broken_views) {
     const std::optional<SubresourceBase> base = image.TryFindBase(candidate_addr);
     if (!base) {
         return std::nullopt;
     }
     const ImageInfo& existing = image.info;
     if (False(options & RelaxedOptions::Format)) {
-        if (!IsViewCompatible(existing.format, candidate.format)) {
+        if (!IsViewCompatible(existing.format, candidate.format, broken_views)) {
             return std::nullopt;
         }
     }
@@ -1160,8 +1163,8 @@ std::optional<SubresourceBase> FindSubresource(const ImageInfo& candidate, const
 }
 
 bool IsSubresource(const ImageInfo& candidate, const ImageBase& image, GPUVAddr candidate_addr,
-                   RelaxedOptions options) {
-    return FindSubresource(candidate, image, candidate_addr, options).has_value();
+                   RelaxedOptions options, bool broken_views) {
+    return FindSubresource(candidate, image, candidate_addr, options, broken_views).has_value();
 }
 
 void DeduceBlitImages(ImageInfo& dst_info, ImageInfo& src_info, const ImageBase* dst,

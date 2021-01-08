@@ -79,8 +79,6 @@ void Config::ReadValues() {
     Settings::values.enable_accurate_vibrations.SetValue(false);
     Settings::values.motion_enabled.SetValue(true);
     Settings::values.touchscreen.enabled = "";
-    Settings::values.touchscreen.device = "";
-    Settings::values.touchscreen.finger = 0;
     Settings::values.touchscreen.rotation_angle = 0;
     Settings::values.touchscreen.diameter_x = 15;
     Settings::values.touchscreen.diameter_y = 15;
@@ -158,7 +156,6 @@ void Config::ReadValues() {
     Settings::values.use_dev_keys = sdl2_config->GetBoolean("Miscellaneous", "use_dev_keys", false);
 
     // Debugging
-    Settings::values.use_gdbstub = false;
     Settings::values.program_args = "";
     Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
     Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);

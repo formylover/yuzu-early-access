@@ -162,7 +162,6 @@ int main(int argc, char** argv) {
 
     Core::System& system{Core::System::GetInstance()};
 
-    Settings::values.use_gdbstub = false;
     Settings::Apply(system);
 
     const auto emu_window{std::make_unique<EmuWindow_SDL2_Hide>()};
@@ -243,7 +242,7 @@ int main(int argc, char** argv) {
             const u16 loader_id = static_cast<u16>(Core::System::ResultStatus::ErrorLoader);
             const u16 error_id = static_cast<u16>(load_result) - loader_id;
             LOG_CRITICAL(Frontend,
-                         "While attempting to load the ROM requested, an error occured. Please "
+                         "While attempting to load the ROM requested, an error occurred. Please "
                          "refer to the yuzu wiki for more information or the yuzu discord for "
                          "additional help.\n\nError Code: {:04X}-{:04X}\nError Description: {}",
                          loader_id, error_id, static_cast<Loader::ResultStatus>(error_id));

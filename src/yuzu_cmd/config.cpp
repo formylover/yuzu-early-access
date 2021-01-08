@@ -296,10 +296,6 @@ void Config::ReadValues() {
         sdl2_config->GetBoolean("ControlsGeneral", "motion_enabled", true));
     Settings::values.touchscreen.enabled =
         sdl2_config->GetBoolean("ControlsGeneral", "touch_enabled", true);
-    Settings::values.touchscreen.device =
-        sdl2_config->Get("ControlsGeneral", "touch_device", "engine:emu_window");
-    Settings::values.touchscreen.finger =
-        sdl2_config->GetInteger("ControlsGeneral", "touch_finger", 0);
     Settings::values.touchscreen.rotation_angle =
         sdl2_config->GetInteger("ControlsGeneral", "touch_angle", 0);
     Settings::values.touchscreen.diameter_x =
@@ -345,7 +341,6 @@ void Config::ReadValues() {
     // System
     Settings::values.use_docked_mode.SetValue(
         sdl2_config->GetBoolean("System", "use_docked_mode", false));
-    const auto size = sdl2_config->GetInteger("System", "users_size", 0);
 
     Settings::values.current_user = std::clamp<int>(
         sdl2_config->GetInteger("System", "current_user", 0), 0, Service::Account::MAX_USERS - 1);
@@ -430,9 +425,6 @@ void Config::ReadValues() {
     // Debugging
     Settings::values.record_frame_times =
         sdl2_config->GetBoolean("Debugging", "record_frame_times", false);
-    Settings::values.use_gdbstub = sdl2_config->GetBoolean("Debugging", "use_gdbstub", false);
-    Settings::values.gdbstub_port =
-        static_cast<u16>(sdl2_config->GetInteger("Debugging", "gdbstub_port", 24689));
     Settings::values.program_args = sdl2_config->Get("Debugging", "program_args", "");
     Settings::values.dump_exefs = sdl2_config->GetBoolean("Debugging", "dump_exefs", false);
     Settings::values.dump_nso = sdl2_config->GetBoolean("Debugging", "dump_nso", false);

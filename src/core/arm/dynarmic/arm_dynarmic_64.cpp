@@ -15,8 +15,8 @@
 #include "core/core.h"
 #include "core/core_timing.h"
 #include "core/hardware_properties.h"
+#include "core/hle/kernel/k_scheduler.h"
 #include "core/hle/kernel/process.h"
-#include "core/hle/kernel/scheduler.h"
 #include "core/hle/kernel/svc.h"
 #include "core/memory.h"
 #include "core/settings.h"
@@ -152,6 +152,7 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
     // Memory
     config.page_table = reinterpret_cast<void**>(page_table.pointers.data());
     config.page_table_address_space_bits = address_space_bits;
+    config.page_table_pointer_mask_bits = Common::PageTable::ATTRIBUTE_BITS;
     config.silently_mirror_page_table = false;
     config.absolute_offset_page_table = true;
     config.detect_misaligned_access_via_page_table = 16 | 32 | 64 | 128;
@@ -210,6 +211,9 @@ std::shared_ptr<Dynarmic::A64::Jit> ARM_Dynarmic_64::MakeJit(Common::PageTable& 
         }
         if (Settings::values.cpuopt_unsafe_reduce_fp_error) {
             config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_ReducedErrorFP;
+        }
+        if (Settings::values.cpuopt_unsafe_inaccurate_nan) {
+            config.optimizations |= Dynarmic::OptimizationFlag::Unsafe_InaccurateNaN;
         }
     }
 
@@ -330,6 +334,9 @@ void ARM_Dynarmic_64::InvalidateCacheRange(VAddr addr, std::size_t size) {
 }
 
 void ARM_Dynarmic_64::ClearExclusiveState() {
+    if (!jit) {
+        return;
+    }
     jit->ClearExclusiveState();
 }
 

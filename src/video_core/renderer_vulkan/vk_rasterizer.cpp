@@ -27,7 +27,6 @@
 #include "video_core/renderer_vulkan/vk_compute_pass.h"
 #include "video_core/renderer_vulkan/vk_compute_pipeline.h"
 #include "video_core/renderer_vulkan/vk_descriptor_pool.h"
-#include "video_core/renderer_vulkan/vk_device.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
@@ -36,9 +35,10 @@
 #include "video_core/renderer_vulkan/vk_state_tracker.h"
 #include "video_core/renderer_vulkan/vk_texture_cache.h"
 #include "video_core/renderer_vulkan/vk_update_descriptor.h"
-#include "video_core/renderer_vulkan/wrapper.h"
 #include "video_core/shader_cache.h"
 #include "video_core/texture_cache/texture_cache.h"
+#include "video_core/vulkan_common/vulkan_device.h"
+#include "video_core/vulkan_common/vulkan_wrapper.h"
 
 namespace Vulkan {
 
@@ -62,7 +62,7 @@ namespace {
 
 constexpr auto COMPUTE_SHADER_INDEX = static_cast<size_t>(Tegra::Engines::ShaderType::Compute);
 
-VkViewport GetViewportState(const VKDevice& device, const Maxwell& regs, size_t index) {
+VkViewport GetViewportState(const Device& device, const Maxwell& regs, size_t index) {
     const auto& src = regs.viewport_transform[index];
     const float width = src.scale_x * 2.0f;
     const float height = src.scale_y * 2.0f;
@@ -239,7 +239,7 @@ public:
         index.type = type;
     }
 
-    void Bind(const VKDevice& device, VKScheduler& scheduler) const {
+    void Bind(const Device& device, VKScheduler& scheduler) const {
         // Use this large switch case to avoid dispatching more memory in the record lambda than
         // what we need. It looks horrible, but it's the best we can do on standard C++.
         switch (vertex.num_buffers) {
@@ -330,7 +330,7 @@ private:
     } index;
 
     template <size_t N>
-    void BindStatic(const VKDevice& device, VKScheduler& scheduler) const {
+    void BindStatic(const Device& device, VKScheduler& scheduler) const {
         if (device.IsExtExtendedDynamicStateSupported()) {
             if (index.buffer) {
                 BindStatic<N, true, true>(scheduler);
@@ -406,31 +406,31 @@ void RasterizerVulkan::DrawParameters::Draw(vk::CommandBuffer cmdbuf) const {
     }
 }
 
-RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window, Tegra::GPU& gpu_,
+RasterizerVulkan::RasterizerVulkan(Core::Frontend::EmuWindow& emu_window_, Tegra::GPU& gpu_,
                                    Tegra::MemoryManager& gpu_memory_,
-                                   Core::Memory::Memory& cpu_memory, VKScreenInfo& screen_info_,
-                                   const VKDevice& device_, VKMemoryManager& memory_manager_,
+                                   Core::Memory::Memory& cpu_memory_, VKScreenInfo& screen_info_,
+                                   const Device& device_, MemoryAllocator& memory_allocator_,
                                    StateTracker& state_tracker_, VKScheduler& scheduler_)
-    : RasterizerAccelerated{cpu_memory}, gpu{gpu_},
+    : RasterizerAccelerated{cpu_memory_}, gpu{gpu_},
       gpu_memory{gpu_memory_}, maxwell3d{gpu.Maxwell3D()}, kepler_compute{gpu.KeplerCompute()},
-      screen_info{screen_info_}, device{device_}, memory_manager{memory_manager_},
+      screen_info{screen_info_}, device{device_}, memory_allocator{memory_allocator_},
       state_tracker{state_tracker_}, scheduler{scheduler_}, stream_buffer(device, scheduler),
-      staging_pool(device, memory_manager, scheduler), descriptor_pool(device, scheduler),
+      staging_pool(device, memory_allocator, scheduler), descriptor_pool(device, scheduler),
       update_descriptor_queue(device, scheduler),
       blit_image(device, scheduler, state_tracker, descriptor_pool),
       quad_array_pass(device, scheduler, descriptor_pool, staging_pool, update_descriptor_queue),
       quad_indexed_pass(device, scheduler, descriptor_pool, staging_pool, update_descriptor_queue),
       uint8_pass(device, scheduler, descriptor_pool, staging_pool, update_descriptor_queue),
-      texture_cache_runtime{device, scheduler, memory_manager, staging_pool, blit_image},
+      texture_cache_runtime{device, scheduler, memory_allocator, staging_pool, blit_image},
       texture_cache(texture_cache_runtime, *this, maxwell3d, kepler_compute, gpu_memory),
       pipeline_cache(*this, gpu, maxwell3d, kepler_compute, gpu_memory, device, scheduler,
                      descriptor_pool, update_descriptor_queue),
-      buffer_cache(*this, gpu_memory, cpu_memory, device, memory_manager, scheduler, stream_buffer,
-                   staging_pool),
+      buffer_cache(*this, gpu_memory, cpu_memory_, device, memory_allocator, scheduler,
+                   stream_buffer, staging_pool),
       query_cache{*this, maxwell3d, gpu_memory, device, scheduler},
       fence_manager(*this, gpu, gpu_memory, texture_cache, buffer_cache, query_cache, device,
                     scheduler),
-      wfi_event(device.GetLogical().CreateEvent()), async_shaders(emu_window) {
+      wfi_event(device.GetLogical().CreateEvent()), async_shaders(emu_window_) {
     scheduler.SetQueryCache(query_cache);
     if (device.UseAsynchronousShaders()) {
         async_shaders.AllocateWorkers();
@@ -477,14 +477,13 @@ void RasterizerVulkan::Draw(bool is_indexed, bool is_instanced) {
         return;
     }
 
-    UpdateDynamicStates();
-
     buffer_bindings.Bind(device, scheduler);
 
     BeginTransformFeedback();
 
     scheduler.RequestRenderpass(framebuffer);
     scheduler.BindGraphicsPipeline(pipeline->GetHandle());
+    UpdateDynamicStates();
 
     const auto pipeline_layout = pipeline->GetLayout();
     const auto descriptor_set = pipeline->CommitDescriptorSet();
@@ -629,8 +628,10 @@ void RasterizerVulkan::DispatchCompute(GPUVAddr code_addr) {
                       grid_z = launch_desc.grid_dim_z, pipeline_handle, pipeline_layout,
                       descriptor_set](vk::CommandBuffer cmdbuf) {
         cmdbuf.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_handle);
-        cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, DESCRIPTOR_SET,
-                                  descriptor_set, {});
+        if (descriptor_set) {
+            cmdbuf.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout,
+                                      DESCRIPTOR_SET, descriptor_set, nullptr);
+        }
         cmdbuf.Dispatch(grid_x, grid_y, grid_z);
     });
 }
@@ -658,7 +659,7 @@ void RasterizerVulkan::FlushRegion(VAddr addr, u64 size) {
     query_cache.FlushRegion(addr, size);
 }
 
-void RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size) {
+void Vulkan::RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size) {
     if (addr == 0 || size == 0) {
         return;
     }
@@ -667,7 +668,7 @@ void RasterizerVulkan::InvalidateExceptTextureCache(VAddr addr, u64 size) {
     query_cache.InvalidateRegion(addr, size);
 }
 
-void RasterizerVulkan::InvalidateTextureCache(VAddr addr, u64 size) {
+void Vulkan::RasterizerVulkan::InvalidateTextureCache(VAddr addr, u64 size) {
     if (addr == 0 || size == 0) {
         return;
     }
@@ -1462,7 +1463,7 @@ VkBuffer RasterizerVulkan::DefaultBuffer() {
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = nullptr,
     });
-    default_buffer_commit = memory_manager.Commit(default_buffer, false);
+    default_buffer_commit = memory_allocator.Commit(default_buffer, MemoryUsage::DeviceLocal);
 
     scheduler.RequestOutsideRenderPassOperationContext();
     scheduler.Record([buffer = *default_buffer](vk::CommandBuffer cmdbuf) {
